@@ -2,7 +2,8 @@ package miner
 
 type Miner struct {
 	HBeatAddr string
-	Nbrs      []Miner
+	Nbrs      [256]*Miner
+	
 }
 
 func (m *Miner) ValidateNewArtlib() (err error) {
