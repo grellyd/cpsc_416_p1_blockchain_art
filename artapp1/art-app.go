@@ -11,7 +11,7 @@ package main
 
 // Expects blockartlib.go to be in the ./blockartlib/ dir, relative to
 // this art-app.go file
-import "./blockartlib"
+import "../blockartlib"
 
 import "fmt"
 import "os"
