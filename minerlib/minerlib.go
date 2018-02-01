@@ -3,7 +3,10 @@ package minerlib
 type Miner struct {
 	HBeatAddr string
 	Nbrs      [256]int
-	MAddr			string
+	MAddr     string
+}
+
+type Block struct {
 }
 
 func (m *Miner) ValidateNewArtlib() (err error) {
