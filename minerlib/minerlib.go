@@ -16,8 +16,17 @@ type Miner struct {
 }
 
 // Canvas is the blockchain
+// TODO: Move Canvas to blockutil or its own file?
 type Canvas struct {
 	Blocks []*blockartlib.Block
+}
+
+func CreateCanvas() (c Canvas) {
+	return c
+}
+
+func (c *Canvas) MineBlock() (err error) {
+	return err
 }
 
 // TODO: Separate into interactions with server, app and other miners

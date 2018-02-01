@@ -1,7 +1,12 @@
 package blockartlib
 
+type Operation struct {
+
+}
+
 type Block struct {
   // TODO: Figure what to put in blocks
+  Operations []*Operation
 }
 
 func NewGenesisBlock() (b Block, err error) {
