@@ -16,10 +16,12 @@ func main() {
 	localIP := "127.0.0.1:0"
 	//serverAddr := "tbd"
 	var nbrs [256]int
-	m := minerlib.Miner{"server addr", nbrs, localIP}
+	m := minerlib.Miner{"server addr", nbrs, 0,localIP, false}
 
 	fmt.Printf("miner ip: %v, m: %v, \n", localIP, m)
 }
+
+
 
 func CheckError(err error) {
 	if err != nil {
