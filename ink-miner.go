@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"../minerlib"
+	"./minerlib"
 )
 
 func main() {
