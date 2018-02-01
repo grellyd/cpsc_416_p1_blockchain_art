@@ -1,5 +1,7 @@
 package minerlib
 
+import "../blockartlib"
+
 type Miner struct {
 	HBeatAddr string
 	Nbrs      [256]int
@@ -13,9 +15,12 @@ type Miner struct {
 	//ANs       []int // maybe []*AN
 }
 
-type Block struct {
+// Canvas is the blockchain
+type Canvas struct {
+	Blocks []*blockartlib.Block
 }
 
+// TODO: Separate into interactions with server, app and other miners
 func (m *Miner) ValidateNewArtlib() (err error) {
 	return nil
 }

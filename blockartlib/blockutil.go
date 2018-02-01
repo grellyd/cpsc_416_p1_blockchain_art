@@ -1,12 +1,15 @@
 package blockartlib
 
 type Block struct {
+  // TODO: Figure what to put in blocks
 }
 
-func NewGenesisBlock() (b block, err error) {
+func NewGenesisBlock() (b Block, err error) {
+  return b, err
 }
 
-func NewBlock() (b block, err error) {
+// TODO: Check if block functions go here or in minerlib
+func NewBlock() (b Block, err error) {
   return b, err
 }
 
