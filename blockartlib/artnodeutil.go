@@ -46,7 +46,8 @@ func (an *AN) CloseCanvas() (inkRemaining uint32, err error) {
 }
 
 // MINER INTERACTION FUNCTIONS
-func (an *AN) Connect(miner string) (err error) {
+func (an *AN) Connect(minerAddr, pubKey, privKey string) (err error) {
+	
 	return nil
 }
 

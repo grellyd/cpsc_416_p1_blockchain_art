@@ -9,24 +9,17 @@ type Miner struct {
 	//MAddr     string
 	ServAddr  string
 	ServAlive bool
-	//PubKey    string
-	//PrivKey   string
+	Chain Blockchain
+	PubKey    string
+	PrivKey   string
 	//InkLevel  int
 	//ANs       []int // maybe []*AN
 }
 
 // Canvas is the blockchain
 // TODO: Move Canvas to blockutil or its own file?
-type Canvas struct {
+type Blockchain struct {
 	Blocks []*blockartlib.Block
-}
-
-func CreateCanvas() (c Canvas) {
-	return c
-}
-
-func (c *Canvas) MineBlock() (err error) {
-	return err
 }
 
 // TODO: Separate into interactions with server, app and other miners
