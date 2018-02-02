@@ -11,16 +11,21 @@ package main
 
 // Expects blockartlib.go to be in the ./blockartlib/ dir, relative to
 // this art-app.go file
-import "../blockartlib"
+import "./blockartlib"
 
 import "fmt"
 import "os"
-import "crypto/ecdsa"
+import (
+	"crypto/ecdsa"
+	"strconv"
+)
 
 func main() {
 	minerAddr := "127.0.0.1:8080"
 	privKey := // TODO: use crypto/ecdsa to read pub/priv keys from a file argument.
-
+/*	args := os.Args[1:]
+	var privKey ecdsa.PrivateKey{} = args[2]
+	privKey.PublicKey = mar*/
 	// Open a canvas.
 	canvas, settings, err := blockartlib.OpenCanvas(minerAddr, privKey)
 	if checkError(err) != nil {

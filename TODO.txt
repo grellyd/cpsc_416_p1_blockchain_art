@@ -1,0 +1,5 @@
+Global TODO list
+-Add canvas data structure for validating new operations
+-Add tree type, where tree has a canvas type, to validate at the given point in
+the blockchain/canvas.
+
