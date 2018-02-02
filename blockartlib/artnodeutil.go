@@ -1,5 +1,11 @@
 package blockartlib
 
+import (
+	"net/rpc"
+	"net"
+	"fmt"
+)
+
 /*
 Artnode that communicates with the client app and the miner
 */
@@ -10,8 +16,11 @@ type AN struct {
 	PrivKey 	string
 	PubKey 		string
 	MinerAlive 	bool
+	LocalIP		string
 }
 
+type MinerInst int // for now it's the int, but we can change to actual struct
+var minerConnector *rpc.Client
 
 // CANVAS INTERFACE FUNCTIONS
 func (an *AN) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgString string, fill string, stroke string) (shapeHash string, blockHash string, inkRemaining uint32, err error) {
@@ -47,10 +56,36 @@ func (an *AN) CloseCanvas() (inkRemaining uint32, err error) {
 
 // MINER INTERACTION FUNCTIONS
 func (an *AN) Connect(minerAddr, pubKey, privKey string) (err error) {
-	
+	// Establish RPC connection
+	minerInst := new(MinerInst)
+	rpc.Register(minerInst)
+
+	tcpAddr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
+	CheckErr(err)
+
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	CheckErr(err)
+
+	go rpc.Accept(listener)
+
+	// connect to the miner
+	dfsLibClient, errs := rpc.Dial("tcp", an.MinerAddr)
+	CheckErr(errs)
+
+	var reply bool // TODO: change when actual RPC will be alive
+	err = dfsLibClient.Call("ArtNodeInst.ConnectNode", an, &reply)
+
+
 	return nil
 }
 
 func (an *AN) MakeDrawRequest() (err error) {
 	return err
 }
+
+func CheckErr(err error) {
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
+}
+

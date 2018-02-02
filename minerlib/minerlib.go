@@ -1,11 +1,14 @@
 package minerlib
 
-import "../blockartlib"
+import (
+	"../blockartlib"
+	"time"
+)
 
 type Miner struct {
-	HBeatAddr string
+	//HBeatAddr string // Already in Settings
 	Nbrs      [256]int
-	ThrNbrs   int // min threshold below which we request new neighbours
+	//ThrNbrs   int // Already in Settings: min threshold below which we request new neighbours
 	//MAddr     string
 	ServAddr  string
 	ServAlive bool
@@ -13,7 +16,8 @@ type Miner struct {
 	PubKey    string
 	PrivKey   string
 	//InkLevel  int
-	//ANs       []int // maybe []*AN
+	ANs       []int // maybe []*AN
+	Settings *blockartlib.MinerNetSettings
 }
 
 // Canvas is the blockchain
@@ -41,6 +45,9 @@ func (m *Miner) GenerateOpBlock() (err error) {
 
 // validates incoming block from other miner
 func (m *Miner) ValidateBlock() (err error){
+	// TODO: include here check against the block produced (or paused?)
+	// if block arrived during generating process
+	// or before sending the generated block out ===> TODO: DOUBLE SPENDING CHECK
 	return nil
 }
 
@@ -77,7 +84,14 @@ func (m *Miner) RequestMiner() (err error) {
 	return nil
 }
 
-func (m *Miner) SendHeartbeat() (err error) {
+func (m *Miner) SendHeartbeat(t time.Time) (err error) {
+	//var result bool
+	// TODO: make it correct once server will be alive
+/*	erro := rpc.Client{}.Call("RPC call on server", m.PubKey, &result)
+	if erro !=nil || !result{
+		return blockartlib.DisconnectedError("error")
+	}*/
+	// TODO: stop here
 	return nil
 }
 
