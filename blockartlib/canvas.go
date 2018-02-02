@@ -4,7 +4,7 @@ package blockartlib
 // from the canvas
 
 type CanvasData struct {
-	Points [][]int // Need to update the dimensions when creating canvas
+	Points [][]int // TODO: Need to update the dimensions when creating canvas
 	Operations map[string]Operation
 }
 
