@@ -1,5 +1,19 @@
-Global TODO list
--Add canvas data structure for validating new operations
--Add tree type, where tree has a canvas type, to validate at the given point in
-the blockchain/canvas.
+TODO:
 
+----------
+Phase 1: Infrastructure
+-----------
+Sharon := shape addition validation
+Alex := RPC, miner -> server, applib <-> miner
+Graham := Restructure and ink generation
+Larissa := miner to miner communication
+
+
+----------
+Phase 2: Blockchain & Blockchain RPC Calls
+-----------
+
+
+----------
+Phase 3: Bonuses
+-----------
