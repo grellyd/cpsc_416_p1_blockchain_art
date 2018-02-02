@@ -7,8 +7,9 @@ library (blockartlib) to be used in project 1 of UBC CS 416 2017W2.
 
 package blockartlib
 
-import "crypto/ecdsa"
-import "fmt"
+import (
+	"crypto/ecdsa"
+)
 
 // Represents a type of shape in the BlockArt system.
 type ShapeType int
