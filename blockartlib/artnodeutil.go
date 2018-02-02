@@ -69,11 +69,11 @@ func (an *AN) Connect(minerAddr, pubKey, privKey string) (err error) {
 	go rpc.Accept(listener)
 
 	// connect to the miner
-	dfsLibClient, errs := rpc.Dial("tcp", an.MinerAddr)
-	CheckErr(errs)
+	minerConnector, err = rpc.Dial("tcp", an.MinerAddr)
+	CheckErr(err)
 
 	var reply bool // TODO: change when actual RPC will be alive
-	err = dfsLibClient.Call("ArtNodeInst.ConnectNode", an, &reply)
+	err = minerConnector.Call("ArtNodeInst.ConnectNode", an, &reply)
 
 
 	return nil
