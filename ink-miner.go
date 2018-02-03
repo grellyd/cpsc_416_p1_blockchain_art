@@ -5,8 +5,7 @@ import (
 	"crypto/elliptic"
 	"fmt"
 	"strings"
-
-	"./minerlib"
+	"minerlib"
 	"net/rpc"
 	"blockartlib"
 	"net"

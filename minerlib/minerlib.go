@@ -37,7 +37,6 @@ type Miner struct {
 	Settings *blockartlib.MinerNetSettings
 }
 
-
 /*
 func (m *Miner) callAll() {
 	for _, artNode := range m.ArtNodes {
@@ -47,8 +46,7 @@ func (m *Miner) callAll() {
 }
 */
 
-
-func NewMiner(serverAddr net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner *Miner, err error) {
+func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner *Miner, err error) {
 	return nil, nil
 }
 
