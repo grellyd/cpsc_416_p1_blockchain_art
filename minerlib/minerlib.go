@@ -1,33 +1,57 @@
 package minerlib
 
 import (
-	"../blockartlib"
+	"blockartlib"
 	"time"
+	"net"
+	"net/rpc"
 )
 
-type Miner struct {
-	//HBeatAddr string // Already in Settings
-	Nbrs      [256]int
-	//ThrNbrs   int // Already in Settings: min threshold below which we request new neighbours
-	//MAddr     string
-	ServAddr  string
-	ServAlive bool
-	Chain Blockchain
-	PubKey    string
-	PrivKey   string
-	//InkLevel  int
-	ANs       []int // maybe []*AN
-	Settings *blockartlib.MinerNetSettings
-}
-
-// Canvas is the blockchain
-// TODO: Move Canvas to blockutil or its own file?
 type Blockchain struct {
-	Blocks []*blockartlib.Block
+	GenesisNode *BCTreeNode
+	// perhaps longest chain, addable block, etc.
 }
 
-// TODO: Separate into interactions with server, app and other miners
-func (m *Miner) ValidateNewArtlib() (err error) {
+// Structs to manage the connections to other entities
+type ArtNodeConnection struct {
+	// Addr to Dial
+	Addr net.TCPAddr
+	// RPC Client to Call
+	RPCClient *rpc.Client
+}
+
+type MinerConnection struct {
+	Addr net.TCPAddr
+	RPCClient *rpc.Client
+}
+
+type Miner struct {
+	InkLevel int
+	ServerNodeAddr *net.TCPAddr
+	ServerHrtBtAddr *net.TCPAddr
+	ArtNodes []*ArtNodeConnection
+	Neighbors []*MinerConnection
+	PublKey string
+	PrivKey string
+	Chain Blockchain
+}
+
+
+/*
+func (m *Miner) callAll() {
+	for _, artNode := range m.ArtNodes {
+		artNode.RPCClient, err = rpc.Dial(artNode.Addr)
+		err = artNode.RPCClient.Call("All", arg, response)
+	}
+}
+*/
+
+
+func NewMiner(serverAddr net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner *Miner, err error) {
+	return nil, nil
+}
+
+func (m *Miner) ValidateNewArtIdent() (err error) {
 	return nil
 }
 
@@ -71,6 +95,8 @@ func (m *Miner) AddBlockToBC() (err error){
 func (m *Miner) RemoveBlockFromBC() (err error){
 	return nil
 }
+
+// func (m *Miner) FetchParent() (b *Block
 
 /////// functions to interact with server
 

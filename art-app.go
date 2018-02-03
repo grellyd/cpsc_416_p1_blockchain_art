@@ -13,16 +13,17 @@ package main
 // this art-app.go file
 import "./blockartlib"
 
-import "fmt"
-import "os"
 import (
 	"crypto/ecdsa"
-	"strconv"
+	//"strconv"
+	"fmt"
+	"os"
 )
 
 func main() {
 	minerAddr := "127.0.0.1:8080"
-	privKey := // TODO: use crypto/ecdsa to read pub/priv keys from a file argument.
+	// TODO: use crypto/ecdsa to read pub/priv keys from a file argument.
+	privKey := ecdsa.PrivateKey{}
 /*	args := os.Args[1:]
 	var privKey ecdsa.PrivateKey{} = args[2]
 	privKey.PublicKey = mar*/
@@ -35,19 +36,19 @@ func main() {
     validateNum := 2
 
 	// Add a line.
-	shapeHash, blockHash, ink, err := canvas.AddShape(validateNum, blockartlib.PATH, "M 0 0 L 0 5", "transparent", "red")
+	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 0 5", "transparent", "red")
 	if checkError(err) != nil {
 		return
 	}
 
 	// Add another line.
-	shapeHash2, blockHash2, ink2, err := canvas.AddShape(validateNum, blockartlib.PATH, "M 0 0 L 5 0", "transparent", "blue")
+	shapeHash2, blockHash2, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 5 0", "transparent", "blue")
 	if checkError(err) != nil {
 		return
 	}
 
 	// Delete the first line.
-	ink3, err := canvas.DeleteShape(validateNum, shapeHash)
+	ink3, err := canvas.DeleteShape(uint8(validateNum), shapeHash)
 	if checkError(err) != nil {
 		return
 	}
@@ -64,7 +65,7 @@ func main() {
 // If error is non-nil, print it out and return it.
 func checkError(err error) error {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error ", err.Error())
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		return err
 	}
 	return nil

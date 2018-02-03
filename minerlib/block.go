@@ -1,12 +1,12 @@
-package blockartlib
+package minerlib
 
-type Operation struct {
-
-}
+import (
+	"blockartlib"
+)
 
 type Block struct {
   // TODO: Figure what to put in blocks
-  Operations []*Operation
+  Operations []*blockartlib.Operation
 }
 
 func NewGenesisBlock() (b Block, err error) {

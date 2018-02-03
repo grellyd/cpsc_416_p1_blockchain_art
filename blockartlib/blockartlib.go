@@ -29,6 +29,32 @@ type CanvasSettings struct {
 	CanvasYMax uint32
 }
 
+type KeyPair struct {
+	Private string
+	Public string
+}
+
+type Operation int
+
+const (
+	NOP Operation = iota
+	OP
+)
+
+
+type ArtNodeInstruction struct {
+	MinerID		int //keep reference to the connected miner
+	MinerAddr 	string
+	PrivKey 	string
+	PubKey 		string
+	MinerAlive 	bool
+	LocalIP		string
+}
+
+type MinerInstructions struct {
+	Operation Operation
+}
+
 // Settings for an instance of the BlockArt project/network.
 type MinerNetSettings struct {
 	// Hash of the very first (empty) block in the chain.

@@ -8,52 +8,37 @@ import (
 
 	"./minerlib"
 	"net/rpc"
-	"project1/blockartlib"
+	"blockartlib"
 	"net"
 	"time"
 )
 
-type ServerInst int // for now it's the int, but we can change to actual struct
-type ArtNodeInst int // same as above
+var m Miner
 
-type ArtNode struct {
-	MinerID		int //keep reference to the connected miner
-	MinerAddr 	string
-	PrivKey 	string
-	PubKey 		string
-	MinerAlive 	bool
-	LocalIP		string
-}
-
-var m minerlib.Miner // TODO: <--- introduced globally instead local var in main()
+type ServerInstance int // for now it's the int, but we can change to actual struct
+type ArtNodeInstance int // same as above
 
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
 
 func (si *ArtNodeInst) ConnectNode ( an *ArtNode , reply *bool) error {
 	// TODO: miner must be a global variable, so we could call all methods on this 1 instance
-	new(minerlib.Miner).ValidateNewArtlib() // TODO: implement correct arguments, function itself, and return values
+	m.ValidateNewArtIdent() // TODO: implement correct arguments, function itself, and return values
 	return nil
 }
 
 func main() {
-	GetKeyPair() // Temporary, keys will be passed in as command line args
+	keys := GetKeyPair() // Temporary, keys will be passed in as command line args
 	// Need to print then pass to client
 	// Connect to server
 	localIP := "127.0.0.1:0"
-	//serverAddr := "tbd"  // TODO: change TBD when it will be available
+	// TODO: change TBD when it will be available
+	serverAddr := net.ResolveTCPAddr("tcp", "")
 	var nbrs [256]int
 	//m := minerlib.Miner { <-- was local became global
-	m = minerlib.Miner {
-		nbrs,
-		"server addr",
-		false,
-		nil,
-		"pubKey",
-		"privKey",
-		make([]int, 1),
-		new(&blockartlib.MinerNetSettings{}),
-		}
+	config := blockartlib.MinerNetSettings{}
+	m := minerlib.NewMiner(serverAddr, keys, config)
+
 
 	fmt.Printf("miner ip: %v, m: %v, \n", localIP, m)
 
@@ -99,9 +84,10 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-func GetKeyPair() {
+func GetKeyPair() *KeyPair {
 	curve := elliptic.P256()
 	r := strings.NewReader("Hello, Reader!")
 	keys, _ := ecdsa.GenerateKey(curve, r)
 	fmt.Printf("Keys: %v\n", keys.PublicKey)
+	return nil
 }
