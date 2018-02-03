@@ -34,13 +34,20 @@ type KeyPair struct {
 	Public string
 }
 
-type Operation int
+type OperationType int
 
 const (
-	NOP Operation = iota
+	NOP OperationType = iota
 	OP
 )
 
+type Operation struct {
+	Type OperationType
+	OperationNumber int
+	OperationSig string
+	ArtNodePubKey string
+	Nonce uint32
+}
 
 type ArtNodeInstruction struct {
 	MinerID		int //keep reference to the connected miner
