@@ -35,6 +35,7 @@ type Miner struct {
 	PrivKey string
 	Chain Blockchain
 	Settings *blockartlib.MinerNetSettings
+	LocalCanvas CanvasData
 }
 
 /*
