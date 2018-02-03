@@ -45,6 +45,8 @@ type Operation struct {
 	Type OperationType
 	OperationNumber int
 	OperationSig string
+	Shape ShapeType
+	ShapeSVGString string
 	ArtNodePubKey string
 	Nonce uint32
 }
