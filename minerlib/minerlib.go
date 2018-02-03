@@ -34,6 +34,7 @@ type Miner struct {
 	PublKey string
 	PrivKey string
 	Chain Blockchain
+	Settings *blockartlib.MinerNetSettings
 }
 
 
