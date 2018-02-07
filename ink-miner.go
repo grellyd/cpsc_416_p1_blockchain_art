@@ -1,59 +1,99 @@
 package main
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
+
 	"fmt"
-	"strings"
 	"minerlib"
 	"net/rpc"
 	"blockartlib"
 	"net"
 	"time"
+	"os"
+	"crypto/ecdsa"
+	"crypto/x509"
+	"encoding/hex"
 )
-
-var m Miner
+var m minerlib.Miner
 
 type ServerInstance int // for now it's the int, but we can change to actual struct
 type ArtNodeInstance int // same as above
 
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
+var artNodeQueue []*blockartlib.ArtNodeInstruction
 
-func (si *ArtNodeInst) ConnectNode ( an *ArtNode , reply *bool) error {
-	// TODO: miner must be a global variable, so we could call all methods on this 1 instance
-	m.ValidateNewArtIdent() // TODO: implement correct arguments, function itself, and return values
-	return nil
+func (si *ArtNodeInstance) ConnectNode ( an *blockartlib.ArtNodeInstruction , reply *bool) error {
+	fmt.Println("In rpc call to register the AN")
+	err := m.ValidateNewArtIdent(an)
+	CheckError(err)
+	if err == nil {
+		*reply = true
+		artNodeQueue = append(artNodeQueue, an)
+	}
+	return err
 }
 
 func main() {
-	keys := GetKeyPair() // Temporary, keys will be passed in as command line args
-	// Need to print then pass to client
+
+	fmt.Println("start")
+	args := os.Args[1:]
+
+	// Missing command line args.
+	if len(args) != 3 {
+		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
+		return
+	}
+
+	servAddr := args[0]
+	keys := GetKeyPair(args)
 	// Connect to server
 	localIP := "127.0.0.1:0"
 	// TODO: change TBD when it will be available
-	serverAddr := net.ResolveTCPAddr("tcp", "")
-	var nbrs [256]int
-	//m := minerlib.Miner { <-- was local became global
-	config := blockartlib.MinerNetSettings{}
-	m := minerlib.NewMiner(serverAddr, keys, config)
+	serverAddr, err := net.ResolveTCPAddr("tcp", servAddr)
 
+	config := blockartlib.MinerNetSettings{}
+	fmt.Println("config ", config)
+	m, err = minerlib.NewMiner(serverAddr, keys, &config)
 
 	fmt.Printf("miner ip: %v, m: %v, \n", localIP, m)
 
 	//setup an RPC connection with AN
 
-	serverInst := new(ServerInst)
-	artNodeInst := new(ArtNodeInst)
+	//serverInst := new(ServerInstance)
+	artNodeInst := new(ArtNodeInstance)
 
-	rpc.Register(serverInst)
+	//rpc.Register(serverInst)
 	rpc.Register(artNodeInst)
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", localIP)
-	checkError(err)
+	CheckError(err)
+
 
 	listener, err := net.ListenTCP("tcp", tcpAddr)
-	checkError(err)
+	CheckError(err)
+	fmt.Println("TCP address: ", listener.Addr().String())
+
+	serverConnector, err = rpc.Dial("tcp", servAddr)
+
+	err = m.ConnectServer(serverConnector, listener.Addr().String())
+	CheckError(err)
+
+	var mConn minerlib.MinerCaller
+	mConn.Addr = *tcpAddr
+	mConn.RPCClient = serverConnector
+	mConn.Public = m.PublKey
+
+	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, mConn.SendHeartbeat)
+
+	var lom = []net.Addr{}
+
+	err = mConn.RequestMiner(&lom, m.Settings.MinNumMinerConnections)
+	fmt.Println("LOM1: ", lom)
+	CheckError(err)
+
+	err = m.AddMinersToList(&lom)
+	fmt.Printf("LOM1: %v \n", &m.Neighbors)
+	CheckError(err)
 
 	for {
 		conn, err := listener.Accept()
@@ -61,12 +101,22 @@ func main() {
 		defer conn.Close()
 
 		go rpc.ServeConn(conn)
+		fmt.Println("after connection served")
 
-		// sending heartbeat for every X seconds
-		var x int = int(m.Settings.HeartBeat)
-		go doEvery(time.Duration(x) * time.Second, m.SendHeartbeat)
+		time.Sleep(10*time.Millisecond)
 
+		if len(artNodeQueue) != 0{
+			fmt.Println("connect to queue")
+			artNodeConnector, err = rpc.Dial("tcp", artNodeQueue[0].LocalIP)
+			CheckError(err)
+			var b bool
+			err = artNodeConnector.Call("MinerInstance.ConnectMiner", true, &b)
+			CheckError(err)
+			artNodeQueue = artNodeQueue[1:]
+			fmt.Println("connected to queue ", b, "len ", len(artNodeQueue))
 		}
+
+	}
 
 }
 
@@ -83,10 +133,31 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-func GetKeyPair() *KeyPair {
-	curve := elliptic.P256()
-	r := strings.NewReader("Hello, Reader!")
-	keys, _ := ecdsa.GenerateKey(curve, r)
-	fmt.Printf("Keys: %v\n", keys.PublicKey)
-	return nil
+func GetKeyPair(args[] string) *blockartlib.KeyPair {
+	if len(args) == 0 {
+		return nil
+	}
+	a := args[2]
+	b := args[1]
+	priv, pub := decodeKeys(a, b)
+	pair := blockartlib.KeyPair{
+		priv,
+		pub,
+	}
+	return &pair
 }
+
+func decodeKeys(pemEncoded string, pemEncodedPub string) (*ecdsa.PrivateKey, *ecdsa.PublicKey) {
+
+	c, _ := hex.DecodeString(pemEncoded)
+	d, _ := hex.DecodeString(pemEncodedPub)
+	privateKey, _ := x509.ParseECPrivateKey(c)
+	fmt.Println(privateKey)
+	genericPublicKey, _ := x509.ParsePKIXPublicKey(d)
+	publicKey := genericPublicKey.(*ecdsa.PublicKey)
+	//publicKey := &privateKey.PublicKey
+
+	return privateKey, publicKey
+}
+
+

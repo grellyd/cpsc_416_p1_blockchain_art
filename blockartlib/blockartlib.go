@@ -9,6 +9,7 @@ package blockartlib
 
 import (
 	"crypto/ecdsa"
+	"time"
 )
 
 // Represents a type of shape in the BlockArt system.
@@ -30,8 +31,8 @@ type CanvasSettings struct {
 }
 
 type KeyPair struct {
-	Private string
-	Public string
+	Private *ecdsa.PrivateKey
+	Public *ecdsa.PublicKey
 }
 
 type OperationType int
@@ -89,8 +90,10 @@ type MinerNetSettings struct {
 	PoWDifficultyNoOpBlock uint8
 
 	// Canvas settings
-	canvasSettings CanvasSettings
+	CanvasSettings CanvasSettings
 }
+
+
 
 // Represents a canvas in the system.
 type Canvas interface {
@@ -156,5 +159,29 @@ type Canvas interface {
 func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, setting CanvasSettings, err error) {
 	// TODO
 	// For now return DisconnectedError
+	println("Started canvas")
+
+	var an = ArtNode {
+		0,
+		minerAddr,
+		&privKey,
+		&privKey.PublicKey,
+		false,
+		"127.0.0.1" + ":0",
+		nil}
+	//var settings CanvasSettings
+	err = an.Connect(an.MinerAddr, an.PrivKey)
+	CheckErr(err)
+
+	/*err = an.MinerConnection.Call("ArtNodeInstance.GetCanvasSetting", &an, &settings)
+	CheckErr(err)*/
+
+	println("Miner addr ", an.MinerAddr, "LocalIP: ", an.LocalIP, "Miner Connection ", an.MinerConnection, "Alive: ", an.MinerAlive, "Error ", err )
+	time.Sleep(5*time.Second)
+	if err == nil {
+		return an, CanvasSettings{}, nil
+	}
 	return nil, CanvasSettings{}, DisconnectedError("")
 }
+
+
