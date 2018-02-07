@@ -4,7 +4,7 @@ TODO:
 Phase 1: Infrastructure
 -----------
 Sharon := shape addition validation
-Alex := RPC, miner -> server, applib <-> miner, NewMiner, NewArtNode
+Alex := RPC (done), miner -> server (done), applib <-> miner (done), NewMiner (done), NewArtNode (done)
 Graham := Restructure and ink generation, serialise and deserialise block
 Larissa := miner to miner communication
 
