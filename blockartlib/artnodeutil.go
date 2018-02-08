@@ -43,6 +43,10 @@ func (an ArtNode) GetSvgString(shapeHash string) (svgString string, err error) {
 }
 
 func (an ArtNode) GetInk() (inkRemaining uint32, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetAvailableInk", true, &inkRemaining)
+	if err != nil {
+		return 0, DisconnectedError("miner unavailable")
+	}
 	return inkRemaining, err
 }
 
@@ -55,12 +59,17 @@ func (an ArtNode) GetShapes(blockHash string) (shapeHashes []string, err error) 
 }
 
 func (an ArtNode) GetGenesisBlock() (blockHash string, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetGenesisBlockHash", true, &blockHash)
+	if err != nil {
+		return "", DisconnectedError("miner unavailable")
+	}
 	return blockHash, err
 }
 
 func (an ArtNode) GetChildren(blockHash string) (blockHashes []string, err error) {
 	return blockHashes, err
 }
+
 func (an ArtNode) CloseCanvas() (inkRemaining uint32, err error) {
 	return inkRemaining, err
 }

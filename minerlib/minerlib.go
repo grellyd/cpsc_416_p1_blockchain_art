@@ -32,7 +32,7 @@ type MinerConnection struct {
 }
 
 type Miner struct {
-	InkLevel int
+	InkLevel uint32
 	ServerNodeAddr *net.TCPAddr
 	ServerHrtBtAddr *net.TCPAddr
 	ArtNodes []*ArtNodeConnection
@@ -172,7 +172,7 @@ func (m *MinerCaller) RequestMiner(lom *[]net.Addr, minNeighbours uint8) (err er
 	gob.Register(&elliptic.CurveParams{})
 
 	//for uint8(len(*lom))<minNeighbours { // TODO: uncomment for production
-	for uint8(len(*lom))<1 {
+	for uint8(len(*lom))<2 {
 		//fmt.Println("request lom")
 		err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
 		if err != nil {
