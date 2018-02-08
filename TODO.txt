@@ -5,14 +5,14 @@ Phase 1: Infrastructure
 -----------
 Sharon := shape addition validation
 Alex := RPC (done), miner -> server (done), applib <-> miner (done), NewMiner (done), NewArtNode (done)
-Graham := Restructure and ink generation, serialise and deserialise block
+Graham := Restructure and ink generation, serialise and deserialise block; Add field BCLength to retrieve length of BC.
 Larissa := miner to miner communication
 
 
 ----------
 Phase 2: Blockchain & Blockchain RPC Calls
 -----------
-
+Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about stubs for BC.
 
 ----------
 Phase 3: Bonuses
