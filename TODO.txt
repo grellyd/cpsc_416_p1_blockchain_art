@@ -3,7 +3,7 @@ TODO:
 ----------
 Phase 1: Infrastructure
 -----------
-Sharon := shape addition validation
+Sharon := shape addition validation, add helper to determine how much ink an operation takes. Add ink used field to operation.
 Alex := RPC (done), miner -> server (done), applib <-> miner (done), NewMiner (done), NewArtNode (done)
 Graham := Restructure and ink generation, serialise and deserialise block
 Larissa := miner to miner communication
