@@ -1,5 +1,6 @@
 package mine_test
 import (
+	"fmt"
 	"minerlib/mine"
 	"strings"
 	"testing"
@@ -12,22 +13,23 @@ func TestData(t *testing.T) {
 	}{
 		{
 			[]byte("base case"),
-			0,
+			1,
 		},
 		{
 			[]byte("test"),
 			3,
 		},
-		// ^^ completes in 1.6s
+		// ^^ completes in 1.6s -> 5s
 		{
 			[]byte("thisisastring"),
 			5,
 		},
-		// ^^ completes in 18s
+		// ^^ completes in 18s -> 13s
 		{
 			[]byte("Ioe948%*(F)4"),
 			10,
 		},
+		// ^^ fails after 600s
 		// {
 		// 	[]byte("nonce-ahoy"),
 		// 	32,
@@ -38,11 +40,12 @@ func TestData(t *testing.T) {
 		// },
 	}
 	for _, test := range tests {
-		nonce, err := mine.Data(test.data, test.difficulty)
+		nonce, err := mine.MultiMine(test.data, test.difficulty)
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestData(%v)\" produced err: %v", test, err)
 		}
 		hash := mine.MD5Hash(test.data, nonce)
+		fmt.Printf("Difficulty: %d, Nonce: %d, Hash: %s\n", test.difficulty, nonce, hash)
 		// sanity check num zeros as using same validity functions as mine.Data
 		numPresentZeros := strings.Count(hash, "0")
 		if !mine.Valid(hash, test.difficulty) || numPresentZeros < int(test.difficulty) {

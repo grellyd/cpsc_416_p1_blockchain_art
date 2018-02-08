@@ -19,7 +19,7 @@ var usedNonces map[uint32]bool
 func Data(data []byte, difficulty uint8) (nonce uint32, err error) {
 	usedNonces = make(map[uint32]bool)
 	for {
-		n, err := newNonce()
+		n, err := NewNonce()
 		if err != nil {
 			return 0, fmt.Errorf("Unable to mine nonce for data: %v", err)
 		}
@@ -50,7 +50,7 @@ func asByteArr(val uint32) []byte {
 	return a
 }
 
-func newNonce() (newNonce uint32, err error) {
+func NewNonce() (newNonce uint32, err error) {
 	// TODO check for all tries
 	for {
 		newNonce = randomNonce()
