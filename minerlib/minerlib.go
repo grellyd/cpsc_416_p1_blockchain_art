@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"encoding/gob"
 	"crypto/elliptic"
+	"minerlib/mine"
 )
 
 type Blockchain struct {
@@ -55,31 +56,21 @@ type MinerCaller struct {
 	Public *ecdsa.PublicKey
 }
 
-/*
-func (m *Miner) callAll() {
-	for _, artNode := range m.ArtNodes {
-		artNode.RPCClient, err = rpc.Dial(artNode.Addr)
-		err = artNode.RPCClient.Call("All", arg, response)
-	}
-}
-*/
-
 // Miner constructor
 func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner Miner, err error) {
 	var m = Miner{
-		0,
-		serverAddr,
-		nil,
-		[]*ArtNodeConnection{},
-		[]*MinerConnection{},
-		keys.Public,
-		keys.Private,
-		Blockchain{},
-		config,
-		CanvasData{},
+		InkLevel: 0,
+		ServerNodeAddr: serverAddr,
+		ServerHrtBtAddr: nil,
+		ArtNodes: []*ArtNodeConnection{},
+		Neighbors: []*MinerConnection{},
+		PublKey: keys.Public,
+		PrivKey: keys.Private,
+		Chain: Blockchain{},
+		Settings: config,
+		LocalCanvas: CanvasData{},
 	}
 	return m, nil
-	//return nil, nil
 }
 
 func (m *Miner) ValidateNewArtIdent(an *blockartlib.ArtNodeInstruction) (err error) {
@@ -106,6 +97,20 @@ func (m *Miner) GenerateNoopBlock() (err error) {
 
 func (m *Miner) GenerateOpBlock() (err error) {
 	return nil
+}
+
+func (m *Miner) MineBlock(b *Block) (nb *Block, err error) {
+	difficulty := uint8(0)
+	if len(b.Operations) == 0 {
+		difficulty = m.Settings.PoWDifficultyNoOpBlock
+	} else {
+		difficulty = m.Settings.PoWDifficultyOpBlock
+	}
+	b.nonce, err = mine.Data(b.ToBytes(), difficulty)
+	if err != nil {
+		// TODO: handle
+	}
+	return b, nil
 }
 
 // validates incoming block from other miner
