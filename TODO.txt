@@ -17,3 +17,18 @@ Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about st
 ----------
 Phase 3: Bonuses
 -----------
+
+----------
+Notes
+-----------
+
+----------
+How to run several miners (and apps)
+-----------
+1. Run key-gen.go (each run 1 set of [Private][Public] keys).
+2. Each time copy the values you get somewhere.
+3. Run server
+4. Run every miner with the arguments 127.0.0.1:12345 [publ][priv]
+5. If you want to run an app, you'll need to copy miner's IP:Port from terminal printout (it's randomly picked) and copy private key for that miner.
+6. Manually insert into art-app.go private key and IP:Port combination
+7. Run App.
