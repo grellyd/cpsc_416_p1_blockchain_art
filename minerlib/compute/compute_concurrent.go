@@ -1,5 +1,4 @@
-// TODO swap map for sync.map
-package mine
+package compute
 
 import (
 	// "fmt"
@@ -26,15 +25,15 @@ var generators sync.WaitGroup
 var hashers sync.WaitGroup
 var testers sync.WaitGroup
 
-var numConcurrent = 6
+var numConcurrent = 8
 var UsedNonces sync.Map
 
-func MultiMine(data []byte, difficulty uint8) (result uint32, err error) {
+func DataConcurrent(data []byte, difficulty uint8) (result uint32, err error) {
 	doneTesting = make(chan struct{})
 	doneHashing = make(chan struct{})
 	finished = make(chan struct{})
-	newNonces = make(chan uint32, numConcurrent * 1000)
-	hashes = make(chan nonceHashPair, numConcurrent * 1000)
+	newNonces = make(chan uint32, numConcurrent * 100)
+	hashes = make(chan nonceHashPair, numConcurrent * 100)
 	final = make(chan uint32, 1)
 	UsedNonces = sync.Map{}
 	// spawn
@@ -61,9 +60,6 @@ func MultiMine(data []byte, difficulty uint8) (result uint32, err error) {
 	// exit
 	return result, nil
 }
-
-
-
 
 func GenerateValues() {
 	for {

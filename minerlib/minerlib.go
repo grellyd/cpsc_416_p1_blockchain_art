@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"encoding/gob"
 	"crypto/elliptic"
-	"minerlib/mine"
 )
 
 type Blockchain struct {
@@ -99,18 +98,14 @@ func (m *Miner) GenerateOpBlock() (err error) {
 	return nil
 }
 
-func (m *Miner) MineBlock(b *Block) (nb *Block, err error) {
+func (m *Miner) MineBlock(b *Block) (err error) {
 	difficulty := uint8(0)
 	if len(b.Operations) == 0 {
 		difficulty = m.Settings.PoWDifficultyNoOpBlock
 	} else {
 		difficulty = m.Settings.PoWDifficultyOpBlock
 	}
-	b.nonce, err = mine.Data(b.ToBytes(), difficulty)
-	if err != nil {
-		// TODO: handle
-	}
-	return b, nil
+	return b.Mine(difficulty)
 }
 
 // validates incoming block from other miner

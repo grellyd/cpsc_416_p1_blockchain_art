@@ -2,7 +2,7 @@
 Mining is a package to mine a valid hash given a byte array and difficulty (number of zeros)
 */
 
-package mine
+package compute
 
 import (
 	"crypto/md5"
@@ -39,12 +39,12 @@ func Valid(hash string, difficulty uint8) (valid bool) {
 
 func MD5Hash(data []byte, nonce uint32) (hash string) {
 	h := md5.New()
-	h.Write(append(data, asByteArr(nonce)...))
+	h.Write(append(data, Uint32AsByteArr(nonce)...))
 	str := hex.EncodeToString(h.Sum(nil))
 	return str
 }
 
-func asByteArr(val uint32) []byte {
+func Uint32AsByteArr(val uint32) []byte {
 	a := make([]byte, 4)
     binary.LittleEndian.PutUint32(a, val)
 	return a
