@@ -28,21 +28,18 @@ type Point struct {
 	Y float64
 }
 
-type Shape struct {
-	Owner string // Public key of owner artnode
-	Hash  string
-}
-
 type LineSegment struct {
 	BaseShape Shape
 	Point1    Point
 	Point2    Point
 }
 
-type Polygon struct {
-	BaseShape Shape
+type Shape struct {
+	Owner string // Public key of owner artnode
+	Hash  string
 	Sides     []LineSegment
 	IsFilled  bool
+	Colour string
 }
 
 /*
@@ -80,28 +77,50 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 	return AddPoints(initial, target)
 }
 
-func StringToShape(op Operation) (s Shape) {
+func StringToShape(op Operation) (s Shape, err error) {
 	svgString := op.ShapeSVGString
 	var curPt Point
 	opFloatStrings := regexp.MustCompile("[^.0-9]+").Split(svgString, -1)
 	var opFloats []float64
-	for i, s := range opFloatStrings {
-		opFloats[i], _ = strconv.ParseFloat(s, 64)
+	for i, str := range opFloatStrings {
+		opFloats[i], err = strconv.ParseFloat(str, 64)
+		if err != nil {
+			return s, blockartlib.InvalidShapeSvgStringError(svgString)
+		}
 	}
 	// Turn all letters of svgString into a rune slice
 	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
 	var index int
-	var isAbsolute bool
+	//var isTransparent bool // set based on fill
 	for _, op := range opCommands {
-		isAbsolute = unicode.IsUpper(op)
 		switch unicode.ToLower(op) {
 		case 'm':
 			newPt := Point{opFloats[index], opFloats[index+1]}
 			index += 2
-			curPt = ResolvePoint(curPt, newPt, isAbsolute)
+			curPt = ResolvePoint(curPt, newPt, unicode.IsUpper(op))
+		case 'l':
+			newPt := Point{opFloats[index], opFloats[index+1]}
+			index += 2
+			s.Sides = append(s.Sides, LineSegment{s, curPt, newPt})
+			curPt = newPt
+		case 'h':
+			newPt := Point{opFloats[index], curPt.Y}
+			index++
+			s.Sides = append(s.Sides, LineSegment{s, curPt, newPt})
+			curPt = newPt
+		case 'v':
+			newPt := Point{curPt.X, opFloats[index]}
+			index++
+			s.Sides = append(s.Sides, LineSegment{s, curPt, newPt})
+			curPt = newPt
+		case 'c':
+			// TODO: circle
+		default:
+			// Get a letter that isn't one of the defined ones
+			return s, blockartlib.InvalidShapeSvgStringError(svgString)
 		}
 	}
-	return s
+	return s, err
 }
 
 func AddPoints(p1, p2 Point) (p Point) {
