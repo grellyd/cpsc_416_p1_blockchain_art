@@ -29,17 +29,16 @@ type Point struct {
 }
 
 type LineSegment struct {
-	BaseShape Shape
 	Point1    Point
 	Point2    Point
 }
 
 type Shape struct {
-	Owner string // Public key of owner artnode
-	Hash  string
-	Sides     []LineSegment
-	IsFilled  bool
-	Colour string
+	Owner    string // Public key of owner artnode
+	Hash     string
+	Sides    []LineSegment
+	IsFilled bool
+	Colour   string
 }
 
 /*
@@ -77,19 +76,23 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 	return AddPoints(initial, target)
 }
 
-func StringToShape(op Operation) (s Shape, err error) {
+func OperationToShape(op Operation) (s Shape, err error) {
 	svgString := op.ShapeSVGString
-	var curPt Point
+	// Turn all letters of svgString into a rune slice
+	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
 	opFloatStrings := regexp.MustCompile("[^.0-9]+").Split(svgString, -1)
+
 	var opFloats []float64
-	for i, str := range opFloatStrings {
-		opFloats[i], err = strconv.ParseFloat(str, 64)
+	for i := 1; i < len(opFloatStrings); i++ {
+		floatVal, err := strconv.ParseFloat(opFloatStrings[i], 64)
 		if err != nil {
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
 		}
+		opFloats = append(opFloats, floatVal)
 	}
-	// Turn all letters of svgString into a rune slice
-	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
+
+	// TODO[sharon]: Add z
+	var curPt Point
 	var index int
 	//var isTransparent bool // set based on fill
 	for _, op := range opCommands {
@@ -101,20 +104,20 @@ func StringToShape(op Operation) (s Shape, err error) {
 		case 'l':
 			newPt := Point{opFloats[index], opFloats[index+1]}
 			index += 2
-			s.Sides = append(s.Sides, LineSegment{s, curPt, newPt})
+			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'h':
 			newPt := Point{opFloats[index], curPt.Y}
 			index++
-			s.Sides = append(s.Sides, LineSegment{s, curPt, newPt})
+			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'v':
 			newPt := Point{curPt.X, opFloats[index]}
 			index++
-			s.Sides = append(s.Sides, LineSegment{s, curPt, newPt})
+			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'c':
-			// TODO: circle
+			// TODO[sharon]: circle
 		default:
 			// Get a letter that isn't one of the defined ones
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
