@@ -92,48 +92,48 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	}
 
 	// TODO[sharon]: Add z
-	var curPt Point
+	curPt := Point{0, 0}
+	initialPt := Point{0, 0}
 	var index int
 	//var isTransparent bool // set based on fill
 	for _, op := range opCommands {
 		switch unicode.ToLower(op) {
 		case 'm':
-			x := opFloats[index]
-			y := opFloats[index+1]
-			if !InBounds(x, y, canvasSettings) {
+			newPt := Point{opFloats[index], opFloats[index+1]}
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{x, y}
 			index += 2
 			curPt = ResolvePoint(curPt, newPt, unicode.IsUpper(op))
 		case 'l':
-			x := opFloats[index]
-			y := opFloats[index+1]
-			if !InBounds(x, y, canvasSettings) {
+			newPt := ResolvePoint(curPt, Point{opFloats[index], opFloats[index+1]}, unicode.IsUpper(op))
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{x, y}
 			index += 2
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'h':
-			x := opFloats[index]
-			if !InBounds(x, -1, canvasSettings) {
+			newPt := ResolvePoint(curPt, Point{opFloats[index], curPt.Y}, unicode.IsUpper(op))
+			newPt.Y = curPt.Y
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{x, curPt.Y}
 			index++
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'v':
-			y := opFloats[index]
-			if !InBounds(-1, y, canvasSettings) {
+			newPt := ResolvePoint(curPt, Point{curPt.X, opFloats[index]}, unicode.IsUpper(op))
+			newPt.X = curPt.X
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{curPt.X, y}
 			index++
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
+		case 'z':
+			s.Sides = append(s.Sides, LineSegment{curPt, initialPt})
+			curPt = initialPt
 		case 'c':
 			// TODO[sharon]: circle
 		default:
@@ -150,8 +150,8 @@ func AddPoints(p1, p2 Point) (p Point) {
 	return p
 }
 
-func InBounds(x, y float64, canvasSettings CanvasSettings) (inBounds bool) {
-	return x > float64(canvasSettings.CanvasXMax) || y > float64(canvasSettings.CanvasYMax)
+func InBounds(p Point, canvasSettings CanvasSettings) (inBounds bool) {
+	return p.X > float64(canvasSettings.CanvasXMax) || p.Y > float64(canvasSettings.CanvasYMax)
 }
 
 func IsIntersecting(l1, l2 LineSegment) (isIntersecting bool) {
