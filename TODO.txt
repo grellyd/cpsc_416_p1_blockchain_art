@@ -15,13 +15,16 @@ generating ink for the InkNodes to use.
 ----------
 Phase 2: Blockchain & Blockchain RPC Calls
 -----------
-Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about stubs for BC.
-
 Graham := Block propagation
 Graham := Block Validation
+    AKA: 
+    - Check that the nonce for the block is valid: PoW is correct and has the right difficulty.
+    - Check that each operation in the block has a valid signature (this signature should be generated using the private key and the operation).
+    - Check that the previous block hash points to a legal, previously generated, block in the forest
 Graham := Switching to a new longest chain (stop/start mining)
 Graham := Miner main loop
 
+Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about stubs for BC.
 Alex := Tree comparisons for the purposes of choosing the longest chain.
 Alex := Given a valid block, check if new longest chain.
     func IsNewLongestChain(b *Block) bool
@@ -30,16 +33,22 @@ Alex := Fix requesting neighbors from the server
 Larissa := Miner intial join chain revceive
 Larissa := Share operations to other miners
 
-:= Has operation already been completed
-:= Choose #OPs per block, and timeout to start mining
-
 Sharon := Shape Addition Validation -> Validate an operation can go on the Canvas
 Sharon := Canvas generation
 Sharon := blockchain output to ink-miners
+Sharon := Check that an operation that deletes a shape refers to a shape that exists and which has not been previously deleted.
+
+
+:= Check that the operation with an identical signature has not been previously added to the blockchain (prevents operation replay attacks).
+:= Has operation already been completed by another miner
+:= Choose #OPs per block, and timeout to start mining
 
 ----------
-Phase 3: Azure Deployment
+Phase 3: Azure Deployment & Redundancy
 ----------
+
+:= handling ink-miner failure
+:= handling art-node failure
 
 
 
