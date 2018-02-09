@@ -2,6 +2,7 @@ package minerlib
 
 import (
 	"blockartlib"
+	"math"
 	"regexp"
 	"strconv"
 	"unicode"
@@ -154,6 +155,38 @@ func InBounds(p Point, canvasSettings CanvasSettings) (inBounds bool) {
 	return p.X > float64(canvasSettings.CanvasXMax) || p.Y > float64(canvasSettings.CanvasYMax)
 }
 
-func IsIntersecting(l1, l2 LineSegment) (isIntersecting bool) {
+func IsIntersecting(l1, l2 LineSegment) bool {
+	o1 := Orientation(l1.Point1, l1.Point2, l2.Point1)
+	o2 := Orientation(l1.Point1, l1.Point2, l2.Point2)
+	o3 := Orientation(l1.Point1, l2.Point1, l2.Point2)
+	o4 := Orientation(l1.Point2, l2.Point1, l2.Point2)
+
+	if (o1 != o2 && o3 != o4) ||
+		(o1 == 0 && OnSegment(l1.Point1, l2.Point1, l1.Point1)) ||
+		(o2 == 0 && OnSegment(l1.Point1, l2.Point2, l1.Point1)) ||
+		(o3 == 0 && OnSegment(l2.Point1, l1.Point1, l2.Point2)) ||
+		(o4 == 0 && OnSegment(l2.Point1, l1.Point2, l2.Point2)) {
+		return true
+	}
+
+	return false
+}
+
+func Orientation(p, q, r Point) (o int) {
+	val := (q.Y-p.Y)*(r.X-q.X) - (q.X-p.X)*(r.Y-q.Y)
+	if val == 0 {
+		return 0
+	}
+	if val > 0 {
+		return 1
+	} else {
+		return 2
+	}
+}
+
+func OnSegment(p, q, r Point) (onSegment bool) {
+	if q.X <= math.Max(p.X, r.X) && q.X >= math.Min(p.X, r.X) && q.Y <= math.Max(p.Y, r.Y) && q.Y >= math.Min(p.Y, r.Y) {
+		return true
+	}
 	return false
 }
