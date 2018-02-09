@@ -48,7 +48,7 @@ func main()  {
 	encPriv, encPub := encode(privateKey, publicKey)
 
 	fmt.Printf("%x \n", encPriv)
-	fmt.Printf("%x", encPub)
+	fmt.Printf("%x \n", encPub)
 
 	priv2, pub2 := decode(encPriv, encPub)
 

@@ -33,6 +33,18 @@ func (si *ArtNodeInstance) ConnectNode ( an *blockartlib.ArtNodeInstruction , re
 	return err
 }
 
+func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error {
+	fmt.Println("In RPC getting hash of genesis block")
+	*reply = m.Settings.GenesisBlockHash
+	return nil
+}
+
+func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
+	fmt.Println("In RPC getting ink from miner")
+	*reply = m.InkLevel
+	return nil
+}
+
 func main() {
 
 	fmt.Println("start")
