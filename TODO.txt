@@ -21,16 +21,21 @@ Graham := Block propagation
 Graham := Block Validation
 Graham := Switching to a new longest chain (stop/start mining)
 Graham := Miner main loop
-Larissa := Miner intial join chain revceive
+
 Alex := Tree comparisons for the purposes of choosing the longest chain.
 Alex := Given a valid block, check if new longest chain.
     func IsNewLongestChain(b *Block) bool
 Alex := Fix requesting neighbors from the server
-:= Share operations to other miners
+
+Larissa := Miner intial join chain revceive
+Larissa := Share operations to other miners
+
 := Has operation already been completed
-:= Shape Addition Validation -> Validate an operation can go on the Canvas
 := Choose #OPs per block, and timeout to start mining
 
+Sharon := Shape Addition Validation -> Validate an operation can go on the Canvas
+Sharon := Canvas generation
+Sharon := blockchain output to ink-miners
 
 ----------
 Phase 3: Azure Deployment
