@@ -20,8 +20,8 @@ Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about st
 Graham := Block propagation
 Graham := Block Validation
 Graham := Switching to a new longest chain (stop/start mining)
-Graham := Miner intial join chain revceive
 Graham := Miner main loop
+Larissa := Miner intial join chain revceive
 Alex := Tree comparisons for the purposes of choosing the longest chain.
 Alex := Given a valid block, check if new longest chain.
     func IsNewLongestChain(b *Block) bool
