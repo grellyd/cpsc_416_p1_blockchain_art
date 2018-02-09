@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"blockartlib"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"bytes"
 	"encoding/gob"
 	"minerlib/compute"
@@ -26,7 +27,7 @@ type Block struct {
   ParentHash string
   Operations []*blockartlib.Operation
   MinerPublicKey *ecdsa.PublicKey
-  nonce uint32
+  Nonce uint32
 }
 
 func NewGenesisBlock() (b Block, err error) {
@@ -40,7 +41,7 @@ func NewBlock() (b Block, err error) {
 
 // TODO: Check the reference to the nonce is maintained without returning the block
 func (b* Block) Mine(difficulty uint8) error {
-	if b.nonce != 0 {
+	if b.Nonce != 0 {
 		return fmt.Errorf("Block already mined!")
 	}
 	data, err := b.bodyBytes()
@@ -51,16 +52,16 @@ func (b* Block) Mine(difficulty uint8) error {
 	if err != nil {
 		return fmt.Errorf("Error while mining block: %v", err)
 	}
-	b.nonce = nonce
+	b.Nonce = nonce
 	return nil
 }
 
 func (b *Block) GetHash() (hash string, err error) {
-	if b.nonce == 0 {
+	if b.Nonce == 0 {
 		return "", fmt.Errorf("Block not yet mined!")
 	}
 	bytes, err := b.bodyBytes()
-	return compute.MD5Hash(bytes, b.nonce), nil
+	return compute.MD5Hash(bytes, b.Nonce), nil
 }
 
 // ==================
@@ -77,11 +78,21 @@ Therefore, the marshall function will error when given any nil pointers
 
 // Marshalls the entire object
 func (b *Block) MarshallBinary() ([]byte, error) {
-	body, err := b.bodyBytes()
+	//body, err := b.bodyBytes()
+	// Guard against nil pubkeys
+	if b.MinerPublicKey == nil {
+		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
+	}
+	var buff bytes.Buffer
+	gob.Register(Block{})
+	gob.Register(elliptic.P224())
+	
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(*b)
 	if err != nil {
 		return nil, fmt.Errorf("Error while marshalling block: %v", err)
 	}
-	return append(body, compute.Uint32AsByteArr(b.nonce)...), nil
+	return append(buff.Bytes(), compute.Uint32AsByteArr(b.Nonce)...), nil
 }
 
 // Unmarshalls bytes into a Block
@@ -101,9 +112,9 @@ func (b *Block) bodyBytes() (data []byte, err error) {
 	if b.MinerPublicKey == nil {
 		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
 	}
-
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
+	gob.Register(Block{})
 	err = enc.Encode(b.ParentHash)
 	if err != nil {
 		return nil, fmt.Errorf("Error: Unable to encode ParentHash")

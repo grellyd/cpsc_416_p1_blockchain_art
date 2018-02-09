@@ -29,20 +29,17 @@ func TestMarshall(t *testing.T) {
 	}{
 		// TODO: Add more testing scenarios
 		{
-			Block{},
-			[]byte{},
-		},
-		{
 			Block{
 				ParentHash: "parentHash",
 				Operations: []*blockartlib.Operation{},
 				MinerPublicKey: publicKey,
-				nonce: 4,
+				Nonce: 4,
 			},
-			[]byte{},
+			[]byte{1,2,3,4,5,5,6,7},
 		},
 	}
 	for _, test := range tests {
+		fmt.Printf("Testing Block: %v\n", test.block)
 		data, err := test.block.MarshallBinary()
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestMarshall(%v)\" produced err: %v", test, err)
@@ -50,8 +47,20 @@ func TestMarshall(t *testing.T) {
 		if data == nil {
 			t.Errorf("Bad Exit: No data, instead of %d", test.data)
 		}
-		// TODO: Figure out what the data should actually look like
+		err = nil
+		for i, datum := range data {
+			if datum != test.data[i] {
+				err = fmt.Errorf("Error: Byte %d as '%d' doesn't match '%d'", i, datum, test.data[i])
+				break
+			}
+		}
+		if err != nil {
+			t.Errorf("Bad Exit: Given '%d', instead of '%d'", data, test.data)
+		}
 	}
+}
+
+func TestMarshallErrors(t *testing.T) {
 }
 
 func TestUnmarshall(t *testing.T) {
@@ -74,7 +83,7 @@ func TestUnmarshall(t *testing.T) {
 				ParentHash: "parentHash",
 				Operations: []*blockartlib.Operation{},
 				MinerPublicKey: publicKey,
-				nonce: 4,
+				Nonce: 4,
 			},
 		},
 	}
@@ -105,7 +114,7 @@ func TestMarshallUnMarshall(t *testing.T) {
 				ParentHash: "parentHash",
 				Operations: []*blockartlib.Operation{},
 				MinerPublicKey: publicKey,
-				nonce: 4,
+				Nonce: 4,
 			},
 		},
 	}
@@ -132,8 +141,8 @@ func TestMarshallUnMarshall(t *testing.T) {
 		if newBlock.MinerPublicKey != test.block.MinerPublicKey {
 			t.Errorf("Bad Exit: Keys Don't match! '%v' vs. '%v'", newBlock.MinerPublicKey, test.block.MinerPublicKey)
 		}
-		if newBlock.nonce != test.block.nonce {
-			t.Errorf("Bad Exit: Nonces Don't match! '%d' vs. '%d'", newBlock.nonce, test.block.nonce)
+		if newBlock.Nonce != test.block.Nonce {
+			t.Errorf("Bad Exit: Nonces Don't match! '%d' vs. '%d'", newBlock.Nonce, test.block.Nonce)
 		}
 	}
 }
