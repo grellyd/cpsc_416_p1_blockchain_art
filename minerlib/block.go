@@ -38,27 +38,6 @@ func NewBlock() (b Block, err error) {
   return b, err
 }
 
-// Marshalls the entire object
-func (b *Block) MarshallBinary() ([]byte, error) {
-	body, err := b.bodyBytes()
-	if err != nil {
-		return nil, fmt.Errorf("Error while marshalling block: %v", err)
-	}
-	return append(body, compute.Uint32AsByteArr(b.nonce)...), nil
-}
-
-// Unmarshalls bytes into a Block
-func UnmarshallBinary(data []byte) (b *Block, err error) {
-	var buff bytes.Buffer
-	dec := gob.NewDecoder(&buff)
-	b = &Block{}
-	err = dec.Decode(b)
-	if err != nil {
-		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
-	}
-	return b, nil
-}
-
 // TODO: Check the reference to the nonce is maintained without returning the block
 func (b* Block) Mine(difficulty uint8) error {
 	if b.nonce != 0 {
@@ -84,7 +63,45 @@ func (b *Block) GetHash() (hash string, err error) {
 	return compute.MD5Hash(bytes, b.nonce), nil
 }
 
+// ==================
+// Marshalling
+// ==================
+
+/*
+Note when encoding: 
+	"An interface value can be transmitted only if the concrete value itself is transmittable.
+	"At least for now, that's equivalent to saying that interfaces holding typed nil pointers cannot be sent."
+From: https://github.com/golang/go/issues/3704#issuecomment-66067672 by Rob Pike
+Therefore, the marshall function will error when given any nil pointers
+*/
+
+// Marshalls the entire object
+func (b *Block) MarshallBinary() ([]byte, error) {
+	body, err := b.bodyBytes()
+	if err != nil {
+		return nil, fmt.Errorf("Error while marshalling block: %v", err)
+	}
+	return append(body, compute.Uint32AsByteArr(b.nonce)...), nil
+}
+
+// Unmarshalls bytes into a Block
+func UnmarshallBinary(data []byte) (b *Block, err error) {
+	var buff bytes.Buffer
+	dec := gob.NewDecoder(&buff)
+	b = &Block{}
+	err = dec.Decode(b)
+	if err != nil {
+		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
+	}
+	return b, nil
+}
+
 func (b *Block) bodyBytes() (data []byte, err error) {
+	// Guard against nil pubkeys
+	if b.MinerPublicKey == nil {
+		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
+	}
+
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
 	err = enc.Encode(b.ParentHash)

@@ -1,10 +1,28 @@
 package minerlib
 
 import (
+	"blockartlib"
 	"testing"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"fmt"
 )
 
+func GenerateKeys() (publicKey *ecdsa.PublicKey, err error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to Generate Keys: %v", err)
+	}
+	return privateKey.Public().(*ecdsa.PublicKey), nil
+}
+
+
 func TestMarshall(t *testing.T) {
+	publicKey, err := GenerateKeys()
+	if err != nil {
+		t.Errorf("Bad Exit: \"TestMarshall()\" produced err: %v", err)
+	}
 	var tests = []struct {
 		block    Block
 		data     []byte
@@ -16,10 +34,10 @@ func TestMarshall(t *testing.T) {
 		},
 		{
 			Block{
-				"parentHash",
-				nil,
-				nil,
-				4,
+				ParentHash: "parentHash",
+				Operations: []*blockartlib.Operation{},
+				MinerPublicKey: publicKey,
+				nonce: 4,
 			},
 			[]byte{},
 		},
@@ -37,6 +55,10 @@ func TestMarshall(t *testing.T) {
 }
 
 func TestUnmarshall(t *testing.T) {
+	publicKey, err := GenerateKeys()
+	if err != nil {
+		t.Errorf("Bad Exit: \"TestUnmarshall()\" produced err: %v", err)
+	}
 	var tests = []struct {
 		data     []byte
 		block    Block
@@ -49,10 +71,10 @@ func TestUnmarshall(t *testing.T) {
 		{
 			[]byte{},
 			Block{
-				"parentHash",
-				nil,
-				nil,
-				4,
+				ParentHash: "parentHash",
+				Operations: []*blockartlib.Operation{},
+				MinerPublicKey: publicKey,
+				nonce: 4,
 			},
 		},
 	}
@@ -68,6 +90,10 @@ func TestUnmarshall(t *testing.T) {
 }
 
 func TestMarshallUnMarshall(t *testing.T) {
+	publicKey, err := GenerateKeys()
+	if err != nil {
+		t.Errorf("Bad Exit: \"TestMarshallUnmarshall()\" produced err: %v", err)
+	}
 	var tests = []struct {
 		block    Block
 	}{
@@ -76,21 +102,21 @@ func TestMarshallUnMarshall(t *testing.T) {
 		},
 		{
 			Block{
-				"parentHash",
-				nil,
-				nil,
-				4,
+				ParentHash: "parentHash",
+				Operations: []*blockartlib.Operation{},
+				MinerPublicKey: publicKey,
+				nonce: 4,
 			},
 		},
 	}
 	for _, test := range tests {
 		data, err := test.block.MarshallBinary()
 		if err != nil {
-			t.Errorf("Bad Exit: \"TestMarshall(%v)\" produced err: %v", test, err)
+			t.Errorf("Bad Exit: \"TestMarshallUnmarshall(%v)\" produced err: %v", test, err)
 		}
 		newBlock, err := UnmarshallBinary(data)
 		if err != nil {
-			t.Errorf("Bad Exit: \"TestUnmarshall(%v)\" produced err: %v", test, err)
+			t.Errorf("Bad Exit: \"TestMarshallUnmarshall(%v)\" produced err: %v", test, err)
 		}
 		if newBlock == nil || data == nil { 
 			t.Errorf("Bad Exit: No results or data!")
