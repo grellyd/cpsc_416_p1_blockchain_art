@@ -8,6 +8,9 @@ Alex := RPC (done), miner -> server (done), applib <-> miner (done), NewMiner (d
 Graham := Restructure and ink generation, serialise and deserialise block; Add field BCLength to retrieve length of BC.
 Larissa := miner to miner communication
 
+Graham Deliverable (Post Alex Done) -> Able to start multiple miners from ink
+nodes, and provide no operations. The miners will all start NOPing and
+generating ink for the InkNodes to use.
 
 ----------
 Phase 2: Blockchain & Blockchain RPC Calls
@@ -16,9 +19,17 @@ Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about st
 
 Graham := Block propagation
 Graham := Block Validation
-:= Switching to a new longest chain
-:= Miner intial join chain revceive
+Graham := Switching to a new longest chain (stop/start mining)
+Graham := Miner intial join chain revceive
+Graham := Miner main loop
+Alex := Tree comparisons for the purposes of choosing the longest chain.
+Alex := Given a valid block, check if new longest chain.
+    func IsNewLongestChain(b *Block) bool
 Alex := Fix requesting neighbors from the server
+:= Share operations to other miners
+:= Has operation already been completed
+:= Shape Addition Validation -> Validate an operation can go on the Canvas
+:= Choose #OPs per block, and timeout to start mining
 
 
 ----------
