@@ -14,8 +14,23 @@ Phase 2: Blockchain & Blockchain RPC Calls
 -----------
 Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about stubs for BC.
 
+Graham := Block propagation
+Graham := Block Validation
+:= Switching to a new longest chain
+:= Miner intial join chain revceive
+Alex := Fix requesting neighbors from the server
+
+
 ----------
-Phase 3: Bonuses
+Phase 3: Azure Deployment
+----------
+
+
+
+
+
+----------
+Phase 4: Bonuses
 -----------
 
 ----------
