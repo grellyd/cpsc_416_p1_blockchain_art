@@ -41,6 +41,8 @@ Sharon := Check that an operation that deletes a shape refers to a shape that ex
 
 := Check that the operation with an identical signature has not been previously added to the blockchain (prevents operation replay attacks).
 := Has operation already been completed by another miner
+:= for new invalid chain, have all operations been completed? Aka operation
+    reliability
 := Choose #OPs per block, and timeout to start mining
 
 ----------
