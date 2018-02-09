@@ -1,9 +1,9 @@
 package minerlib
 
 import (
-	"strconv"
-	"fmt"
 	"blockartlib"
+	"regexp"
+	"strconv"
 	"unicode"
 )
 
@@ -11,9 +11,7 @@ type Operation = blockartlib.Operation
 
 // Each miner has a local instance of CanvasData
 type CanvasData struct {
-	Points   [][]int                // TODO: Need to update the dimensions when creating canvas
-	OpHashes map[string][]Operation // Operations that belong to each block
-	OpOwners map[string][]Operation // Operations that belone to each artnode
+	Shapes []Shape
 }
 
 type BCTreeNode struct {
@@ -25,10 +23,26 @@ type BCTreeNode struct {
 	Depth     int
 }
 
-type SvgCommand struct {
-	Command rune
-	X int
-	Y int
+type Point struct {
+	X float64
+	Y float64
+}
+
+type Shape struct {
+	Owner string // Public key of owner artnode
+	Hash  string
+}
+
+type LineSegment struct {
+	BaseShape Shape
+	Point1    Point
+	Point2    Point
+}
+
+type Polygon struct {
+	BaseShape Shape
+	Sides     []LineSegment
+	IsFilled  bool
 }
 
 /*
@@ -45,113 +59,53 @@ type Operation struct {
 }
 */
 
-// Draw shapes from a given operation
-func (cd *CanvasData) DrawOperation(op Operation) {
+// Draw all shapes in list
+func DrawOperations(ops []Operation) (validOps, invalidOps []Operation) {
+	/*var drawnShapes []Shape
+	var indexMap map[string]int // maps hashes of shapes to their index in drawnShapes
+	var curShape Shape
+	for op := range ops {
+		//curShape = StringToShape(op)
+		if len(drawnShapes) == 0 {
 
-}
-
-// Checks in greedy fashion if the list of provided operations can be drawn
-func ValidOpList(ops []Operation) (validOps, invalidOps []Operation) {
+		}
+	}*/
 	return validOps, invalidOps
 }
 
-// Update the canvas to the status of the blockchain at the given block hash
-func (cd *CanvasData) UpdateToBlock(hash string) {
-
+func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
+	if isAbsolute {
+		return target
+	}
+	return AddPoints(initial, target)
 }
 
-// Validate new block
-
-func ParseSvgString(svg string) (arr []SvgCommand) {
-	svg = svg + " " // To make iterating in helper easier
-	for index, char := range svg {
-		if unicode.IsSpace(char) {
-			continue
-		}
-	
-		// Implicit break at the end of each case
-		switch char {
-		// x and y
-		case 'M':
-			com, newIndex := GetInts(svg, index, 2, true, true, 'M')
-			arr = append(arr, com)
-			index = newIndex
+func StringToShape(op Operation) (s Shape) {
+	svgString := op.ShapeSVGString
+	var curPt Point
+	opFloatStrings := regexp.MustCompile("[^.0-9]+").Split(svgString, -1)
+	var opFloats []float64
+	for i, s := range opFloatStrings {
+		opFloats[i], _ = strconv.ParseFloat(s, 64)
+	}
+	// Turn all letters of svgString into a rune slice
+	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
+	var index int
+	var isAbsolute bool
+	for _, op := range opCommands {
+		isAbsolute = unicode.IsUpper(op)
+		switch unicode.ToLower(op) {
 		case 'm':
-			com, newIndex := GetInts(svg, index, 2, true, true, 'm')
-			arr = append(arr, com)
-			index = newIndex
-		case 'L':
-			com, newIndex := GetInts(svg, index, 2, true, true, 'L')
-			arr = append(arr, com)
-			index = newIndex
-		case 'l':
-			com, newIndex := GetInts(svg, index, 2, true, true, 'l')
-			arr = append(arr, com)
-			index = newIndex
-		// x
-		case 'H':
-			com, newIndex := GetInts(svg, index, 1, true, false, 'H')
-			arr = append(arr, com)
-			index = newIndex
-		case 'h':
-			com, newIndex := GetInts(svg, index, 1, true, false, 'h')
-			arr = append(arr, com)
-			index = newIndex
-		// y
-		case 'V':
-			com, newIndex := GetInts(svg, index, 1, false, true, 'V')
-			arr = append(arr, com)
-			index = newIndex
-		case 'v':
-			com, newIndex := GetInts(svg, index, 1, false, true, 'v')
-			arr = append(arr, com)
-			index = newIndex
-		// No parameters
-		case 'Z':
-			arr = append(arr, SvgCommand{'Z', -1, -1})
-			index++
-			fmt.Printf("case Z")
-		case 'z':
-			// Same as Z
-			arr = append(arr, SvgCommand{'Z', -1, -1})
-			fmt.Printf("case z")
-			index++
+			newPt := Point{opFloats[index], opFloats[index+1]}
+			index += 2
+			curPt = ResolvePoint(curPt, newPt, isAbsolute)
 		}
 	}
-	return arr
+	return s
 }
 
-func GetInts(s string, index, numInts int, x, y bool, command rune) (sc SvgCommand, newIndex int) {
-	switch numInts {
-	case 1:
-		for i := index; i < len(s) - 1; i++ {
-			if !unicode.IsDigit([]rune(s)[i+1]) {
-				if x {
-					tempx, _ := strconv.Atoi(s[index:i+1])
-					return SvgCommand{command, tempx, -1}, i + 1
-				} else if y {
-					tempy, _ := strconv.Atoi(s[index:i+1])
-					return SvgCommand{command, -1, tempy}, i + 1
-				}
-			}
-			continue
-		}
-	case 2:
-		var tempx, tempy, tempindex int
-		for i := index; i < len(s) - 1; i++ {
-			if !unicode.IsDigit([]rune(s)[i+1]) {
-				tempx, _ = strconv.Atoi(s[index:i+1])
-				tempindex = i+1
-				break			
-			}
-			continue
-		}
-		for j := tempindex; j < len(s) - 1; j++ {
-			if !unicode.IsDigit([]rune(s)[j+1]) {
-				tempy, _ = strconv.Atoi(s[tempindex:j+1])
-				return SvgCommand{command, tempx, tempy}, j + 1
-			}
-			continue
-		}
-	}
+func AddPoints(p1, p2 Point) (p Point) {
+	p.X = p1.X + p2.X
+	p.Y = p1.Y + p2.Y
+	return p
 }
