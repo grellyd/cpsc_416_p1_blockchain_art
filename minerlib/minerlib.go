@@ -13,10 +13,10 @@ import (
 	"crypto/elliptic"
 )
 
-type Blockchain struct {
+/*type Blockchain struct {
 	GenesisNode *BCTreeNode
 	// perhaps longest chain, addable block, etc.
-}
+}*/
 
 // Structs to manage the connections to other entities
 type ArtNodeConnection struct {
@@ -39,7 +39,7 @@ type Miner struct {
 	Neighbors []*MinerConnection
 	PublKey *ecdsa.PublicKey
 	PrivKey *ecdsa.PrivateKey
-	Chain Blockchain
+	Chain BlockchainAlt
 	Settings *blockartlib.MinerNetSettings
 	LocalCanvas CanvasData
 }

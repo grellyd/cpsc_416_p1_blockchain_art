@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 )
 var m minerlib.Miner
+var bcs minerlib.BlockchainAlt
 
 type ServerInstance int // for now it's the int, but we can change to actual struct
 type ArtNodeInstance int // same as above
