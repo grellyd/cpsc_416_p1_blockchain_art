@@ -74,7 +74,7 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blocka
 		[]*MinerConnection{},
 		keys.Public,
 		keys.Private,
-		Blockchain{},
+		BlockchainAlt{},
 		config,
 		CanvasData{},
 	}
