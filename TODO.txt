@@ -38,7 +38,7 @@ Sharon := Canvas generation
 Sharon := blockchain output to ink-miners
 Sharon := Check that an operation that deletes a shape refers to a shape that exists and which has not been previously deleted.
 
-
+:= Slice of operations from walking the tree to validate on canvas
 := Check that the operation with an identical signature has not been previously added to the blockchain (prevents operation replay attacks).
 := Has operation already been completed by another miner
 := for new invalid chain, have all operations been completed? Aka operation reliability for non-committed operations
