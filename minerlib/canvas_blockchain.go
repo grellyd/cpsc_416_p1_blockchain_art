@@ -69,6 +69,9 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 
 		}
 	}*/
+	for _, op := range ops {
+		validOps[op.OperationSig] = op
+	}
 	return validOps, invalidOps
 }
 
