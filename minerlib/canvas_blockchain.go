@@ -57,6 +57,7 @@ type Operation struct {
 */
 
 // Draw all shapes in list
+// Currently returns all operations
 func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps []Operation) {
 	/*var drawnShapes []Shape
 	var indexMap map[string]int // maps hashes of shapes to their index in drawnShapes
@@ -67,7 +68,7 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 
 		}
 	}*/
-	return validOps, invalidOps
+	return ops, invalidOps
 }
 
 func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
