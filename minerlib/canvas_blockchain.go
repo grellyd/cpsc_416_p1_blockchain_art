@@ -190,3 +190,8 @@ func OnSegment(p, q, r Point) (onSegment bool) {
 	}
 	return false
 }
+
+// How much ink a shape needs
+func InkNeeded(op Operation) (inkUnits int) {
+	return inkUnits
+}
