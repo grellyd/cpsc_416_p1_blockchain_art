@@ -58,7 +58,8 @@ type Operation struct {
 
 // Draw all shapes in list
 // Currently returns all operations
-func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps []Operation) {
+// TODO[sharon]: change return types to be map[OperationSig]Operation
+func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation) {
 	/*var drawnShapes []Shape
 	var indexMap map[string]int // maps hashes of shapes to their index in drawnShapes
 	var curShape Shape
@@ -68,7 +69,7 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 
 		}
 	}*/
-	return ops, invalidOps
+	return validOps, invalidOps
 }
 
 func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
@@ -153,7 +154,8 @@ func AddPoints(p1, p2 Point) (p Point) {
 }
 
 func InBounds(p Point, canvasSettings CanvasSettings) (inBounds bool) {
-	return p.X > float64(canvasSettings.CanvasXMax) || p.Y > float64(canvasSettings.CanvasYMax)
+	return math.Abs(p.X) > float64(canvasSettings.CanvasXMax) ||
+		math.Abs(p.Y) > float64(canvasSettings.CanvasYMax)
 }
 
 func IsIntersecting(l1, l2 LineSegment) bool {
@@ -186,7 +188,10 @@ func Orientation(p, q, r Point) (o int) {
 }
 
 func OnSegment(p, q, r Point) (onSegment bool) {
-	if q.X <= math.Max(p.X, r.X) && q.X >= math.Min(p.X, r.X) && q.Y <= math.Max(p.Y, r.Y) && q.Y >= math.Min(p.Y, r.Y) {
+	if q.X <= math.Max(p.X, r.X) &&
+		q.X >= math.Min(p.X, r.X) &&
+		q.Y <= math.Max(p.Y, r.Y) &&
+		q.Y >= math.Min(p.Y, r.Y) {
 		return true
 	}
 	return false
