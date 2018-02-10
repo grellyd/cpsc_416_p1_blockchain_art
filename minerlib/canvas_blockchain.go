@@ -2,6 +2,7 @@ package minerlib
 
 import (
 	"blockartlib"
+	"math"
 	"regexp"
 	"strconv"
 	"unicode"
@@ -56,7 +57,9 @@ type Operation struct {
 */
 
 // Draw all shapes in list
-func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps []Operation) {
+// Currently returns all operations
+// TODO[sharon]: change return types to be map[OperationSig]Operation
+func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation) {
 	/*var drawnShapes []Shape
 	var indexMap map[string]int // maps hashes of shapes to their index in drawnShapes
 	var curShape Shape
@@ -92,48 +95,48 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	}
 
 	// TODO[sharon]: Add z
-	var curPt Point
+	curPt := Point{0, 0}
+	initialPt := Point{0, 0}
 	var index int
 	//var isTransparent bool // set based on fill
 	for _, op := range opCommands {
 		switch unicode.ToLower(op) {
 		case 'm':
-			x := opFloats[index]
-			y := opFloats[index+1]
-			if !InBounds(x, y, canvasSettings) {
+			newPt := Point{opFloats[index], opFloats[index+1]}
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{x, y}
 			index += 2
 			curPt = ResolvePoint(curPt, newPt, unicode.IsUpper(op))
 		case 'l':
-			x := opFloats[index]
-			y := opFloats[index+1]
-			if !InBounds(x, y, canvasSettings) {
+			newPt := ResolvePoint(curPt, Point{opFloats[index], opFloats[index+1]}, unicode.IsUpper(op))
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{x, y}
 			index += 2
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'h':
-			x := opFloats[index]
-			if !InBounds(x, -1, canvasSettings) {
+			newPt := ResolvePoint(curPt, Point{opFloats[index], curPt.Y}, unicode.IsUpper(op))
+			newPt.Y = curPt.Y
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{x, curPt.Y}
 			index++
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'v':
-			y := opFloats[index]
-			if !InBounds(-1, y, canvasSettings) {
+			newPt := ResolvePoint(curPt, Point{curPt.X, opFloats[index]}, unicode.IsUpper(op))
+			newPt.X = curPt.X
+			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			newPt := Point{curPt.X, y}
 			index++
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
+		case 'z':
+			s.Sides = append(s.Sides, LineSegment{curPt, initialPt})
+			curPt = initialPt
 		case 'c':
 			// TODO[sharon]: circle
 		default:
@@ -150,10 +153,51 @@ func AddPoints(p1, p2 Point) (p Point) {
 	return p
 }
 
-func InBounds(x, y float64, canvasSettings CanvasSettings) (inBounds bool) {
-	return x > float64(canvasSettings.CanvasXMax) || y > float64(canvasSettings.CanvasYMax)
+func InBounds(p Point, canvasSettings CanvasSettings) (inBounds bool) {
+	return math.Abs(p.X) > float64(canvasSettings.CanvasXMax) ||
+		math.Abs(p.Y) > float64(canvasSettings.CanvasYMax)
 }
 
-func IsIntersecting(l1, l2 LineSegment) (isIntersecting bool) {
+func IsIntersecting(l1, l2 LineSegment) bool {
+	o1 := Orientation(l1.Point1, l1.Point2, l2.Point1)
+	o2 := Orientation(l1.Point1, l1.Point2, l2.Point2)
+	o3 := Orientation(l1.Point1, l2.Point1, l2.Point2)
+	o4 := Orientation(l1.Point2, l2.Point1, l2.Point2)
+
+	if (o1 != o2 && o3 != o4) ||
+		(o1 == 0 && OnSegment(l1.Point1, l2.Point1, l1.Point1)) ||
+		(o2 == 0 && OnSegment(l1.Point1, l2.Point2, l1.Point1)) ||
+		(o3 == 0 && OnSegment(l2.Point1, l1.Point1, l2.Point2)) ||
+		(o4 == 0 && OnSegment(l2.Point1, l1.Point2, l2.Point2)) {
+		return true
+	}
+
 	return false
+}
+
+func Orientation(p, q, r Point) (o int) {
+	val := (q.Y-p.Y)*(r.X-q.X) - (q.X-p.X)*(r.Y-q.Y)
+	if val == 0 {
+		return 0
+	}
+	if val > 0 {
+		return 1
+	} else {
+		return 2
+	}
+}
+
+func OnSegment(p, q, r Point) (onSegment bool) {
+	if q.X <= math.Max(p.X, r.X) &&
+		q.X >= math.Min(p.X, r.X) &&
+		q.Y <= math.Max(p.Y, r.Y) &&
+		q.Y >= math.Min(p.Y, r.Y) {
+		return true
+	}
+	return false
+}
+
+// How much ink a shape needs
+func InkNeeded(op Operation) (inkUnits int) {
+	return inkUnits
 }
