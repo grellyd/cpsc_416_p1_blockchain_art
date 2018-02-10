@@ -11,6 +11,8 @@ import (
 type Operation = blockartlib.Operation
 type CanvasSettings = blockartlib.CanvasSettings
 
+const TRANSPARENT = "transparent"
+
 // Each miner has a local instance of CanvasData
 type CanvasData struct {
 	Shapes []Shape
@@ -38,8 +40,8 @@ type Shape struct {
 	Owner    string // Public key of owner artnode
 	Hash     string
 	Sides    []LineSegment
-	IsFilled bool
-	Colour   string
+	Fill		 string
+	Stroke   string
 }
 
 /*
@@ -97,7 +99,9 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 		opFloats = append(opFloats, floatVal)
 	}
 
-	// TODO[sharon]: Add z
+	s.Fill = op.Fill
+	s.Stroke = op.Stroke
+
 	curPt := Point{0, 0}
 	initialPt := Point{0, 0}
 	var index int
@@ -201,6 +205,25 @@ func OnSegment(p, q, r Point) (onSegment bool) {
 }
 
 // How much ink a shape needs
-func InkNeeded(op Operation) (inkUnits int) {
+func InkNeeded(op Operation, settings CanvasSettings) (inkUnits float64) {
+	shape, _ := OperationToShape(op, settings)
+	if shape.Fill == TRANSPARENT {
+		for _, side := range shape.Sides {
+			inkUnits += side.Length()
+		}
+	} else {
+		for i := 0; i < len(shape.Sides); i++ {
+			x1 := shape.Sides[i].Point1.X
+			y1 := shape.Sides[i].Point1.Y
+			x2 := shape.Sides[i].Point2.X
+			y2 := shape.Sides[i].Point2.Y
+			inkUnits += ((x1 * y2) - (y1 * x2))
+		}
+	}
 	return inkUnits
+}
+
+func (ls *LineSegment) Length() float64 {
+	return math.Sqrt(math.Pow(ls.Point1.X - ls.Point2.X, 2) -
+		math.Pow(ls.Point1.Y - ls.Point2.Y, 2))
 }
