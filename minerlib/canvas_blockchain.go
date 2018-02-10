@@ -36,6 +36,11 @@ type LineSegment struct {
 	Point2 Point
 }
 
+func (ls *LineSegment) Length() float64 {
+	return math.Sqrt(math.Pow(ls.Point1.X - ls.Point2.X, 2) -
+		math.Pow(ls.Point1.Y - ls.Point2.Y, 2))
+}
+
 type Shape struct {
 	Owner    string // Public key of owner artnode
 	Hash     string
@@ -165,7 +170,7 @@ func InBounds(p Point, canvasSettings CanvasSettings) (inBounds bool) {
 		math.Abs(p.Y) > float64(canvasSettings.CanvasYMax)
 }
 
-func IsIntersecting(l1, l2 LineSegment) bool {
+func IsLinesIntersecting(l1, l2 LineSegment) bool {
 	o1 := Orientation(l1.Point1, l1.Point2, l2.Point1)
 	o2 := Orientation(l1.Point1, l1.Point2, l2.Point2)
 	o3 := Orientation(l1.Point1, l2.Point1, l2.Point2)
@@ -223,7 +228,13 @@ func InkNeeded(op Operation, settings CanvasSettings) (inkUnits float64) {
 	return inkUnits
 }
 
-func (ls *LineSegment) Length() float64 {
-	return math.Sqrt(math.Pow(ls.Point1.X - ls.Point2.X, 2) -
-		math.Pow(ls.Point1.Y - ls.Point2.Y, 2))
+func IsShapesOverlapping(s1, s2 Shape) bool {
+	for _, s := range s1.Sides {
+		for _, p := range s2.Sides {
+			if IsLinesIntersecting(s, p) {
+				return true
+			}
+		}
+	}
+	return false
 }
