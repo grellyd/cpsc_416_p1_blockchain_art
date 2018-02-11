@@ -39,7 +39,7 @@ type Miner struct {
 	Neighbors []*MinerConnection
 	PublKey *ecdsa.PublicKey
 	PrivKey *ecdsa.PrivateKey
-	Chain BlockchainAlt
+	Chain BCStorage
 	Settings *blockartlib.MinerNetSettings
 	LocalCanvas CanvasData
 }
@@ -74,7 +74,7 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blocka
 		[]*MinerConnection{},
 		keys.Public,
 		keys.Private,
-		BlockchainAlt{},
+		BCStorage{},
 		config,
 		CanvasData{},
 	}

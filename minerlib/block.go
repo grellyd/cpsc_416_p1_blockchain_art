@@ -2,11 +2,15 @@ package minerlib
 
 import (
 	"blockartlib"
+  "crypto/ecdsa"
 )
 
 type Block struct {
   // TODO: Figure what to put in blocks
+  ParentHash string
   Operations []*blockartlib.Operation
+  MinerPublicKey *ecdsa.PublicKey
+  Nonce uint32
 }
 
 func NewGenesisBlock() (b Block, err error) {
