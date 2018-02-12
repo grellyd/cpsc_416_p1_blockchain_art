@@ -85,27 +85,35 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 	}
 	var buff bytes.Buffer
 	gob.Register(Block{})
-	gob.Register(elliptic.P224())
+	gob.Register(elliptic.CurveParams{})
 	
 	enc := gob.NewEncoder(&buff)
 	err := enc.Encode(*b)
 	if err != nil {
 		return nil, fmt.Errorf("Error while marshalling block: %v", err)
 	}
-	return append(buff.Bytes(), compute.Uint32AsByteArr(b.Nonce)...), nil
+	return buff.Bytes(), nil
+	// return append(buff.Bytes(), compute.Uint32AsByteArr(b.Nonce)...), nil
 }
 
 // Unmarshalls bytes into a Block
 func UnmarshallBinary(data []byte) (b *Block, err error) {
 	var buff bytes.Buffer
+	gob.Register(Block{})
+	gob.Register(elliptic.CurveParams{})
 	dec := gob.NewDecoder(&buff)
-	b = &Block{}
-	err = dec.Decode(b)
+	blk := Block{}
+	err = dec.Decode(blk)
 	if err != nil {
 		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
 	}
-	return b, nil
+	return &blk, nil
 }
+
+
+
+
+
 
 func (b *Block) bodyBytes() (data []byte, err error) {
 	// Guard against nil pubkeys
