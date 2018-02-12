@@ -137,5 +137,22 @@ func TestBlockChain (t *testing.T) {
 	fmt.Println("Blockchain6", bc.BC.LastNode.Current.CurrentHash)
 	fmt.Println("BC should change: ", b)
 
+	children, er := bc.GetChildrenNodes("83218ac34c1834c26781fe4bde900000")
+	fmt.Println("Children ", children, "Error ", er)
+
+	children, er = bc.GetChildrenNodes("83218ac34c1834c26781fe4bde900008")
+	fmt.Println("Children ", children, "Error ", er)
+
+	bc.AddToForest("83218ac34c1834c26781fe4bde900005", &block5)
+	bc.AddToForest("83218ac34c1834c26781fe4bde900006", &block6)
+
+	b = bc.IsInForest("83218ac34c1834c26781fe4bde900005")
+	fmt.Println("Is in forest (true) ", b)
+
+	bc.RemoveFromForest("83218ac34c1834c26781fe4bde900005")
+
+	b = bc.IsInForest("83218ac34c1834c26781fe4bde900005")
+	fmt.Println("Is in forest (false) ", b)
+
 
 }

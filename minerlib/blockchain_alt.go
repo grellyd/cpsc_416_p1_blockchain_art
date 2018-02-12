@@ -6,12 +6,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"fmt"
+	"blockartlib"
 )
 
 type BlockchainAlt struct {
 	GenesisNode *BCChainNode
 	LastNode *BCChainNode
-}
+	}
 
 type BCTree struct {
 	GenesisNode *BCTreeNode
@@ -81,6 +82,45 @@ func (bcs *BCStorage) AppendBlockToTree (block *Block, miner *Miner, hash string
 
 	return true
 
+
+	/*	var bcNode *BCTreeNode
+	if len(leaves) == 0 {
+		d := 1
+		v := bcs.BCT.GenesisNode
+		k := keyToString(block.MinerPublicKey)
+		var inkOnNode uint32 = v.OwnerInkLvl[k]
+		bcNode = NewBCNodeAlt(block,v, inkOnNode, miner, hash)
+		bcNode.Depth = d
+		fmt.Println("leaves before append: ", leaves)
+		v.Children = append(v.Children, bcNode)
+		leaves = append(leaves, bcNode)
+		bcs.BCT.Leaves = leaves
+		fmt.Println("leaves after append: ", bcs.BCT.Leaves)
+		bccNode := NewBCChainNode(bcNode)
+		bcs.BC.LastNode.Next = bcNode
+		bcs.BC.LastNode = bccNode
+		fmt.Println("BC after append: ", bcs.BC)
+		return false
+	}
+
+	for i, v := range leaves {
+		if v.CurrentHash == block.ParentHash {
+			d := v.Depth + 1
+			k := keyToString(block.MinerPublicKey)
+			var inkOnNode uint32 = v.OwnerInkLvl[k]
+			bcNode = NewBCNodeAlt(block,v, inkOnNode, miner, hash)
+			bcNode.Depth = d
+			// put a new node among the leaves
+			fmt.Println("leaves before append: ", leaves)
+			v.Children = append(v.Children, bcNode)
+			leaves1 := append(leaves[:i], bcNode)
+			leaves = append(leaves1, leaves[i+1:]...)
+			bcs.BCT.Leaves = leaves
+			fmt.Println("leaves after append: ", bcs.BCT.Leaves)
+			break
+		}
+
+	}*/
 }
 
 func FindBCTreeNode (bct *BCTreeNode, nodeHash string) *BCTreeNode {
@@ -103,16 +143,39 @@ func FindBCTreeNode (bct *BCTreeNode, nodeHash string) *BCTreeNode {
 }
 
 // stub for the function which return children of the block
-func (bcs *BCStorage) GetChildrenNodes (hashOfBlock string) [] string {
-	return make([]string, 0)
+func (bcs *BCStorage) GetChildrenNodes (hashOfBlock string) ([]string, error) {
+	children :=  make([]string, 0)
+	node := FindBCTreeNode(bcs.BCT.GenesisNode, hashOfBlock)
+	if node == nil {
+		return children, blockartlib.InvalidBlockHashError("no such node on a tree")
+	}
+	for _, v := range node.Children {
+		children = append(children, v.CurrentHash)
+	}
+	return children, nil
 }
 
-func (bcs *BCStorage) AddToForest (hash string, block *Block) {
+// REQUIRES: valid hash
+func (bcs *BCStorage) AddToForest (blockHash string, block *Block) {
+	forest := *bcs.For
+	forest[blockHash] = block
+	bcs.For = &forest
 	return
 }
 
-func (bcs *BCStorage) RemoveFromForest (hash string, block *Block) {
+// REQUIRES: valid hash
+func (bcs *BCStorage) RemoveFromForest (blockHash string) {
+	forest := *bcs.For
+	delete(forest, blockHash)
+	bcs.For = &forest
 	return
+
+}
+
+func (bcs *BCStorage) IsInForest (blockHash string) bool {
+	forest := *bcs.For
+	_, ok := forest[blockHash]
+	return ok
 }
 
 func keyToString (key *ecdsa.PublicKey) string {
@@ -202,4 +265,6 @@ func (bc *Blockchain) AppendNeighboursBlockToTree (block *Block, miner *Miner, h
 	appendBlock(bc, bcNode)
 	return true
 }*/
+
+
 

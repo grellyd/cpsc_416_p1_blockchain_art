@@ -13,8 +13,8 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 )
-var m minerlib.Miner
-var bcs minerlib.BCStorage
+var m minerlib.Miner // singleton for miner
+var bc minerlib.BCStorage //singleton for blockchain stored at miner
 
 type ServerInstance int // for now it's the int, but we can change to actual struct
 type ArtNodeInstance int // same as above
@@ -44,6 +44,13 @@ func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
 	fmt.Println("In RPC getting ink from miner")
 	*reply = m.InkLevel
 	return nil
+}
+
+func (si *ArtNodeInstance) GetBlockChildren (hash *string, reply *[]string) error {
+	fmt.Println("In RPC getting children hashes")
+	bla, err := bc.GetChildrenNodes(*hash)
+	*reply = bla
+	return err
 }
 
 func main() {
@@ -100,6 +107,7 @@ func main() {
 
 	var lom = []net.Addr{}
 
+	// TODO: put it into a goroutine wh will as the miners until it will fill the entire array
 	err = mConn.RequestMiner(&lom, m.Settings.MinNumMinerConnections)
 	fmt.Println("LOM1: ", lom)
 	CheckError(err)
