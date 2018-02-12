@@ -91,7 +91,11 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 
 func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err error) {
 	svgString := op.ShapeSVGString
+
+  // [A-Za-z]|[-0-9., ]*
+  // ["M", "   3,  8  ", "H", ...
 	// Turn all letters of svgString into a rune slice
+
 	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
 	opFloatStrings := regexp.MustCompile("[^-.0-9]+").Split(svgString, -1)
 
@@ -252,5 +256,30 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 			}
 		}
 	}
+  if (s1.Fill != TRANSPARENT) && IsPointContainedInShape(s2.Sides[0].Point1, s1) ||
+    (s2.Fill != TRANSPARENT && IsPointContainedInShape(s1.Sides[0].Point1, s2)) {
+    return true
+  }
 	return false
+}
+
+func IsPointContainedInShape(p Point, s Shape) bool {
+  segment := LineSegment{p, Point{0, p.Y}}
+  var numIntersections int
+  var prevY float64
+  for _, side := range s.Sides {
+    if side.Point1.Y == side.Point2.Y {
+      continue
+    }
+    if IsLinesIntersecting(side, segment) {
+      if side.Point1.Y == p.Y {
+        if (prevY > p.Y && side.Point2.Y < p.Y) ||
+          (prevY < p.Y && side.Point2.Y > p.Y) {
+            numIntersections--
+          }
+      }
+      numIntersections++
+    }
+  }
+  return numIntersections % 2 != 0
 }
