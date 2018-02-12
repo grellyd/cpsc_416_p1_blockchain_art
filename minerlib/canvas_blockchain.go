@@ -37,8 +37,8 @@ type LineSegment struct {
 }
 
 func (ls *LineSegment) Length() float64 {
-	return math.Sqrt(math.Pow(ls.Point1.X - ls.Point2.X, 2) -
-		math.Pow(ls.Point1.Y - ls.Point2.Y, 2))
+	return (math.Sqrt(math.Pow(ls.Point1.X - ls.Point2.X, 2) +
+		math.Pow(ls.Point1.Y - ls.Point2.Y, 2)))
 }
 
 type Shape struct {
@@ -65,7 +65,7 @@ type Operation struct {
 
 // Draw all shapes in list
 // Currently returns all operations
-// TODO[sharon]: change return types to be map[OperationSig]Operation
+// TODO[sharon]: Handle nested shapes
 func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation) {
 	/*var drawnShapes []Shape
 	var indexMap map[string]int // maps hashes of shapes to their index in drawnShapes
@@ -93,10 +93,13 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	svgString := op.ShapeSVGString
 	// Turn all letters of svgString into a rune slice
 	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
-	opFloatStrings := regexp.MustCompile("[^.0-9]+").Split(svgString, -1)
+	opFloatStrings := regexp.MustCompile("[^-.0-9]+").Split(svgString, -1)
 
 	var opFloats []float64
-	for i := 1; i < len(opFloatStrings); i++ {
+	for i := 0; i < len(opFloatStrings); i++ {
+		if opFloatStrings[i] == "" {
+			continue
+		}
 		floatVal, err := strconv.ParseFloat(opFloatStrings[i], 64)
 		if err != nil {
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
@@ -156,6 +159,13 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
 		}
 	}
+
+	if op.Fill != TRANSPARENT {
+		if s.Sides[0].Point1 != s.Sides[len(s.Sides)-1].Point2 {
+			return s, blockartlib.InvalidShapeSvgStringError(svgString)
+		}
+	}
+
 	return s, err
 }
 
@@ -166,8 +176,9 @@ func AddPoints(p1, p2 Point) (p Point) {
 }
 
 func InBounds(p Point, canvasSettings CanvasSettings) (inBounds bool) {
-	return math.Abs(p.X) > float64(canvasSettings.CanvasXMax) ||
-		math.Abs(p.Y) > float64(canvasSettings.CanvasYMax)
+	return !(math.Abs(p.X) > float64(canvasSettings.CanvasXMax) ||
+		math.Abs(p.Y) > float64(canvasSettings.CanvasYMax) ||
+		p.X < 0 || p.Y < 0)
 }
 
 func IsLinesIntersecting(l1, l2 LineSegment) bool {
@@ -210,8 +221,12 @@ func OnSegment(p, q, r Point) (onSegment bool) {
 }
 
 // How much ink a shape needs
-func InkNeeded(op Operation, settings CanvasSettings) (inkUnits float64) {
-	shape, _ := OperationToShape(op, settings)
+func InkNeeded(op Operation, settings CanvasSettings) (inkUnits float64, err error) {
+	inkUnits = 0
+	shape, err := OperationToShape(op, settings)
+	if (err != nil) {
+		return 0, err
+	}
 	if shape.Fill == TRANSPARENT {
 		for _, side := range shape.Sides {
 			inkUnits += side.Length()
@@ -224,8 +239,9 @@ func InkNeeded(op Operation, settings CanvasSettings) (inkUnits float64) {
 			y2 := shape.Sides[i].Point2.Y
 			inkUnits += ((x1 * y2) - (y1 * x2))
 		}
+		inkUnits /= 2
 	}
-	return inkUnits
+	return math.Ceil(inkUnits), nil
 }
 
 func IsShapesOverlapping(s1, s2 Shape) bool {
