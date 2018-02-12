@@ -52,13 +52,6 @@ func TestIsLinesIntersecting(t *testing.T) {
 
 
 /*
-type CanvasSettings struct {
-	// Canvas dimensions
-	CanvasXMax uint32
-	CanvasYMax uint32
-}
-
-/*
 type Operation struct {
 	Type OperationType
 	OperationNumber int

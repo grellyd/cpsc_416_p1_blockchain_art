@@ -63,23 +63,27 @@ type Operation struct {
 }
 */
 
-// Draw all shapes in list
-// Currently returns all operations
-// TODO[sharon]: Handle nested shapes
-func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation) {
-	/*var drawnShapes []Shape
-	var indexMap map[string]int // maps hashes of shapes to their index in drawnShapes
-	var curShape Shape
-	for op := range ops {
-		//curShape = StringToShape(op)
-		if len(drawnShapes) == 0 {
-
+// Attempt to draw all shapes in list
+// validOps are succesfully drawn.
+// TODO[sharon]: Handle delete operations
+func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation, err error) {
+	validOps = make(map[string]Operation)
+	invalidOps = make(map[string]Operation)
+	var drawnShapes []Shape
+	for i, op := range ops {
+		cur, err := OperationToShape(op, canvasSettings)
+		if err != nil {
+			return validOps, invalidOps, err
 		}
-	}*/
-	for _, op := range ops {
-		validOps[op.OperationSig] = op
+		for _, valid := range drawnShapes {
+			if IsShapesOverlapping(valid, cur) {
+				invalidOps[op.OperationSig] = ops[i]
+			} else {
+				validOps[op.OperationSig] = ops[i]
+			}
+		}
 	}
-	return validOps, invalidOps
+	return validOps, invalidOps, err
 }
 
 func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
