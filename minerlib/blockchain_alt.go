@@ -7,11 +7,6 @@ import (
 	"blockartlib"
 )
 
-type Blockchain struct {
-	GenesisHash string
-	CurrentBlock *Block
-}
-
 type BlockchainAlt struct {
 	GenesisNode *BCChainNode
 	LastNode *BCChainNode

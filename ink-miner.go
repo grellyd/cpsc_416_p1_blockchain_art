@@ -60,10 +60,8 @@ func main() {
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, serverConn.SendHeartbeat)
 
-	m.Blockchain = &minerlib.Blockchain{
-		GenesisHash: m.Settings.GenesisBlockHash, 
-		CurrentBlock: nil,
-	}
+	m.Blockchain, err = minerlib.NewBlockchain(m.Settings.GenesisBlockHash)
+	checkError(err)
 	go m.StartMining()
 
 	// Ask for Neighbors

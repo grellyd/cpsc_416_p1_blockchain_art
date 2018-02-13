@@ -9,7 +9,7 @@ import (
 
 
 // signal channels
-var finished chan struct{}
+var stopMining chan struct{}
 
 // pipeline channels
 var emptyBlocks chan *Block
@@ -58,10 +58,10 @@ func (m *Miner) IsEnoughInk() (err error) {
 }
 
 func (m *Miner) StartMining() (err error) {
-	fmt.Printf("Starting Mining Process\n")
+	fmt.Printf("[miner] Starting Mining Process\n")
 	// setup channels
 	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
-	finished  = make(chan struct{})
+	stopMining  = make(chan struct{})
 	//emptyBlocks = make(chan *Block, MAX_EMPTY_BLOCKS)
 	//go CreateEmptyBlocks()
 	go m.MineBlocks()
@@ -73,7 +73,7 @@ func (m *Miner) CreateEmptyBlocks() {
 	fmt.Printf("Starting to Create Empty Blocks\n")
 	for {
 		select {
-		case <- finished:
+		case <- stopMining:
 			// Done
 			fmt.Printf("Done Creating Empty Blocks\n")
 			return
@@ -90,12 +90,12 @@ func (m *Miner) CreateEmptyBlocks() {
 */
 
 func (m *Miner) MineBlocks() (err error) {
-	fmt.Printf("Starting to Mine Blocks\n")
+	fmt.Printf("[miner] Starting to Mine Blocks\n")
 	for {
 		select {
-		case <- finished:
+		case <- stopMining:
 			// done
-			fmt.Printf("Done Mining Blocks\n")
+			fmt.Printf("[miner] Done Mining Blocks\n")
 			return nil
 		default:
 			// parentHash, err := m.Chain.BC.LastNode.Current.BlockResiding.Hash()
@@ -104,16 +104,22 @@ func (m *Miner) MineBlocks() (err error) {
 			// 	return err
 			// }
 			var parentHash string
-			if m.Blockchain.CurrentBlock == nil {
+			fmt.Printf("Current Head: %v\n", m.Blockchain.CurrentNode)
+			if m.Blockchain.CurrentNode == nil {
 				// empty chain
 				parentHash = m.Blockchain.GenesisHash
 			} else {
-				parentHash = m.Blockchain.CurrentBlock.ParentHash
+				parentHash, err = m.Blockchain.CurrentNode.Block.Hash()
+				if err != nil {
+					fmt.Printf("MineBlocks created Error: %v", err)
+					return err
+				}
 			}
 			b := &Block{
 				ParentHash: parentHash,
 				MinerPublicKey: m.PublKey,
 			}
+
 			difficulty := uint8(0)
 			if len(operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
@@ -123,10 +129,14 @@ func (m *Miner) MineBlocks() (err error) {
 			} else {
 				difficulty = m.Settings.PoWDifficultyNoOpBlock
 			}
-			fmt.Printf("Starting Mining: %v\n", b)
+
+			fmt.Printf("[miner] Starting Mining: %v\n", b)
 			err = b.Mine(difficulty)
 			hash, err := b.Hash()
-			fmt.Printf("Done Mining: %v with %s\n", b, hash)
+			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
+
+
+			err = m.Blockchain.AddBlock(b)
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
