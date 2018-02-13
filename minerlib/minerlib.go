@@ -74,20 +74,24 @@ func (m *Miner) IsEnoughInk() (err error) {
 }
 
 func (m *Miner) StartMining() (err error) {
+	fmt.Printf("Starting Mining Process\n")
 	// setup channels
 	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
 	finished  = make(chan struct{})
 	emptyBlocks = make(chan *Block, MAX_EMPTY_BLOCKS)
-	go m.CreateEmptyBlocks()
+	//go CreateEmptyBlocks()
 	go m.MineBlocks()
 	return nil
 }
 
+/*
 func (m *Miner) CreateEmptyBlocks() {
+	fmt.Printf("Starting to Create Empty Blocks\n")
 	for {
 		select {
 		case <- finished:
 			// Done
+			fmt.Printf("Done Creating Empty Blocks\n")
 			return
 		default:
 			newBlock := &Block{
@@ -95,18 +99,25 @@ func (m *Miner) CreateEmptyBlocks() {
 				MinerPublicKey: m.PublKey,
 			}
 			emptyBlocks <- newBlock
+			fmt.Printf("Empty blocks: %v\n", emptyBlocks)
 		}
 	}
 }
+*/
 
 func (m *Miner) MineBlocks() (err error) {
+	fmt.Printf("Starting to Mine Blocks\n")
 	for {
 		select {
 		case <- finished:
 			// done
+			fmt.Printf("Done Mining Blocks\n")
 			return nil
 		default:
-			b := <- emptyBlocks
+			b := &Block{
+				ParentHash: m.Chain.Head.BlockHash,
+				MinerPublicKey: m.PublKey,
+			}
 			difficulty := uint8(0)
 			if len(operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
@@ -116,8 +127,11 @@ func (m *Miner) MineBlocks() (err error) {
 			} else {
 				difficulty = m.Settings.PoWDifficultyNoOpBlock
 			}
+			fmt.Printf("Starting Mining: %v\n", b)
 			err = b.Mine(difficulty)
+			fmt.Printf("Done Mining: %v\n", b)
 			if err != nil {
+				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
 			}
 		}
