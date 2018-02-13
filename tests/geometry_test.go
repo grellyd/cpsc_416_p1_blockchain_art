@@ -1,4 +1,4 @@
-package testlib
+package tests
 
 import (
 	"blockartlib"

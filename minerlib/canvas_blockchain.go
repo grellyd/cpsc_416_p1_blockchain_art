@@ -37,16 +37,16 @@ type LineSegment struct {
 }
 
 func (ls *LineSegment) Length() float64 {
-	return (math.Sqrt(math.Pow(ls.Point1.X - ls.Point2.X, 2) +
-		math.Pow(ls.Point1.Y - ls.Point2.Y, 2)))
+	return (math.Sqrt(math.Pow(ls.Point1.X-ls.Point2.X, 2) +
+		math.Pow(ls.Point1.Y-ls.Point2.Y, 2)))
 }
 
 type Shape struct {
-	Owner    string // Public key of owner artnode
-	Hash     string
-	Sides    []LineSegment
-	Fill		 string
-	Stroke   string
+	Owner  string // Public key of owner artnode
+	Hash   string
+	Sides  []LineSegment
+	Fill   string
+	Stroke string
 }
 
 /*
@@ -89,6 +89,31 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 	return validOps, invalidOps, err
 }
 
+// How much ink a shape needs
+func InkNeeded(op Operation, settings CanvasSettings) (inkUnits uint32, err error) {
+	var temp float64
+	shape, err := OperationToShape(op, settings)
+	if err != nil {
+		return 0, err
+	}
+	if shape.Fill == TRANSPARENT {
+		for _, side := range shape.Sides {
+			temp += side.Length()
+		}
+	} else {
+		for i := 0; i < len(shape.Sides); i++ {
+			x1 := shape.Sides[i].Point1.X
+			y1 := shape.Sides[i].Point1.Y
+			x2 := shape.Sides[i].Point2.X
+			y2 := shape.Sides[i].Point2.Y
+			temp += ((x1 * y2) - (y1 * x2))
+		}
+		temp /= 2
+	}
+	inkUnits = uint32(math.Ceil(temp))
+	return inkUnits, nil
+}
+
 func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 	if isAbsolute {
 		return target
@@ -99,8 +124,8 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err error) {
 	svgString := op.ShapeSVGString
 
-  // [A-Za-z]|[-0-9., ]*
-  // ["M", "   3,  8  ", "H", ...
+	// [A-Za-z]|[-0-9., ]*
+	// ["M", "   3,  8  ", "H", ...
 	// Turn all letters of svgString into a rune slice
 
 	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
@@ -231,30 +256,6 @@ func OnSegment(p, q, r Point) (onSegment bool) {
 	return false
 }
 
-// How much ink a shape needs
-func InkNeeded(op Operation, settings CanvasSettings) (inkUnits float64, err error) {
-	inkUnits = 0
-	shape, err := OperationToShape(op, settings)
-	if (err != nil) {
-		return 0, err
-	}
-	if shape.Fill == TRANSPARENT {
-		for _, side := range shape.Sides {
-			inkUnits += side.Length()
-		}
-	} else {
-		for i := 0; i < len(shape.Sides); i++ {
-			x1 := shape.Sides[i].Point1.X
-			y1 := shape.Sides[i].Point1.Y
-			x2 := shape.Sides[i].Point2.X
-			y2 := shape.Sides[i].Point2.Y
-			inkUnits += ((x1 * y2) - (y1 * x2))
-		}
-		inkUnits /= 2
-	}
-	return math.Ceil(inkUnits), nil
-}
-
 func IsShapesOverlapping(s1, s2 Shape) bool {
 	for _, s := range s1.Sides {
 		for _, p := range s2.Sides {
@@ -263,30 +264,30 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 			}
 		}
 	}
-  if (s1.Fill != TRANSPARENT) && IsPointContainedInShape(s2.Sides[0].Point1, s1) ||
-    (s2.Fill != TRANSPARENT && IsPointContainedInShape(s1.Sides[0].Point1, s2)) {
-    return true
-  }
+	if (s1.Fill != TRANSPARENT) && IsPointContainedInShape(s2.Sides[0].Point1, s1) ||
+		(s2.Fill != TRANSPARENT && IsPointContainedInShape(s1.Sides[0].Point1, s2)) {
+		return true
+	}
 	return false
 }
 
 func IsPointContainedInShape(p Point, s Shape) bool {
-  segment := LineSegment{p, Point{0, p.Y}}
-  var numIntersections int
-  var prevY float64
-  for _, side := range s.Sides {
-    if side.Point1.Y == side.Point2.Y {
-      continue
-    }
-    if IsLinesIntersecting(side, segment) {
-      if side.Point1.Y == p.Y {
-        if (prevY > p.Y && side.Point2.Y < p.Y) ||
-          (prevY < p.Y && side.Point2.Y > p.Y) {
-            numIntersections--
-          }
-      }
-      numIntersections++
-    }
-  }
-  return numIntersections % 2 != 0
+	segment := LineSegment{p, Point{0, p.Y}}
+	var numIntersections int
+	var prevY float64
+	for _, side := range s.Sides {
+		if side.Point1.Y == side.Point2.Y {
+			continue
+		}
+		if IsLinesIntersecting(side, segment) {
+			if side.Point1.Y == p.Y {
+				if (prevY > p.Y && side.Point2.Y < p.Y) ||
+					(prevY < p.Y && side.Point2.Y > p.Y) {
+					numIntersections--
+				}
+			}
+			numIntersections++
+		}
+	}
+	return numIntersections%2 != 0
 }
