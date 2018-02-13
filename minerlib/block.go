@@ -56,7 +56,7 @@ func (b* Block) Mine(difficulty uint8) error {
 	return nil
 }
 
-func (b *Block) GetHash() (hash string, err error) {
+func (b *Block) Hash() (hash string, err error) {
 	if b.Nonce == 0 {
 		return "", fmt.Errorf("Block not yet mined!")
 	}

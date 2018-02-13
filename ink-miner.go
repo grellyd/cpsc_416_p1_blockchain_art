@@ -13,14 +13,22 @@ import (
 	"encoding/gob"
 	"crypto/elliptic"
 )
-var m minerlib.Miner
+var m minerlib.Miner // singleton for miner
 var miners []net.Addr
+var bc minerlib.BCStorage //singleton for blockchain stored at miner
 
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
 	
 var localIP = "127.0.0.1:0"
+
+func (si *ArtNodeInstance) GetBlockChildren (hash *string, reply *[]string) error {
+	fmt.Println("In RPC getting children hashes")
+	bla, err := bc.GetChildrenNodes(*hash)
+	*reply = bla
+	return err
+}
 
 func main() {
 	fmt.Println("start")
@@ -73,6 +81,34 @@ func main() {
 	serviceRequests(localListener)
 }
 
+/*
+	tcpAddr, err := net.ResolveTCPAddr("tcp", localIP)
+	CheckError(err)
+
+
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	CheckError(err)
+	fmt.Println("TCP address: ", listener.Addr().String())
+
+	serverConnector, err = rpc.Dial("tcp", servAddr)
+
+	err = m.ConnectServer(serverConnector, listener.Addr().String())
+	CheckError(err)
+
+	var mConn minerlib.MinerCaller
+	mConn.Addr = *tcpAddr
+	mConn.RPCClient = serverConnector
+	mConn.Public = m.PublKey
+
+	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, mConn.SendHeartbeat)
+
+	var lom = []net.Addr{}
+
+	// TODO: put it into a goroutine wh will as the miners until it will fill the entire array
+	err = mConn.RequestMiner(&lom, m.Settings.MinNumMinerConnections)
+	fmt.Println("LOM1: ", lom)
+	CheckError(err)
+	*/
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
 	// dial to server

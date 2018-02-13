@@ -8,10 +8,6 @@ import (
 	"keys"
 )
 
-type Blockchain struct {
-	GenesisNode *BCTreeNode
-	Head *BCTreeNode
-}
 
 // signal channels
 var finished chan struct{}
@@ -34,7 +30,7 @@ type Miner struct {
 	Neighbors []*MinerConnection
 	PublKey *ecdsa.PublicKey
 	PrivKey *ecdsa.PrivateKey
-	Chain Blockchain
+	Chain BCStorage
 	Settings *blockartlib.MinerNetSettings
 	LocalCanvas CanvasData
 }
@@ -49,7 +45,7 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		Neighbors: []*MinerConnection{},
 		PublKey: keys.Public,
 		PrivKey: keys.Private,
-		Chain: Blockchain{},
+		Chain: BCStorage{},
 		Settings: &blockartlib.MinerNetSettings{},
 		LocalCanvas: CanvasData{},
 	}
@@ -114,8 +110,13 @@ func (m *Miner) MineBlocks() (err error) {
 			fmt.Printf("Done Mining Blocks\n")
 			return nil
 		default:
+			parentHash, err := m.Chain.BC.LastNode.Current.BlockResiding.Hash()
+			if err != nil {
+				fmt.Printf("MineBlocks created Error: %v", err)
+				return err
+			}
 			b := &Block{
-				ParentHash: m.Chain.Head.BlockHash,
+				ParentHash: parentHash,
 				MinerPublicKey: m.PublKey,
 			}
 			difficulty := uint8(0)

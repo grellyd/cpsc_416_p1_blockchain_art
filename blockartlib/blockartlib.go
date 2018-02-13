@@ -13,6 +13,8 @@ import (
 )
 
 // Represents a type of shape in the BlockArt system.
+// 1 for a line, 2 for a circle
+// TODO[sharon]: make an iota?
 type ShapeType int
 
 const (
