@@ -9,16 +9,14 @@ import (
 	"crypto/elliptic"
 )
 
-
-
-type MinerCaller struct {
+type ServerInstance struct {
 	Addr net.TCPAddr
 	RPCClient *rpc.Client
 	Public *ecdsa.PublicKey
 }
 
 // requests another miner's ID (info) from the server
-func (m *MinerCaller) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (err error) {
+func (m *ServerInstance) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (err error) {
 	gob.Register(&net.TCPAddr{})
 	gob.Register(&[]net.Addr{})
 	gob.Register(&[]net.TCPAddr{})
@@ -35,7 +33,7 @@ func (m *MinerCaller) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (err e
 	return nil
 }
 
-func (m *MinerCaller) SendHeartbeat(t time.Time) (err error) {
+func (m *ServerInstance) SendHeartbeat(t time.Time) (err error) {
 	var ignored bool
 	err = m.RPCClient.Call( "RServer.HeartBeat", m.Public, &ignored)
 	if err != nil {
@@ -43,7 +41,6 @@ func (m *MinerCaller) SendHeartbeat(t time.Time) (err error) {
 	}
 	return nil
 }
-
 
 // Structs to manage the connections to other entities
 type ArtNodeConnection struct {
@@ -57,4 +54,3 @@ type MinerConnection struct {
 	Addr net.TCPAddr
 	RPCClient *rpc.Client
 }
-

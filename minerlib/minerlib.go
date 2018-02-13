@@ -10,8 +10,21 @@ import (
 
 type Blockchain struct {
 	GenesisNode *BCTreeNode
-	// perhaps longest chain, addable block, etc.
+	Head *BCTreeNode
 }
+
+// signal channels
+var finished chan struct{}
+
+// pipeline channels
+var emptyBlocks chan *Block
+var operationQueue chan *blockartlib.Operation
+
+const (
+	OP_THRESHOLD = 4
+	MAX_WAITING_OPS = 10
+	MAX_EMPTY_BLOCKS = 3
+)
 
 type Miner struct {
 	InkLevel uint32
@@ -60,22 +73,55 @@ func (m *Miner) IsEnoughInk() (err error) {
 	return nil
 }
 
-func (m *Miner) GenerateNoopBlock() (err error) {
+func (m *Miner) StartMining() (err error) {
+	// setup channels
+	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
+	finished  = make(chan struct{})
+	emptyBlocks = make(chan *Block, MAX_EMPTY_BLOCKS)
+	go m.CreateEmptyBlocks()
+	go m.MineBlocks()
 	return nil
 }
 
-func (m *Miner) GenerateOpBlock() (err error) {
-	return nil
-}
-
-func (m *Miner) MineBlock(b *Block) (err error) {
-	difficulty := uint8(0)
-	if len(b.Operations) == 0 {
-		difficulty = m.Settings.PoWDifficultyNoOpBlock
-	} else {
-		difficulty = m.Settings.PoWDifficultyOpBlock
+func (m *Miner) CreateEmptyBlocks() {
+	for {
+		select {
+		case <- finished:
+			// Done
+			return
+		default:
+			newBlock := &Block{
+				ParentHash: m.Chain.Head.BlockHash,
+				MinerPublicKey: m.PublKey,
+			}
+			emptyBlocks <- newBlock
+		}
 	}
-	return b.Mine(difficulty)
+}
+
+func (m *Miner) MineBlocks() (err error) {
+	for {
+		select {
+		case <- finished:
+			// done
+			return nil
+		default:
+			b := <- emptyBlocks
+			difficulty := uint8(0)
+			if len(operationQueue) >= OP_THRESHOLD {
+				difficulty = m.Settings.PoWDifficultyOpBlock
+				for i := 0; i <= OP_THRESHOLD; i++ {
+					b.Operations = append(b.Operations, <- operationQueue)
+				}
+			} else {
+				difficulty = m.Settings.PoWDifficultyNoOpBlock
+			}
+			err = b.Mine(difficulty)
+			if err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // validates incoming block from other miner

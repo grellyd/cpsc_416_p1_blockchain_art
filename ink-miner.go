@@ -44,7 +44,7 @@ func main() {
 	localMinerInfo := MinerInfo{localAddr, m.PublKey}
 	
 	//setup an ArtNode Reciever
-	artNodeInst := new(ArtNodeInstance)
+	artNodeInst := new(minerlib.ArtNodeInstance)
 	// register art node instance locally
 	rpc.Register(artNodeInst)
 	
@@ -75,7 +75,7 @@ func main() {
 }
 
 
-func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.MinerCaller, err error) {
+func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
 	// dial to server
 	serverRPCClient, err := rpc.Dial("tcp", serverAddr.String())
 	// setup gob
@@ -91,7 +91,7 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	// TODO: refactor to ServerInstance
 	tcpFromAddr, err := net.ResolveTCPAddr("tcp", minerInfo.Address.String())
 	checkError(err)
-	serverConnection = minerlib.MinerCaller{
+	serverConnection = minerlib.ServerInstance{
 		Addr: *tcpFromAddr,
 		RPCClient: serverRPCClient,
 		Public: minerInfo.Key,
@@ -153,7 +153,6 @@ func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
 // TODO: Extract out from ink-miner.go
 // =========================
 
-type ServerInstance int // for now it's the int, but we can change to actual struct
 type ArtNodeInstance int // same as above
 
 func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction , reply *bool) error {
@@ -176,8 +175,7 @@ func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error
 
 func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
 	fmt.Println("In RPC getting ink from miner")
-	*reply = m.InkLevel
-	return nil
+	return *reply
 }
 
 // struct for communicating info about a miner to the server
