@@ -11,18 +11,20 @@ Larissa := miner to miner communication
 Graham Deliverable (Post Alex Done) -> Able to start multiple miners from ink
 nodes, and provide no operations. The miners will all start NOPing and
 generating ink for the InkNodes to use.
+^^ Done
 
 ----------
 Phase 2: Blockchain & Blockchain RPC Calls
 -----------
-Graham := Block propagation
-Graham := Block Validation
+Graham := Block propagation <- Outstanding
+Graham := Block Validation 
     AKA: 
     - Check that the nonce for the block is valid: PoW is correct and has the right difficulty.
     - Check that each operation in the block has a valid signature (this signature should be generated using the private key and the operation).
     - Check that the previous block hash points to a legal, previously generated, block in the forest
-Graham := Switching to a new longest chain (stop/start mining)
-Graham := Miner main loop
+Graham := Switching to a new longest chain (stop/start mining) <- done but
+slow. the fast version was causing too many channel issues.
+Graham := Miner main loop <- Done. Needs testing and bug catching.
 
 Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about stubs for BC.
 Alex := Tree comparisons for the purposes of choosing the longest chain.
