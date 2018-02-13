@@ -63,6 +63,7 @@ func main() {
 	m.Blockchain, err = minerlib.NewBlockchain(m.Settings.GenesisBlockHash)
 	checkError(err)
 	go m.StartMining()
+	go m.TestEarlyExit()
 
 	// Ask for Neighbors
 	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)

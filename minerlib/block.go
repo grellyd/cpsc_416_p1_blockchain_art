@@ -30,7 +30,6 @@ type Block struct {
   Nonce uint32
 }
 
-// TODO: Check the reference to the nonce is maintained without returning the block
 func (b* Block) Mine(difficulty uint8) error {
 	if b.Nonce != 0 {
 		return fmt.Errorf("Block already mined!")

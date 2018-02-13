@@ -25,6 +25,15 @@ func (b *Blockchain) AddBlock(blk *Block) (err error) {
 		Next: nil,
 		Block: blk,
 	}
+	// TODO: handle the case of early exit
+	if parent != nil {
+		parentHash, err := parent.Block.Hash()
+		newHash := blk.ParentHash
+		if parentHash != newHash {
+			// no longer head
+			return err
+		}
+	}
 	b.CurrentNode = &newBlock
 	return nil
 }

@@ -5,20 +5,27 @@ import (
 	"fmt"
 	"crypto/ecdsa"
 	"net"
+	"sync"
+	"time"
 )
 
 
 // signal channels
-var stopMining chan struct{}
+var doneMining chan struct{}
+var earlyExitSignal chan struct{}
+var exited chan struct{}
 
 // pipeline channels
-var emptyBlocks chan *Block
 var operationQueue chan *blockartlib.Operation
+
+// waitgroups 
+var minersGroup sync.WaitGroup
 
 const (
 	OP_THRESHOLD = 4
 	MAX_WAITING_OPS = 10
 	MAX_EMPTY_BLOCKS = 3
+	NUM_MINING_TASKS = 1
 )
 
 type Miner struct {
@@ -61,41 +68,39 @@ func (m *Miner) StartMining() (err error) {
 	fmt.Printf("[miner] Starting Mining Process\n")
 	// setup channels
 	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
-	stopMining  = make(chan struct{})
-	//emptyBlocks = make(chan *Block, MAX_EMPTY_BLOCKS)
-	//go CreateEmptyBlocks()
-	go m.MineBlocks()
+	doneMining  = make(chan struct{})
+	earlyExitSignal = make(chan struct{})
+	for i := 0; i < NUM_MINING_TASKS; i++{
+		go m.MineBlocks()
+		minersGroup.Add(1)
+	}
 	return nil
 }
 
-/*
-func (m *Miner) CreateEmptyBlocks() {
-	fmt.Printf("Starting to Create Empty Blocks\n")
-	for {
-		select {
-		case <- stopMining:
-			// Done
-			fmt.Printf("Done Creating Empty Blocks\n")
-			return
-		default:
-			newBlock := &Block{
-				ParentHash: m.Chain.Head.BlockHash,
-				MinerPublicKey: m.PublKey,
-			}
-			emptyBlocks <- newBlock
-			fmt.Printf("Empty blocks: %v\n", emptyBlocks)
-		}
+func (m *Miner)TestEarlyExit() {
+	time.Sleep(6000 * time.Millisecond)
+	fmt.Printf("[miner] Killing...\n")
+	err := m.StopMining()
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
+	err = m.StartMining()
+	if err != nil {
+		fmt.Printf("%v\n", err)
 	}
 }
-*/
 
 func (m *Miner) MineBlocks() (err error) {
 	fmt.Printf("[miner] Starting to Mine Blocks\n")
 	for {
 		select {
-		case <- stopMining:
+		case <- doneMining:
 			// done
 			fmt.Printf("[miner] Done Mining Blocks\n")
+			return nil
+		case <- earlyExitSignal:
+			minersGroup.Done()
+			fmt.Printf("[miner] Early Exit\n")
 			return nil
 		default:
 			// parentHash, err := m.Chain.BC.LastNode.Current.BlockResiding.Hash()
@@ -135,7 +140,6 @@ func (m *Miner) MineBlocks() (err error) {
 			hash, err := b.Hash()
 			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
 
-
 			err = m.Blockchain.AddBlock(b)
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
@@ -153,14 +157,14 @@ func (m *Miner) ValidateBlock() (err error){
 	return nil
 }
 
-// this should pause (or delete?) process of mining ink
-// in case we want to keep the point at which we've stopped
+// this stops the process of mining blocks
+// Commands the lower level threads to stop.
+// Waitgroup finishes when these exit
 func (m *Miner) StopMining() (err error){
-	return nil
-}
-
-// this should resume process of mining ink
-func (m *Miner) ResumeMining() (err error){
+	fmt.Printf("[miner] Stopping Mining by command\n")
+	close(earlyExitSignal)
+	minersGroup.Wait()
+	fmt.Printf("[miner] Stopped\n")
 	return nil
 }
 

@@ -1,7 +1,6 @@
 package compute
 
 import (
-	// "fmt"
 	"sync"
 )
 
@@ -35,6 +34,7 @@ func DataConcurrent(data []byte, difficulty uint8) (result uint32, err error) {
 	newNonces = make(chan uint32, numConcurrent * 100)
 	hashes = make(chan nonceHashPair, numConcurrent * 100)
 	final = make(chan uint32, 1)
+
 	UsedNonces = sync.Map{}
 	// spawn
 	for i:= 0; i < numConcurrent; i++ {
@@ -58,6 +58,7 @@ func DataConcurrent(data []byte, difficulty uint8) (result uint32, err error) {
 	generators.Wait()
 	// fmt.Println("MAIN: Done Generating")
 	// exit
+	// fmt.Println("Exiting from data concurrent")
 	return result, nil
 }
 
