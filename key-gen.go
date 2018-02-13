@@ -12,8 +12,8 @@ func main()  {
 		return
 	}
 	encPriv, encPub := keys.Encode(privateKey, publicKey)
-	fmt.Printf("Private:\n------\n%x\n\n", encPriv)
-	fmt.Printf("Public:\n------\n%x\n\n", encPub)
+	fmt.Printf("Private:\n------\n%s\n\n", encPriv)
+	fmt.Printf("Public:\n------\n%s\n\n", encPub)
 	fmt.Println("-----")
 
 	decodedPriv, decodedPub := keys.Decode(encPriv, encPub)

@@ -6,14 +6,14 @@ import (
 	"crypto/x509"
 	"crypto/elliptic"
 	"crypto/rand"
+	"encoding/hex"
 	"reflect"
 )
-
-// TODO: Throw errors when unable to encode/decode instead of swapplowing them
 
 func Generate() (privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, err error) {
 	privateKey, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
+		fmt.Printf("Error while Generating Keys: %v\n", err)
 		return nil, nil, err
 	}
 	publicKey = &privateKey.PublicKey
@@ -25,16 +25,19 @@ func Encode(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) (string, s
 }
 
 func EncodePrivateKey(privateKey *ecdsa.PrivateKey) (string) {
-	x509Encoded, _ := x509.MarshalECPrivateKey(privateKey)
-	var b []byte = x509Encoded
-	return string(b)
+	x509Encoded, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		fmt.Printf("Error while Encoding Private Key: %v\n", err)
+	}
+	return hex.EncodeToString(x509Encoded)
 }
 
 func EncodePublicKey(publicKey *ecdsa.PublicKey) (string) {
-	x509EncodedPub, _ := x509.MarshalPKIXPublicKey(publicKey)
-
-	var c []byte = x509EncodedPub
-	return string(c)
+	x509EncodedPub, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		fmt.Printf("Error while Encoding Public Key: %v\n", err)
+	}
+	return hex.EncodeToString(x509EncodedPub)
 }
 
 func Decode(pemEncoded string, pemEncodedPub string) (*ecdsa.PrivateKey, *ecdsa.PublicKey) {
@@ -42,14 +45,25 @@ func Decode(pemEncoded string, pemEncodedPub string) (*ecdsa.PrivateKey, *ecdsa.
 }
 
 func DecodePrivateKey(pemEncoded string) (*ecdsa.PrivateKey) {
-	privateKey, _ := x509.ParseECPrivateKey([]byte(pemEncoded))
+	hexDecodedBytes, err := hex.DecodeString(pemEncoded)
+	if err != nil {
+		fmt.Printf("Error while Dehexing Private Key: %v\n", err)
+	}
+	privateKey, err := x509.ParseECPrivateKey(hexDecodedBytes)
+	if err != nil {
+		fmt.Printf("Error while Decoding Private Key: %v\n", err)
+	}
 	return privateKey
 }
 
 func DecodePublicKey(pemEncodedPub string) (*ecdsa.PublicKey) {
-	genericPublicKey, err := x509.ParsePKIXPublicKey([]byte(pemEncodedPub))
+	hexDecodedBytes, err := hex.DecodeString(pemEncodedPub)
 	if err != nil {
-		fmt.Printf("Error while Decoding: %v\n", err)
+		fmt.Printf("Error while Dehexing Public Key: %v\n", err)
+	}
+	genericPublicKey, err := x509.ParsePKIXPublicKey(hexDecodedBytes)
+	if err != nil {
+		fmt.Printf("Error while Decoding Public Key: %v\n", err)
 	}
 	key := genericPublicKey.(*ecdsa.PublicKey)
 	return key
