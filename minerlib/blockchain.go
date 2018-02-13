@@ -37,3 +37,7 @@ func (b *Blockchain) AddBlock(blk *Block) (err error) {
 	b.CurrentNode = &newBlock
 	return nil
 }
+
+func (b *Blockchain) BlockPresent(blk *Block) (present bool, err error) {
+	return true, nil
+}

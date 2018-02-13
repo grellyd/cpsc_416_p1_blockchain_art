@@ -7,6 +7,7 @@ import (
 	"net"
 	"sync"
 	"time"
+	"minerlib/compute"
 )
 
 
@@ -150,11 +151,54 @@ func (m *Miner) MineBlocks() (err error) {
 }
 
 // validates incoming block from other miner
-func (m *Miner) ValidateBlock() (err error){
-	// TODO: include here check against the block produced (or paused?)
-	// if block arrived during generating process
-	// or before sending the generated block out ===> TODO: DOUBLE SPENDING CHECK
-	return nil
+func (m *Miner) ValidBlock(b *Block) (valid bool, err error){
+	hash, err := b.Hash()
+	if err != nil {
+		return false, fmt.Errorf("Unable validate block: %v", err)
+	}
+	difficulty := uint8(0)
+	if len(b.Operations) > 0 {
+		difficulty = m.Settings.PoWDifficultyOpBlock
+		// check each op has a valid sig
+		for _, op := range b.Operations {
+			// TODO
+			expectedSig := ""
+			err = nil
+			if err != nil {
+				return false, fmt.Errorf("Unable validate block: %v", err)
+			}
+			if op.OperationSig != expectedSig {
+				return false, nil
+			}
+		}
+	} else {
+		difficulty = m.Settings.PoWDifficultyNoOpBlock
+	}
+	// check nonce adds up
+	if !compute.Valid(hash, difficulty) {
+		return false, nil
+	}
+
+	// check previous block is in tree
+	present, err := m.Blockchain.BlockPresent(b)
+	if err != nil {
+		return false, fmt.Errorf("Unable validate block: %v", err)
+	}
+	if present {
+		return true, nil
+	} else {
+		// failing that, check its ancestors in the forest, and those pass ValidBlock
+		if m.BlockForest[b.ParentHash] != nil {
+			parentValid, err := m.ValidBlock(m.BlockForest[b.ParentHash])
+			if err != nil {
+				return false, fmt.Errorf("Unable validate block: %v", err)
+			}
+			if parentValid {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 }
 
 // this stops the process of mining blocks
