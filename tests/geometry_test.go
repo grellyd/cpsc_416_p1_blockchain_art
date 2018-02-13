@@ -90,36 +90,16 @@ type Shape struct {
 	Stroke   string
 }
 */
-func TestShapesOverlappingConvave(t *testing.T) {
-	so1 := LineSegment{Point{5, 2}, Point{6, 2}}
-	so2 := LineSegment{Point{6, 2}, Point{6, 3}}
-	so3 := LineSegment{Point{6, 3}, Point{5, 3}}
-	so4 := LineSegment{Point{5, 3}, Point{5, 2}}
-	soSides := []LineSegment{so1, so2, so3, so4}
-	squareOut := Shape{"o", "h", soSides, "transparent", "stroke"}
-
-	si1 := LineSegment{Point{8, 4}, Point{9, 4}}
-	si2 := LineSegment{Point{9, 4}, Point{9, 5}}
-	si3 := LineSegment{Point{9, 5}, Point{8, 5}}
-	si4 := LineSegment{Point{8, 5}, Point{8, 4}}
-	siSides := []LineSegment{si1, si2, si3, si4}
-	squareIn := Shape{"o", "h", siSides, "transparent", "stroke"}
+func TestShapesOverlappingConcave(t *testing.T) {
+	squareOut := Square1()
+	squareIn := Square2()
 
 	isOverlap := minerlib.IsShapesOverlapping(squareIn, squareOut) // Expect false
 	if isOverlap {
 		t.Errorf("1) squareIn and squareOut. Expected false. Got %v\n", isOverlap)
 	}
 
-	c1 := LineSegment{Point{2, 2}, Point{4, 2}}
-	c2 := LineSegment{Point{4, 2}, Point{4, 4}}
-	c3 := LineSegment{Point{4, 4}, Point{7, 4}}
-	c4 := LineSegment{Point{7, 4}, Point{7, 2}}
-	c5 := LineSegment{Point{7, 2}, Point{10, 2}}
-	c6 := LineSegment{Point{10, 2}, Point{10, 6}}
-	c7 := LineSegment{Point{10, 6}, Point{2, 6}}
-	c8 := LineSegment{Point{2, 6}, Point{2, 2}}
-	cSides := []LineSegment{c1, c2, c3, c4, c5, c6, c7, c8}
-	c := Shape{"o", "h", cSides, "solid", "stroke"}
+	c := ConvexPolygon()
 	
 	isOverlap = minerlib.IsShapesOverlapping(squareOut, c) // Expect false
 	if isOverlap {
@@ -136,4 +116,86 @@ func TestShapesOverlappingConvave(t *testing.T) {
 	if isOverlap {
 		t.Errorf("4) squareIn and c transparent. Expected false. Got %v\n", isOverlap)
 	}
+}
+
+func TestShapesOverlappingConvex(t *testing.T) {
+	square := Square3()
+	triangleOut := Triangle1()
+	triangleIn := Triangle2()
+
+	isOverlap := minerlib.IsShapesOverlapping(square, triangleIn)
+	if !isOverlap {
+		t.Errorf("1) square and triangleIn. Expected true. Got %v\n", isOverlap)
+	}
+
+	triangleIn.Fill = minerlib.TRANSPARENT
+	isOverlap = minerlib.IsShapesOverlapping(square, triangleIn)
+	if !isOverlap {
+		t.Errorf("2) square and triangleIn. Expected false. Got %v\n", isOverlap)
+	}
+	
+	isOverlap = minerlib.IsShapesOverlapping(square, triangleOut)
+	if isOverlap {
+		t.Errorf("3) square and triangleOut. Expected false. Got %v\n", isOverlap)
+	}
+}
+
+func TestDrawAllShapes(t *testing.T) {
+
+}
+
+func Square1() Shape {
+	so1 := LineSegment{Point{5, 2}, Point{6, 2}}
+	so2 := LineSegment{Point{6, 2}, Point{6, 3}}
+	so3 := LineSegment{Point{6, 3}, Point{5, 3}}
+	so4 := LineSegment{Point{5, 3}, Point{5, 2}}
+	soSides := []LineSegment{so1, so2, so3, so4}
+	return Shape{"owner1", "square1", soSides, "transparent", "stroke"}
+}
+
+func Square2() Shape {
+	si1 := LineSegment{Point{8, 4}, Point{9, 4}}
+	si2 := LineSegment{Point{9, 4}, Point{9, 5}}
+	si3 := LineSegment{Point{9, 5}, Point{8, 5}}
+	si4 := LineSegment{Point{8, 5}, Point{8, 4}}
+	siSides := []LineSegment{si1, si2, si3, si4}
+	return Shape{"owner2", "square2", siSides, "transparent", "stroke"}
+}
+
+func Square3() Shape {
+	s1 := LineSegment{Point{4, 3}, Point{5, 3}}
+	s2 := LineSegment{Point{5, 3}, Point{5, 4}}
+	s3 := LineSegment{Point{5, 4}, Point{4, 4}}
+	s4 := LineSegment{Point{4, 2}, Point{4, 3}}
+	sides := []LineSegment{s1, s2, s3, s4}
+	return Shape{"owner3", "square3", sides, "transparent", "stroke"}
+}
+
+func Triangle1() Shape {
+	s1 := LineSegment{Point{6, 1}, Point{6, 6}}
+	s2 := LineSegment{Point{6, 6}, Point{1, 4}}
+	s3 := LineSegment{Point{1, 4}, Point{6, 1}}
+	sides := []LineSegment{s1, s2, s3}
+	return Shape{"owner4", "triangle1", sides, "filled", "stroke"}
+}
+
+func Triangle2() Shape {
+	s1 := LineSegment{Point{2, 3}, Point{3, 5}}
+	s2 := LineSegment{Point{3, 5}, Point{1, 5}}
+	s3 := LineSegment{Point{1, 5}, Point{2, 3}}
+	sides := []LineSegment{s1, s2, s3}
+	return Shape{"owner5", "triangle2", sides, "filled", "stroke"}
+}
+
+func ConvexPolygon() Shape {
+	c1 := LineSegment{Point{2, 2}, Point{4, 2}}
+	c2 := LineSegment{Point{4, 2}, Point{4, 4}}
+	c3 := LineSegment{Point{4, 4}, Point{7, 4}}
+	c4 := LineSegment{Point{7, 4}, Point{7, 2}}
+	c5 := LineSegment{Point{7, 2}, Point{10, 2}}
+	c6 := LineSegment{Point{10, 2}, Point{10, 6}}
+	c7 := LineSegment{Point{10, 6}, Point{2, 6}}
+	c8 := LineSegment{Point{2, 6}, Point{2, 2}}
+	cSides := []LineSegment{c1, c2, c3, c4, c5, c6, c7, c8}
+	return Shape{"owner6", "convex_polygon", cSides, "solid", "stroke"}
 }

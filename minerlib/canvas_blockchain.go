@@ -76,6 +76,9 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			return validOps, invalidOps, err
 		}
 		for _, valid := range drawnShapes {
+			if valid.Owner == cur.Owner {
+				continue
+			}
 			if IsShapesOverlapping(valid, cur) {
 				invalidOps[op.OperationSig] = ops[i]
 			} else {
