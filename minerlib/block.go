@@ -110,7 +110,6 @@ func UnmarshallBinary(data []byte) (b *Block, err error) {
 	return blkPtr, nil
 }
 
-
 func (b *Block) bodyBytes() (data []byte, err error) {
 	// Guard against nil pubkeys
 	if b.MinerPublicKey == nil {
@@ -119,6 +118,7 @@ func (b *Block) bodyBytes() (data []byte, err error) {
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
 	gob.Register(Block{})
+	gob.Register(elliptic.P384())
 	err = enc.Encode(b.ParentHash)
 	if err != nil {
 		return nil, fmt.Errorf("Error: Unable to encode ParentHash")

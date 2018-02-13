@@ -12,15 +12,16 @@ func main()  {
 		return
 	}
 	encPriv, encPub := keys.Encode(privateKey, publicKey)
-	fmt.Printf("%x\n", encPriv)
-	fmt.Printf("%x\n", encPub)
+	fmt.Printf("Private:\n------\n%x\n\n", encPriv)
+	fmt.Printf("Public:\n------\n%x\n\n", encPub)
+	fmt.Println("-----")
 
 	decodedPriv, decodedPub := keys.Decode(encPriv, encPub)
 
 	if !keys.MatchPrivateKeys(privateKey, decodedPriv) {
 		fmt.Println("Private keys do not match.")
 	} else {
-		fmt.Println("Do match")
+		fmt.Println("Keys match")
 	}
 	if !keys.MatchPublicKeys(publicKey, decodedPub) {
 		fmt.Println("Public keys do not match.")

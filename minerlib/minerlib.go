@@ -3,32 +3,18 @@ package minerlib
 import (
 	"blockartlib"
 	"time"
-	"net"
-	"net/rpc"
 	"fmt"
 	"crypto/ecdsa"
-	"crypto/x509"
-	"reflect"
 	"encoding/gob"
 	"crypto/elliptic"
+	"net"
+	"net/rpc"
+	"keys"
 )
 
 type Blockchain struct {
 	GenesisNode *BCTreeNode
 	// perhaps longest chain, addable block, etc.
-}
-
-// Structs to manage the connections to other entities
-type ArtNodeConnection struct {
-	// Addr to Dial
-	Addr net.TCPAddr
-	// RPC Client to Call
-	RPCClient *rpc.Client
-}
-
-type MinerConnection struct {
-	Addr net.TCPAddr
-	RPCClient *rpc.Client
 }
 
 type Miner struct {
@@ -49,12 +35,6 @@ type MinerInfo struct {
 	Key     ecdsa.PublicKey
 }
 
-type MinerCaller struct {
-	Addr net.TCPAddr
-	RPCClient *rpc.Client
-	Public *ecdsa.PublicKey
-}
-
 // Miner constructor
 func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner Miner, err error) {
 	var m = Miner{
@@ -73,11 +53,10 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blocka
 }
 
 func (m *Miner) ValidateNewArtIdent(an *blockartlib.ArtNodeInstruction) (err error) {
-	privateKey, _ := x509.ParseECPrivateKey([]byte(an.PrivKey))
-	genericPublicKey, _ := x509.ParsePKIXPublicKey([]byte(an.PubKey))
-	publicKey := genericPublicKey.(*ecdsa.PublicKey)
+	privateKey := keys.DecodePrivateKey(an.PrivKey)
+	publicKey := keys.DecodePublicKey(an.PubKey)
+	if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
 
-	if !reflect.DeepEqual(privateKey, m.PrivKey) && !reflect.DeepEqual(publicKey, m.PublKey){
 		fmt.Println("Private keys do not match.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
 	}

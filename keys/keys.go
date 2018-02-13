@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"fmt"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"crypto/elliptic"
@@ -44,11 +45,13 @@ func DecodePrivateKey(pemEncoded string) (*ecdsa.PrivateKey) {
 }
 
 func DecodePublicKey(pemEncodedPub string) (*ecdsa.PublicKey) {
-	genericPublicKey, _ := x509.ParsePKIXPublicKey([]byte(pemEncodedPub))
-	publicKey := genericPublicKey.(*ecdsa.PublicKey)
-	return publicKey
+	genericPublicKey, err := x509.ParsePKIXPublicKey([]byte(pemEncodedPub))
+	if err != nil {
+		fmt.Printf("Error while Decoding: %v\n", err)
+	}
+	key := genericPublicKey.(*ecdsa.PublicKey)
+	return key
 }
-
 
 func MatchPublicKeys(key0 *ecdsa.PublicKey, key1 *ecdsa.PublicKey) (match bool) {
 	return reflect.DeepEqual(key0, key1)

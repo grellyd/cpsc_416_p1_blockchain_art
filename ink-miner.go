@@ -1,7 +1,6 @@
 package main
 
 import (
-
 	"fmt"
 	"minerlib"
 	"net/rpc"
@@ -9,44 +8,15 @@ import (
 	"net"
 	"time"
 	"os"
-	"crypto/ecdsa"
-	"crypto/x509"
-	"encoding/hex"
+	"keys"
 )
 var m minerlib.Miner
 
-type ServerInstance int // for now it's the int, but we can change to actual struct
-type ArtNodeInstance int // same as above
-
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
-var artNodeQueue []*blockartlib.ArtNodeInstruction
-
-func (si *ArtNodeInstance) ConnectNode ( an *blockartlib.ArtNodeInstruction , reply *bool) error {
-	fmt.Println("In rpc call to register the AN")
-	err := m.ValidateNewArtIdent(an)
-	CheckError(err)
-	if err == nil {
-		*reply = true
-		artNodeQueue = append(artNodeQueue, an)
-	}
-	return err
-}
-
-func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error {
-	fmt.Println("In RPC getting hash of genesis block")
-	*reply = m.Settings.GenesisBlockHash
-	return nil
-}
-
-func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
-	fmt.Println("In RPC getting ink from miner")
-	*reply = m.InkLevel
-	return nil
-}
+var OpQueue []*blockartlib.ArtNodeInstruction
 
 func main() {
-
 	fmt.Println("start")
 	args := os.Args[1:]
 
@@ -55,9 +25,29 @@ func main() {
 		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
-
 	servAddr := args[0]
-	keys := GetKeyPair(args)
+	keys := getKeyPair(args[2], args[1])
+	serverListener, serverConn := setupServerConn(servAddr, keys)
+
+	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, serverConn.SendHeartbeat)
+
+	var miners = []net.Addr{}
+	
+	// TODO:
+	// go Mine NOPS
+
+	// Ask for Neighbors
+	err := serverConn.RequestMiner(&miners, m.Settings.MinNumMinerConnections)
+	fmt.Println("miners1: ", miners)
+	CheckError(err)
+
+	err = m.AddMinersToList(&miners)
+	CheckError(err)
+	fmt.Printf("miners1: %v \n", &m.Neighbors)
+	serviceRequests()
+}
+
+func setupServerConn(servAddr string, keys *blockartlib.KeyPair) (listener net.TCPListener, serverConn minerlib.MinerCaller) {
 	// Connect to server
 	localIP := "127.0.0.1:0"
 	// TODO: change TBD when it will be available
@@ -69,19 +59,18 @@ func main() {
 
 	fmt.Printf("miner ip: %v, m: %v, \n", localIP, m)
 
-	//setup an RPC connection with AN
+}
 
-	//serverInst := new(ServerInstance)
+func setupArtNodeRPC() {
+	//setup an RPC connection with AN
 	artNodeInst := new(ArtNodeInstance)
 
-	//rpc.Register(serverInst)
 	rpc.Register(artNodeInst)
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", localIP)
 	CheckError(err)
 
-
-	listener, err := net.ListenTCP("tcp", tcpAddr)
+	listener, err = net.ListenTCP("tcp", tcpAddr)
 	CheckError(err)
 	fmt.Println("TCP address: ", listener.Addr().String())
 
@@ -90,23 +79,13 @@ func main() {
 	err = m.ConnectServer(serverConnector, listener.Addr().String())
 	CheckError(err)
 
-	var mConn minerlib.MinerCaller
-	mConn.Addr = *tcpAddr
-	mConn.RPCClient = serverConnector
-	mConn.Public = m.PublKey
+	serverConn.Addr = *tcpAddr
+	serverConn.RPCClient = serverConnector
+	serverConn.Public = m.PublKey
+	return listener, serverConn
+}
 
-	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, mConn.SendHeartbeat)
-
-	var lom = []net.Addr{}
-
-	err = mConn.RequestMiner(&lom, m.Settings.MinNumMinerConnections)
-	fmt.Println("LOM1: ", lom)
-	CheckError(err)
-
-	err = m.AddMinersToList(&lom)
-	fmt.Printf("LOM1: %v \n", &m.Neighbors)
-	CheckError(err)
-
+func serviceRequests(listener net.TCPListener) {
 	for {
 		conn, err := listener.Accept()
 		CheckError(err)
@@ -117,19 +96,18 @@ func main() {
 
 		time.Sleep(10*time.Millisecond)
 
-		if len(artNodeQueue) != 0{
+		if len(OpQueue) != 0{
 			fmt.Println("connect to queue")
-			artNodeConnector, err = rpc.Dial("tcp", artNodeQueue[0].LocalIP)
+			artNodeConnector, err = rpc.Dial("tcp", OpQueue[0].LocalIP)
 			CheckError(err)
 			var b bool
 			err = artNodeConnector.Call("MinerInstance.ConnectMiner", true, &b)
 			CheckError(err)
-			artNodeQueue = artNodeQueue[1:]
-			fmt.Println("connected to queue ", b, "len ", len(artNodeQueue))
+			OpQueue = OpQueue[1:]
+			fmt.Println("connected to queue ", b, "len ", len(OpQueue))
 		}
 
 	}
-
 }
 
 func CheckError(err error) {
@@ -145,31 +123,43 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-func GetKeyPair(args[] string) *blockartlib.KeyPair {
-	if len(args) == 0 {
-		return nil
-	}
-	a := args[2]
-	b := args[1]
-	priv, pub := decodeKeys(a, b)
+func getKeyPair(pubStr string, privStr string) *blockartlib.KeyPair {
+	priv, pub := keys.Decode(privStr, pubStr)
 	pair := blockartlib.KeyPair{
-		priv,
-		pub,
+		Private: priv,
+		Public: pub,
 	}
 	return &pair
 }
 
-func decodeKeys(pemEncoded string, pemEncodedPub string) (*ecdsa.PrivateKey, *ecdsa.PublicKey) {
+// =========================
+// Connection Instances
+// TODO: Extract out from ink-miner.go
+// =========================
 
-	c, _ := hex.DecodeString(pemEncoded)
-	d, _ := hex.DecodeString(pemEncodedPub)
-	privateKey, _ := x509.ParseECPrivateKey(c)
-	fmt.Println(privateKey)
-	genericPublicKey, _ := x509.ParsePKIXPublicKey(d)
-	publicKey := genericPublicKey.(*ecdsa.PublicKey)
-	//publicKey := &privateKey.PublicKey
+type ServerInstance int // for now it's the int, but we can change to actual struct
+type ArtNodeInstance int // same as above
 
-	return privateKey, publicKey
+func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction , reply *bool) error {
+	fmt.Println("In rpc call to register the AN")
+	err := m.ValidateNewArtIdent(an)
+	if err == nil {
+		*reply = true
+		OpQueue = append(OpQueue, an)
+	} else {
+		err = fmt.Errorf("Unable to connect to node: %v", err)
+	}
+	return err
 }
 
+func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error {
+	fmt.Println("In RPC getting hash of genesis block")
+	*reply = m.Settings.GenesisBlockHash
+	return nil
+}
 
+func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
+	fmt.Println("In RPC getting ink from miner")
+	*reply = m.InkLevel
+	return nil
+}
