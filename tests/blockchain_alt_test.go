@@ -1,5 +1,5 @@
 package tests
-
+/*
 import (
 	"fmt"
 	"testing"
@@ -155,4 +155,4 @@ func TestBlockChain (t *testing.T) {
 	fmt.Println("Is in forest (false) ", b)
 
 
-}
+}*/
