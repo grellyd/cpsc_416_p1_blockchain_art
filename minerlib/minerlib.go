@@ -2,13 +2,9 @@ package minerlib
 
 import (
 	"blockartlib"
-	"time"
 	"fmt"
 	"crypto/ecdsa"
-	"encoding/gob"
-	"crypto/elliptic"
 	"net"
-	"net/rpc"
 	"keys"
 )
 
@@ -30,13 +26,8 @@ type Miner struct {
 	LocalCanvas CanvasData
 }
 
-type MinerInfo struct {
-	Address net.Addr
-	Key     ecdsa.PublicKey
-}
-
 // Miner constructor
-func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner Miner, err error) {
+func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) {
 	var m = Miner{
 		InkLevel: 0,
 		ServerNodeAddr: serverAddr,
@@ -46,10 +37,10 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blocka
 		PublKey: keys.Public,
 		PrivKey: keys.Private,
 		Chain: Blockchain{},
-		Settings: config,
+		Settings: &blockartlib.MinerNetSettings{},
 		LocalCanvas: CanvasData{},
 	}
-	return m, nil
+	return m
 }
 
 func (m *Miner) ValidateNewArtIdent(an *blockartlib.ArtNodeInstruction) (err error) {
@@ -121,52 +112,8 @@ func (m *Miner) RemoveBlockFromBC() (err error){
 /////// functions to interact with server
 
 // retrieves settings from server
-func (m *Miner) ConnectServer(servConnector *rpc.Client, minerAddr string) (err error) {
-	//1st rpc call
-	//2nd retrieve settings ==> 2 in 1
-	gob.Register(&net.TCPAddr{})
-	gob.Register(&elliptic.CurveParams{})
-	puk := *m.PublKey
-	a, _ := net.ResolveTCPAddr("tcp",minerAddr)
-	var minerInfo = MinerInfo{
-		net.Addr(a),
-		puk,
-	}
-
-	err = servConnector.Call("RServer.Register", minerInfo, m.Settings)
-	blockartlib.CheckErr(err)
-	fmt.Println("Settings ", m.Settings)
-	return nil
-}
 
 func (m *Miner) RetrieveSettings() (err error) {
-	return nil
-}
-
-// requests another miner's ID (info) from the server
-func (m *MinerCaller) RequestMiner(lom *[]net.Addr, minNeighbours uint8) (err error) {
-	gob.Register(&net.TCPAddr{})
-	gob.Register(&[]net.Addr{})
-	gob.Register(&[]net.TCPAddr{})
-	gob.Register(&elliptic.CurveParams{})
-
-	//for uint8(len(*lom))<minNeighbours { // TODO: uncomment for production
-	for uint8(len(*lom))<2 {
-		//fmt.Println("request lom")
-		err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (m *MinerCaller) SendHeartbeat(t time.Time) (err error) {
-	var ignored bool
-	err = m.RPCClient.Call( "RServer.HeartBeat", m.Public, &ignored)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

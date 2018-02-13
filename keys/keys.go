@@ -9,6 +9,8 @@ import (
 	"reflect"
 )
 
+// TODO: Throw errors when unable to encode/decode instead of swapplowing them
+
 func Generate() (privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, err error) {
 	privateKey, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {

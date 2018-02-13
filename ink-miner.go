@@ -1,20 +1,26 @@
 package main
 
 import (
+	"os"
 	"fmt"
 	"minerlib"
 	"net/rpc"
 	"blockartlib"
 	"net"
 	"time"
-	"os"
 	"keys"
+	"crypto/ecdsa"
+	"encoding/gob"
+	"crypto/elliptic"
 )
 var m minerlib.Miner
+var miners []net.Addr
 
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
+	
+var localIP = "127.0.0.1:0"
 
 func main() {
 	fmt.Println("start")
@@ -25,69 +31,75 @@ func main() {
 		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
-	servAddr := args[0]
-	keys := getKeyPair(args[2], args[1])
-	serverListener, serverConn := setupServerConn(servAddr, keys)
-
+	keys, err := getKeyPair(args[2], args[1])
+	CheckError(err)
+	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
+	CheckError(err)
+	localAddr, err := net.ResolveTCPAddr("tcp", localIP)
+	CheckError(err)
+	
+	// Create Miner
+	m = minerlib.NewMiner(serverAddr, keys)
+	// My Info to Send
+	localMinerInfo := MinerInfo{localAddr, m.PublKey}
+	
+	//setup an ArtNode Reciever
+	artNodeInst := new(ArtNodeInstance)
+	// register art node instance locally
+	rpc.Register(artNodeInst)
+	
+	// Add a listener on myself
+	localListener, err := net.ListenTCP("tcp", localAddr)
+	CheckError(err)
+	
+	// Connect to server
+	// TODO: Check settings are working as expected
+	serverConn, err := connectServer(serverAddr, localMinerInfo, m.Settings)
+	CheckError(err)
+	
+	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, serverConn.SendHeartbeat)
 
-	var miners = []net.Addr{}
-	
 	// TODO:
 	// go Mine NOPS
 
 	// Ask for Neighbors
-	err := serverConn.RequestMiner(&miners, m.Settings.MinNumMinerConnections)
-	fmt.Println("miners1: ", miners)
+	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
 	CheckError(err)
+	fmt.Println("miners1: ", miners)
 
 	err = m.AddMinersToList(&miners)
 	CheckError(err)
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
-	serviceRequests()
+	serviceRequests(localListener)
 }
 
-func setupServerConn(servAddr string, keys *blockartlib.KeyPair) (listener net.TCPListener, serverConn minerlib.MinerCaller) {
-	// Connect to server
-	localIP := "127.0.0.1:0"
-	// TODO: change TBD when it will be available
-	serverAddr, err := net.ResolveTCPAddr("tcp", servAddr)
 
-	config := blockartlib.MinerNetSettings{}
-	fmt.Println("config ", config)
-	m, err = minerlib.NewMiner(serverAddr, keys, &config)
+func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.MinerCaller, err error) {
+	// dial to server
+	serverRPCClient, err := rpc.Dial("tcp", serverAddr.String())
+	// setup gob
+	gob.Register(&net.TCPAddr{})
+	gob.Register(&elliptic.CurveParams{})
 
-	fmt.Printf("miner ip: %v, m: %v, \n", localIP, m)
-
+	//1st rpc call
+	//2nd retrieve settings ==> 2 in 1
+	err = serverRPCClient.Call("RServer.Register", minerInfo, settings)
+	CheckError(err)
+	fmt.Println("Settings ", settings)
+	// Create the serverConnection. 
+	// TODO: refactor to ServerInstance
+	serverConnection = minerlib.MinerCaller{
+		Addr: *minerInfo.Address,
+		RPCClient: serverConnector,
+		Public: minerInfo.Key,
+	}
+	return serverConnection, nil
 }
 
-func setupArtNodeRPC() {
-	//setup an RPC connection with AN
-	artNodeInst := new(ArtNodeInstance)
-
-	rpc.Register(artNodeInst)
-
-	tcpAddr, err := net.ResolveTCPAddr("tcp", localIP)
-	CheckError(err)
-
-	listener, err = net.ListenTCP("tcp", tcpAddr)
-	CheckError(err)
-	fmt.Println("TCP address: ", listener.Addr().String())
-
-	serverConnector, err = rpc.Dial("tcp", servAddr)
-
-	err = m.ConnectServer(serverConnector, listener.Addr().String())
-	CheckError(err)
-
-	serverConn.Addr = *tcpAddr
-	serverConn.RPCClient = serverConnector
-	serverConn.Public = m.PublKey
-	return listener, serverConn
-}
-
-func serviceRequests(listener net.TCPListener) {
+func serviceRequests(localListener *net.TCPListener) {
 	for {
-		conn, err := listener.Accept()
+		conn, err := localListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
@@ -106,7 +118,6 @@ func serviceRequests(listener net.TCPListener) {
 			OpQueue = OpQueue[1:]
 			fmt.Println("connected to queue ", b, "len ", len(OpQueue))
 		}
-
 	}
 }
 
@@ -114,6 +125,7 @@ func CheckError(err error) {
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
+	os.Exit(1)
 }
 
 func doEvery(d time.Duration, f func(time.Time) error) error {
@@ -123,13 +135,13 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-func getKeyPair(pubStr string, privStr string) *blockartlib.KeyPair {
+func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
 	priv, pub := keys.Decode(privStr, pubStr)
 	pair := blockartlib.KeyPair{
 		Private: priv,
 		Public: pub,
 	}
-	return &pair
+	return &pair, nil
 }
 
 // =========================
@@ -162,4 +174,10 @@ func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
 	fmt.Println("In RPC getting ink from miner")
 	*reply = m.InkLevel
 	return nil
+}
+
+// struct for communicating info about a miner to the server
+type MinerInfo struct {
+	Address *net.TCPAddr
+	Key     *ecdsa.PublicKey
 }
