@@ -83,10 +83,10 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 	if b.MinerPublicKey == nil {
 		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
 	}
-	var buff bytes.Buffer
-	gob.Register(Block{})
-	gob.Register(elliptic.CurveParams{})
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	
+	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
 	err := enc.Encode(*b)
 	if err != nil {
@@ -98,21 +98,17 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 
 // Unmarshalls bytes into a Block
 func UnmarshallBinary(data []byte) (b *Block, err error) {
-	var buff bytes.Buffer
-	gob.Register(Block{})
-	gob.Register(elliptic.CurveParams{})
-	dec := gob.NewDecoder(&buff)
-	blk := Block{}
-	err = dec.Decode(blk)
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
+	
+	dec := gob.NewDecoder(bytes.NewReader(data))
+	blkPtr := &Block{}
+	err = dec.Decode(blkPtr)
 	if err != nil {
 		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
 	}
-	return &blk, nil
+	return blkPtr, nil
 }
-
-
-
-
 
 
 func (b *Block) bodyBytes() (data []byte, err error) {
