@@ -44,7 +44,7 @@ func main() {
 	localMinerInfo := MinerInfo{localAddr, m.PublKey}
 	
 	//setup an ArtNode Reciever
-	artNodeInst := new(minerlib.ArtNodeInstance)
+	artNodeInst := new(ArtNodeInstance)
 	// register art node instance locally
 	rpc.Register(artNodeInst)
 	
@@ -175,7 +175,8 @@ func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error
 
 func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
 	fmt.Println("In RPC getting ink from miner")
-	return *reply
+	*reply = m.InkLevel
+	return nil
 }
 
 // struct for communicating info about a miner to the server
