@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"crypto/ecdsa"
 	"net"
-	"keys"
 )
 
 
@@ -30,9 +29,10 @@ type Miner struct {
 	Neighbors []*MinerConnection
 	PublKey *ecdsa.PublicKey
 	PrivKey *ecdsa.PrivateKey
-	Chain BCStorage
+	Blockchain *Blockchain
 	Settings *blockartlib.MinerNetSettings
 	LocalCanvas CanvasData
+	BlockForest map[string]*Block
 }
 
 // Miner constructor
@@ -45,24 +45,12 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		Neighbors: []*MinerConnection{},
 		PublKey: keys.Public,
 		PrivKey: keys.Private,
-		Chain: BCStorage{},
+		Blockchain: nil,
 		Settings: &blockartlib.MinerNetSettings{},
 		LocalCanvas: CanvasData{},
+		BlockForest: map[string]*Block{},
 	}
 	return m
-}
-
-func (m *Miner) ValidateNewArtIdent(an *blockartlib.ArtNodeInstruction) (err error) {
-	privateKey := keys.DecodePrivateKey(an.PrivKey)
-	publicKey := keys.DecodePublicKey(an.PubKey)
-	if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
-
-		fmt.Println("Private keys do not match.")
-		return blockartlib.DisconnectedError("Key pair isn't valid")
-	}
-	fmt.Println("keys match")
-	return nil
-
 }
 
 func (m *Miner) IsEnoughInk() (err error) {
@@ -74,7 +62,7 @@ func (m *Miner) StartMining() (err error) {
 	// setup channels
 	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
 	finished  = make(chan struct{})
-	emptyBlocks = make(chan *Block, MAX_EMPTY_BLOCKS)
+	//emptyBlocks = make(chan *Block, MAX_EMPTY_BLOCKS)
 	//go CreateEmptyBlocks()
 	go m.MineBlocks()
 	return nil
@@ -110,10 +98,17 @@ func (m *Miner) MineBlocks() (err error) {
 			fmt.Printf("Done Mining Blocks\n")
 			return nil
 		default:
-			parentHash, err := m.Chain.BC.LastNode.Current.BlockResiding.Hash()
-			if err != nil {
-				fmt.Printf("MineBlocks created Error: %v", err)
-				return err
+			// parentHash, err := m.Chain.BC.LastNode.Current.BlockResiding.Hash()
+			// if err != nil {
+			// 	fmt.Printf("MineBlocks created Error: %v", err)
+			// 	return err
+			// }
+			var parentHash string
+			if m.Blockchain.CurrentBlock == nil {
+				// empty chain
+				parentHash = m.Blockchain.GenesisHash
+			} else {
+				parentHash = m.Blockchain.CurrentBlock.ParentHash
 			}
 			b := &Block{
 				ParentHash: parentHash,
@@ -130,7 +125,8 @@ func (m *Miner) MineBlocks() (err error) {
 			}
 			fmt.Printf("Starting Mining: %v\n", b)
 			err = b.Mine(difficulty)
-			fmt.Printf("Done Mining: %v\n", b)
+			hash, err := b.Hash()
+			fmt.Printf("Done Mining: %v with %s\n", b, hash)
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err

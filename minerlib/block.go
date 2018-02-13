@@ -30,15 +30,6 @@ type Block struct {
   Nonce uint32
 }
 
-func NewGenesisBlock() (b Block, err error) {
-  return b, err
-}
-
-// TODO: Check if block functions go here or in minerlib
-func NewBlock() (b Block, err error) {
-  return b, err
-}
-
 // TODO: Check the reference to the nonce is maintained without returning the block
 func (b* Block) Mine(difficulty uint8) error {
 	if b.Nonce != 0 {

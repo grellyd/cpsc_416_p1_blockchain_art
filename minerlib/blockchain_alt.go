@@ -7,6 +7,11 @@ import (
 	"blockartlib"
 )
 
+type Blockchain struct {
+	GenesisHash string
+	CurrentBlock *Block
+}
+
 type BlockchainAlt struct {
 	GenesisNode *BCChainNode
 	LastNode *BCChainNode
@@ -16,6 +21,11 @@ type BCTree struct {
 	GenesisNode *BCTreeNode
 	//Leaves []*BCTreeNode
 }
+
+
+// @grellyd: Removing this top layer of indirection into the miner
+// not actually taking it out as I don't want to deal with the compile errors yet...
+
 
 // maps hashes to blocks for the invalid blocks
 type Forest map[string]*Block

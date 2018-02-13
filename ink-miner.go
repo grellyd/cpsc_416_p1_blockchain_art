@@ -15,20 +15,12 @@ import (
 )
 var m minerlib.Miner // singleton for miner
 var miners []net.Addr
-var bc minerlib.BCStorage //singleton for blockchain stored at miner
 
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
 	
 var localIP = "127.0.0.1:0"
-
-func (si *ArtNodeInstance) GetBlockChildren (hash *string, reply *[]string) error {
-	fmt.Println("In RPC getting children hashes")
-	bla, err := bc.GetChildrenNodes(*hash)
-	*reply = bla
-	return err
-}
 
 func main() {
 	fmt.Println("start")
@@ -61,14 +53,18 @@ func main() {
 	checkError(err)
 	
 	// Connect to server
-	// TODO: Check settings are working as expected
 	serverConn, err := connectServer(serverAddr, localMinerInfo, m.Settings)
 	checkError(err)
+	fmt.Println("Settings ", m.Settings)
 	
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, serverConn.SendHeartbeat)
 
-	m.StartMining()
+	m.Blockchain = &minerlib.Blockchain{
+		GenesisHash: m.Settings.GenesisBlockHash, 
+		CurrentBlock: nil,
+	}
+	go m.StartMining()
 
 	// Ask for Neighbors
 	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
@@ -78,37 +74,11 @@ func main() {
 	err = m.AddMinersToList(&miners)
 	checkError(err)
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
+	
+	// TODO: Check in with neighbors
+
 	serviceRequests(localListener)
 }
-
-/*
-	tcpAddr, err := net.ResolveTCPAddr("tcp", localIP)
-	CheckError(err)
-
-
-	listener, err := net.ListenTCP("tcp", tcpAddr)
-	CheckError(err)
-	fmt.Println("TCP address: ", listener.Addr().String())
-
-	serverConnector, err = rpc.Dial("tcp", servAddr)
-
-	err = m.ConnectServer(serverConnector, listener.Addr().String())
-	CheckError(err)
-
-	var mConn minerlib.MinerCaller
-	mConn.Addr = *tcpAddr
-	mConn.RPCClient = serverConnector
-	mConn.Public = m.PublKey
-
-	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, mConn.SendHeartbeat)
-
-	var lom = []net.Addr{}
-
-	// TODO: put it into a goroutine wh will as the miners until it will fill the entire array
-	err = mConn.RequestMiner(&lom, m.Settings.MinNumMinerConnections)
-	fmt.Println("LOM1: ", lom)
-	CheckError(err)
-	*/
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
 	// dial to server
@@ -121,7 +91,6 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	//2nd retrieve settings ==> 2 in 1
 	err = serverRPCClient.Call("RServer.Register", minerInfo, settings)
 	checkError(err)
-	fmt.Println("Settings ", settings)
 	// Create the serverConnection. 
 	// TODO: refactor to ServerInstance
 	tcpFromAddr, err := net.ResolveTCPAddr("tcp", minerInfo.Address.String())
@@ -173,6 +142,7 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 }
 
 func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
+	// TODO: Fix w/e is up with unicode vs strings
 	//priv, pub := keys.Decode(privStr, pubStr)
 	priv, pub, err := keys.Generate()
 	checkError(err)
@@ -192,14 +162,17 @@ type ArtNodeInstance int // same as above
 
 func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction , reply *bool) error {
 	fmt.Println("In rpc call to register the AN")
-	err := m.ValidateNewArtIdent(an)
-	if err == nil {
+	privateKey := keys.DecodePrivateKey(an.PrivKey)
+	publicKey := keys.DecodePublicKey(an.PubKey)
+	if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
+
+		fmt.Println("Private keys do not match.")
+		return blockartlib.DisconnectedError("Key pair isn't valid")
+	} else {
 		*reply = true
 		OpQueue = append(OpQueue, an)
-	} else {
-		err = fmt.Errorf("Unable to connect to node: %v", err)
 	}
-	return err
+	return nil
 }
 
 func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error {
@@ -211,6 +184,14 @@ func (si *ArtNodeInstance) GetGenesisBlockHash (stub *bool, reply *string) error
 func (si *ArtNodeInstance) GetAvailableInk (stub *bool, reply *uint32) error {
 	fmt.Println("In RPC getting ink from miner")
 	*reply = m.InkLevel
+	return nil
+}
+
+func (si *ArtNodeInstance) GetBlockChildren (hash *string, reply *[]string) error {
+	fmt.Println("In RPC getting children hashes")
+	// bla, err := m.Blockchain.GetChildrenNodes(*hash)
+	// *reply = bla
+	// return err
 	return nil
 }
 
