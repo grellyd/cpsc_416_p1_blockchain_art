@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"strings"
 	"blockartlib"
 	"minerlib"
 	"testing"
@@ -151,12 +152,26 @@ func TestDrawAllShapes(t *testing.T) {
 	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp}
 	settings := CanvasSettings{1024, 1024}
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
-	validString := PrintAllOps(validOps, "VALID: ")
-	invalidString := PrintAllOps(invalidOps, "INVALID: ")
-	if validString != "convex_polygon by artnode0, square_out by artnode1, " ||
-		invalidString != "square_in by artnode2, "{
-		t.Errorf("Expected convex_polygon by artnode0, square_out by artnode1, instead have %v\n", validString)
-	}
+	validString := ConcatOps(validOps)
+	invalidString := ConcatOps(invalidOps)
+	AssertContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1"})
+	AssertEquals(t, invalidString, "square_in by artnode2, ")
+}
+
+func TestDrawAllShapesWithOwnership(t *testing.T) {
+	convexPolygon := ConvexPolygon()
+	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34}
+	squareOut := Square1()
+	squareOutOp := Operation{blockartlib.DRAW, 2, "square_out", blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34}
+	squareIn := Square2()
+	squareInOp := Operation{blockartlib.DRAW, 2, "square_in", blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode0", 34}
+	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp}
+	settings := CanvasSettings{1024, 1024}
+	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
+	validString := ConcatOps(validOps)
+	invalidString := ConcatOps(invalidOps)
+	AssertContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1", "square_in by artnode0"})
+	AssertEquals(t, invalidString, "")
 }
 
 func Square1() Shape {
@@ -215,10 +230,24 @@ func ConvexPolygon() Shape {
 	return Shape{"owner6", "concave_polygon", cSides, "solid", "stroke"}
 }
 
-func PrintAllOps(ops map[string]Operation, info string) string {
+func ConcatOps(ops map[string]Operation) string {
 	opSigs := ""
 	for _, op := range ops {
 		opSigs += op.OperationSig + " by " + op.ArtNodePubKey + ", "
 	}
 	return opSigs
+}
+
+func AssertEquals(t *testing.T, s, expected string) {
+	if strings.Compare(s, expected) != 0 {
+		t.Errorf("Got: %s\nExpected: %s\n", s, expected)
+	}
+}
+
+func AssertContains(t *testing.T, testStr string, strArr []string) {
+	for _, str := range strArr {
+		if !strings.Contains(testStr, str) {
+			t.Errorf("Expected string to contain %v, but not found.\n", str)
+		}
+	}
 }
