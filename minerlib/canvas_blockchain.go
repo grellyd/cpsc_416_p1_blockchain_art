@@ -130,7 +130,10 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 // TODO[sharon]: more error checking
 func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err error) {
 	svgString := op.ShapeSVGString
-
+	if len(svgString) > 128 {
+		return s, blockartlib.ShapeSvgStringTooLongError(svgString)
+	}
+	
 	re := regexp.MustCompile("[A-Za-z]|[-0-9., ]*")
 	allPieces := re.FindAllString(svgString, -1)
 

@@ -69,25 +69,39 @@ func TestInkArea(t *testing.T) {
 }
 
 func TestOutOfBoundsPoint(t *testing.T) {
-	svg := "M 8,0 V 8 L 4,4 L -4,4 v -8 h 8" // L -4,4 is out of bounds
+	// L -4,4 is out of bounds
+	svg := "M 8,0 V 8 L 4,4 L -4,4 v -8 h 8"
 	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
 	settings := CanvasSettings{100, 100}
 	_, err := minerlib.OperationToShape(op, settings)
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0 V 8 L 4,4 L -4,4 v -8 h 8]")
 
-	svg = "M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8" // M 1000 out of bounds
+	// M 1000 out of bounds
+	svg = "M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	op.ShapeSVGString = svg
 	_, err = minerlib.OperationToShape(op, settings)
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8]")
 }
 
 func TestInvalidSVGString(t *testing.T) {
-	svg := "M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8" // Too many numbers after M
+	// Too many numbers after M
+	svg := "M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
 	settings := CanvasSettings{100, 100}
 	_, err := minerlib.OperationToShape(op, settings)
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8]")
 
+	// q is not a valid command
+	svg = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8"
+	op.ShapeSVGString = svg
+	_, err = minerlib.OperationToShape(op, settings)
+	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8]")
+
+	// String too long
+	svg = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8" // q is not a valid command
+	op.ShapeSVGString = svg
+	_, err = minerlib.OperationToShape(op, settings)
+	AssertEquals(t, err.Error(), "BlockArt: Shape svg string too long [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8]")
 }
 
 /*
