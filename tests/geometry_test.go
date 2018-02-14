@@ -1,17 +1,10 @@
 package tests
 
 import (
-	"strings"
 	"blockartlib"
 	"minerlib"
 	"testing"
 )
-
-type LineSegment = minerlib.LineSegment
-type CanvasSettings = blockartlib.CanvasSettings
-type Operation = blockartlib.Operation
-type Point = minerlib.Point
-type Shape = minerlib.Shape
 
 func TestIntersectionsVertical(t *testing.T) {
 	l1 := LineSegment{Point{5, 0}, Point{5, 5}}
@@ -36,22 +29,15 @@ func TestIsLinesIntersecting(t *testing.T) {
 	l4 := LineSegment{Point{10, -5}, Point{15, -5}}
 
 	t1 := minerlib.IsLinesIntersecting(l1, l4) // Expect false
-	if t1 {
-		t.Errorf("intersect(l1, l2). Expected false, got %v\n", t1)
-	}
+	ExpectFalse(t, t1, "intersect(l1, l2). Expected false, got true.\n")
 
 	t2 := minerlib.IsLinesIntersecting(l1, l2) // Expect true
-	if !t2 {
-		t.Errorf("intersect(l1, l3). Expected false, got %v\n", t2)
-	}
+	ExpectTrue(t, t2, "intersect(l1, l3). Expected false. Got true.\n")
 
 	t3 := minerlib.IsLinesIntersecting(l2, l3) // Expect true
-	if !t3 {
-		t.Errorf("intersect(l1, l3). Expected false, got %v\n", t2)
-	}
+	ExpectTrue(t, t3, "intersect(l1, l3). Expected false. Got true.\n")
 }
 
-// TODO[sharon]: Test error case
 func TestInkArea(t *testing.T) {
 	svg := "M 8,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
@@ -97,12 +83,12 @@ func TestOutOfBoundsPoint(t *testing.T) {
 	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
 	settings := CanvasSettings{100, 100}
 	_, err := minerlib.OperationToShape(op, settings)
-	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0 V 8 L 4,4 L -4,4 v -8 h 8]")
+	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0 V 8 L 4,4 L -4,4 v -8 h 8]")
 
 	// M 1000 out of bounds
 	op.ShapeSVGString = "M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	_, err = minerlib.OperationToShape(op, settings)
-	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8]")
+	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8]")
 }
 
 func TestInvalidSVGString(t *testing.T) {
@@ -111,54 +97,42 @@ func TestInvalidSVGString(t *testing.T) {
 	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
 	settings := CanvasSettings{100, 100}
 	_, err := minerlib.OperationToShape(op, settings)
-	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8]")
+	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8]")
 
 	// q is not a valid command
 	op.ShapeSVGString = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8"
 	_, err = minerlib.OperationToShape(op, settings)
-	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8]")
+	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8]")
+
+	// Polygon doesn't start and end at the same place
+	op.ShapeSVGString = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 6"
+	_, err = minerlib.OperationToShape(op, settings)
+	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 6]")
 
 	// String too long
 	op.ShapeSVGString = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8" // q is not a valid command
 	_, err = minerlib.OperationToShape(op, settings)
-	AssertEquals(t, err.Error(), "BlockArt: Shape svg string too long [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8]")
+	ExpectEquals(t, err.Error(), "BlockArt: Shape svg string too long [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8]")
 }
 
-/*
-type Shape struct {
-	Owner    string // Public key of owner artnode
-	Hash     string
-	Sides    []LineSegment
-	Fill		 string
-	Stroke   string
-}
-*/
 func TestShapesOverlappingConcave(t *testing.T) {
 	squareOut := Square1()
 	squareIn := Square2()
 
 	isOverlap := minerlib.IsShapesOverlapping(squareIn, squareOut) // Expect false
-	if isOverlap {
-		t.Errorf("1) squareIn and squareOut. Expected false. Got %v\n", isOverlap)
-	}
+	ExpectFalse(t, isOverlap, "1) squareIn and squareOut. Expected false. Got true.\n")
 
 	c := ConvexPolygon()
 
 	isOverlap = minerlib.IsShapesOverlapping(squareOut, c) // Expect false
-	if isOverlap {
-		t.Errorf("2) squareOut and c. Expected false. Got %v\n", isOverlap)
-	}
+	ExpectFalse(t, isOverlap, "2) squareOut and c. Expected false. Got true.\n")
 
 	isOverlap = minerlib.IsShapesOverlapping(squareIn, c) // Expect true
-	if !isOverlap {
-		t.Errorf("3) squareIn and c. Expected true. Got %v\n", isOverlap)
-	}
+	ExpectTrue(t, isOverlap, "3) squareIn and c. Expected true. Got false.\n")
 
 	c.Fill = minerlib.TRANSPARENT
 	isOverlap = minerlib.IsShapesOverlapping(squareIn, c) // Expect false
-	if isOverlap {
-		t.Errorf("4) squareIn and c transparent. Expected false. Got %v\n", isOverlap)
-	}
+	ExpectFalse(t, isOverlap, "4) squareIn and c transparent. Expected false. Got true.\n")
 }
 
 func TestShapesOverlappingConvex(t *testing.T) {
@@ -178,24 +152,20 @@ func TestShapesOverlappingConvex(t *testing.T) {
 	}
 
 	isOverlap = minerlib.IsShapesOverlapping(square, triangleOut) // Expect false
-	if isOverlap {
-		t.Errorf("3) square and triangleOut. Expected false. Got %v\n", isOverlap)
-	}
+	ExpectFalse(t, isOverlap, "3) square and triangleOut. Expected false. Got true\n")
 }
 
-/*
-type Operation struct {
-	Type OperationType
-	OperationNumber int
-	OperationSig string
-	Shape ShapeType
-	Fill string
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
-	Nonce uint32
+func TestCirclesIntersecting(t *testing.T) {
+	circle661 := Circle6_6_1()
+	circle671 := Circle6_7_1()
+	circle1061 := Circle10_6_1()
+
+	isOverlap := minerlib.IsShapesOverlapping(circle661, circle1061) // Expect false
+	ExpectFalse(t, isOverlap, "1) circle661 and circle1061. Expected false. Got true.\n")
+
+	isOverlap = minerlib.IsShapesOverlapping(circle661, circle671) // Expect true
+	ExpectTrue(t, isOverlap, "2) circle661 and circle671. Expected true. Got false.\n")
 }
-*/
 
 func TestDrawAllShapes(t *testing.T) {
 	convexPolygon := ConvexPolygon()
@@ -209,8 +179,8 @@ func TestDrawAllShapes(t *testing.T) {
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
 	validString := ConcatOps(validOps)
 	invalidString := ConcatOps(invalidOps)
-	AssertContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1"})
-	AssertEquals(t, invalidString, "square_in by artnode2, ")
+	ExpectContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1"})
+	ExpectEquals(t, invalidString, "square_in by artnode2, ")
 }
 
 func TestDrawAllShapesWithOwnership(t *testing.T) {
@@ -225,8 +195,8 @@ func TestDrawAllShapesWithOwnership(t *testing.T) {
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
 	validString := ConcatOps(validOps)
 	invalidString := ConcatOps(invalidOps)
-	AssertContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1", "square_in by artnode0"})
-	AssertEquals(t, invalidString, "")
+	ExpectContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1", "square_in by artnode0"})
+	ExpectEquals(t, invalidString, "")
 }
 
 func Square1() Shape {
@@ -285,24 +255,14 @@ func ConvexPolygon() Shape {
 	return Shape{"owner6", "concave_polygon", cSides, "solid", "stroke", Point{0, 0}, 0}
 }
 
-func ConcatOps(ops map[string]Operation) string {
-	opSigs := ""
-	for _, op := range ops {
-		opSigs += op.OperationSig + " by " + op.ArtNodePubKey + ", "
-	}
-	return opSigs
+func Circle6_6_1() Shape {
+	return Shape{"owner7", "concave_polygon", nil, "solid", "stroke", Point{6, 6}, 1}
 }
 
-func AssertEquals(t *testing.T, s, expected string) {
-	if strings.Compare(s, expected) != 0 {
-		t.Errorf("Got: %s\nExpected: %s\n", s, expected)
-	}
+func Circle6_7_1() Shape {
+	return Shape{"owner8", "concave_polygon", nil, "solid", "stroke", Point{6, 7}, 1}
 }
 
-func AssertContains(t *testing.T, testStr string, strArr []string) {
-	for _, str := range strArr {
-		if !strings.Contains(testStr, str) {
-			t.Errorf("Expected string to contain %v, but not found.\n", str)
-		}
-	}
+func Circle10_6_1() Shape {
+	return Shape{"owner9", "concave_polygon", nil, "solid", "stroke", Point{10, 6}, 1}
 }

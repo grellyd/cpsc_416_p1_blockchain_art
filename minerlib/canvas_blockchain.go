@@ -60,7 +60,7 @@ type Operation struct {
 /* Attempt to draw all shapes in list. Successfully drawn operations are in
 validOps. They are attempted in a greedy fashion from the start.
 validOps and invalidOps are maps. Key = OperationSig, value = Operation
-Handles NOP blocks
+Handles NOP blocks. They all get added to validOps.
 */
 // TODO[sharon]: Handle delete operations
 // TODO[sharon]: make this shorter with a map of the commands and number of numbers they take
@@ -70,6 +70,12 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 	var drawnShapes []Shape
 	for _, op := range ops {
 		if op.Type == blockartlib.NOP {
+			validOps[op.OperationSig] = op
+			continue
+		}
+		if op.Type == blockartlib.DELETE {
+			validOps[op.OperationSig] = op
+			// TODO[sharon]: How to represent deletes? Add shapehash field to Operation?
 			continue
 		}
 		shape, err := OperationToShape(op, canvasSettings)
@@ -135,7 +141,6 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 	return AddPoints(initial, target)
 }
 
-// TODO[sharon]: more error checking
 func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err error) {
 	svgString := op.ShapeSVGString
 	if len(svgString) > 128 {
@@ -226,6 +231,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 		}
 	}
 
+	// Make sure the given polygon is closed
 	if op.Fill != TRANSPARENT && !s.IsCircle() {
 		if s.Sides[0].Point1 != s.Sides[len(s.Sides)-1].Point2 {
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
@@ -301,16 +307,36 @@ func OnSegment(p, q, r Point) (onSegment bool) {
 }
 
 func IsShapesOverlapping(s1, s2 Shape) bool {
-	for _, s := range s1.Sides {
-		for _, p := range s2.Sides {
-			if IsLinesIntersecting(s, p) {
-				return true
+	if !s1.IsCircle() && !s2.IsCircle() {
+		for _, s := range s1.Sides {
+			for _, p := range s2.Sides {
+				if IsLinesIntersecting(s, p) {
+					return true
+				}
 			}
 		}
-	}
-	if (s1.Fill != TRANSPARENT) && IsPointContainedInShape(s2.Sides[0].Point1, s1) ||
-		(s2.Fill != TRANSPARENT && IsPointContainedInShape(s1.Sides[0].Point1, s2)) {
-		return true
+		if (s1.Fill != TRANSPARENT) && IsPointContainedInShape(s2.Sides[0].Point1, s1) ||
+			(s2.Fill != TRANSPARENT && IsPointContainedInShape(s1.Sides[0].Point1, s2)) {
+			return true
+		}
+	} else if s1.IsCircle() && s2.IsCircle() {
+		centerSegment := LineSegment{s1.Center, s2.Center}
+		return (centerSegment.Length() > (s1.Radius + s2.Radius))
+	} else {
+		if s1.IsCircle() {
+			for _, side := range s2.Sides {
+				if IsLineIntersectingCircle(side, s1) {
+					return true
+				}
+			}
+		} else {
+			for _, side := range s1.Sides {
+				if IsLineIntersectingCircle(side, s2) {
+					return true
+				}
+			}
+
+		}
 	}
 	return false
 }
@@ -335,6 +361,32 @@ func IsPointContainedInShape(p Point, s Shape) bool {
 		prevY = side.Point1.Y
 	}
 	return numIntersections%2 != 0
+}
+
+func IsLineIntersectingCircle(seg LineSegment, circle Shape) bool {
+	if IsPointInCircle(seg.Point1, circle) || IsPointInCircle(seg.Point2, circle) {
+		return true
+	} else {
+		segSlope := (seg.Point1.Y - seg.Point2.Y) / (seg.Point1.X - seg.Point2.X)
+		orthSlope := 1 / segSlope
+		kPlus := circle.Radius / (math.Sqrt(1 + math.Pow(orthSlope, 2)))
+		point1 := Point{circle.Center.X + kPlus, circle.Center.Y + orthSlope*kPlus}
+		seg1 := LineSegment{point1, circle.Center}
+
+		kMinus := -circle.Radius / (math.Sqrt(1 + math.Pow(orthSlope, 2)))
+		point2 := Point{circle.Center.X + kMinus, circle.Center.Y + orthSlope*kMinus}
+		seg2 := LineSegment{point2, circle.Center}
+
+		if seg1.Length() <= circle.Radius || seg2.Length() <= circle.Radius {
+			return true
+		}
+	}
+	return false
+}
+
+func IsPointInCircle(p Point, circle Shape) bool {
+	segment := LineSegment{p, circle.Center}
+	return segment.Length() <= circle.Radius
 }
 
 func (s *Shape) ShapeToSVGPath() (svg string) {
