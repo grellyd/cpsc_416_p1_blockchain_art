@@ -1,11 +1,11 @@
 package minerlib
 
 import (
-	"strings"
 	"blockartlib"
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -58,9 +58,9 @@ type Operation struct {
 */
 
 /* Attempt to draw all shapes in list. Successfully drawn operations are in
-	 validOps. They are attempted in a greedy fashion from the start.
-	 validOps and invalidOps are maps. Key = OperationSig, value = Operation
-	 Handles NOP blocks
+validOps. They are attempted in a greedy fashion from the start.
+validOps and invalidOps are maps. Key = OperationSig, value = Operation
+Handles NOP blocks
 */
 // TODO[sharon]: Handle delete operations
 // TODO[sharon]: make this shorter with a map of the commands and number of numbers they take
@@ -102,19 +102,27 @@ func InkNeeded(op Operation, settings CanvasSettings) (inkUnits uint32, err erro
 	if err != nil {
 		return 0, err
 	}
-	if shape.Fill == TRANSPARENT {
-		for _, side := range shape.Sides {
-			temp += side.Length()
+	if shape.IsCircle() {
+		if shape.Fill == TRANSPARENT {
+			temp = 2 * math.Pi * shape.Radius
+		} else {
+			temp = math.Pi * math.Pow(shape.Radius, 2)
 		}
 	} else {
-		for i := 0; i < len(shape.Sides); i++ {
-			x1 := shape.Sides[i].Point1.X
-			y1 := shape.Sides[i].Point1.Y
-			x2 := shape.Sides[i].Point2.X
-			y2 := shape.Sides[i].Point2.Y
-			temp += ((x1 * y2) - (y1 * x2))
+		if shape.Fill == TRANSPARENT {
+			for _, side := range shape.Sides {
+				temp += side.Length()
+			}
+		} else {
+			for i := 0; i < len(shape.Sides); i++ {
+				x1 := shape.Sides[i].Point1.X
+				y1 := shape.Sides[i].Point1.Y
+				x2 := shape.Sides[i].Point2.X
+				y2 := shape.Sides[i].Point2.Y
+				temp += ((x1 * y2) - (y1 * x2))
+			}
+			temp /= 2
 		}
-		temp /= 2
 	}
 	inkUnits = uint32(math.Ceil(temp))
 	return inkUnits, nil
@@ -133,7 +141,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	if len(svgString) > 128 {
 		return s, blockartlib.ShapeSvgStringTooLongError(svgString)
 	}
-	
+
 	re := regexp.MustCompile("[A-Za-z]|[-0-9., ]*")
 	allPieces := re.FindAllString(svgString, -1)
 
@@ -211,13 +219,14 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
 			s.Radius = opFloats[0]
+			index++
 		default:
 			// Get a letter that isn't one of the defined ones
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
 		}
 	}
 
-	if op.Fill != TRANSPARENT {
+	if op.Fill != TRANSPARENT && !s.IsCircle() {
 		if s.Sides[0].Point1 != s.Sides[len(s.Sides)-1].Point2 {
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
 		}
@@ -309,7 +318,7 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 func IsPointContainedInShape(p Point, s Shape) bool {
 	segment := LineSegment{p, Point{0, p.Y}}
 	var numIntersections int
-	prevY := s.Sides[len(s.Sides) - 1].Point1.Y
+	prevY := s.Sides[len(s.Sides)-1].Point1.Y
 	for _, side := range s.Sides {
 		if side.Point1.Y == side.Point2.Y {
 			continue
@@ -335,7 +344,7 @@ func (s *Shape) ShapeToSVGPath() (svg string) {
 	}
 	return svg
 }
-	
+
 func (s *Shape) IsCircle() bool {
 	return s.Center.X >= 0 && s.Center.Y >= 0 && s.Radius > 0
 }

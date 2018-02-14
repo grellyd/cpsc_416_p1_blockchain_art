@@ -68,6 +68,29 @@ func TestInkArea(t *testing.T) {
 	}
 }
 
+func TestOpToCircleAndCircleInk(t *testing.T) {
+	svg := "c 10,10 r 5"
+	op := Operation{4, 2, "circle", blockartlib.PATH, "transparent", "red", svg, "pubkey", 28}
+	settings := CanvasSettings{100, 100}
+	circle, _ := minerlib.OperationToShape(op, settings)
+	if circle.Radius != 5 {
+		t.Errorf("Circle didn't work")
+	}
+
+	// Empty circle
+	ink, _ := minerlib.InkNeeded(op, settings)
+	if ink != 32 {
+		t.Errorf("Expected 32 ink. Got: %v\n", ink)
+	}
+
+	// Filled circle
+	op.Fill = "filled"
+	ink, _ = minerlib.InkNeeded(op, settings)
+	if ink != 79 {
+		t.Errorf("Expected 79 ink. Got: %v\n", ink)
+	}
+}
+
 func TestOutOfBoundsPoint(t *testing.T) {
 	// L -4,4 is out of bounds
 	svg := "M 8,0 V 8 L 4,4 L -4,4 v -8 h 8"
@@ -77,8 +100,7 @@ func TestOutOfBoundsPoint(t *testing.T) {
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0 V 8 L 4,4 L -4,4 v -8 h 8]")
 
 	// M 1000 out of bounds
-	svg = "M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8"
-	op.ShapeSVGString = svg
+	op.ShapeSVGString = "M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	_, err = minerlib.OperationToShape(op, settings)
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8]")
 }
@@ -92,14 +114,12 @@ func TestInvalidSVGString(t *testing.T) {
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8]")
 
 	// q is not a valid command
-	svg = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8"
-	op.ShapeSVGString = svg
+	op.ShapeSVGString = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8"
 	_, err = minerlib.OperationToShape(op, settings)
 	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 8]")
 
 	// String too long
-	svg = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8" // q is not a valid command
-	op.ShapeSVGString = svg
+	op.ShapeSVGString = "M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8" // q is not a valid command
 	_, err = minerlib.OperationToShape(op, settings)
 	AssertEquals(t, err.Error(), "BlockArt: Shape svg string too long [M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8 h 37 M 8,0,0 q 8 L 4,4 l -4,4 v -8]")
 }
