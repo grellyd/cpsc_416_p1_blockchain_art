@@ -68,6 +68,28 @@ func TestInkArea(t *testing.T) {
 	}
 }
 
+func TestOutOfBoundsPoint(t *testing.T) {
+	svg := "M 8,0 V 8 L 4,4 L -4,4 v -8 h 8" // L -4,4 is out of bounds
+	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
+	settings := CanvasSettings{100, 100}
+	_, err := minerlib.OperationToShape(op, settings)
+	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0 V 8 L 4,4 L -4,4 v -8 h 8]")
+
+	svg = "M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8" // M 1000 out of bounds
+	op.ShapeSVGString = svg
+	_, err = minerlib.OperationToShape(op, settings)
+	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 1000,0 V 8 L 4,4 l -4,4 v -8 h 8]")
+}
+
+func TestInvalidSVGString(t *testing.T) {
+	svg := "M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8" // Too many numbers after M
+	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
+	settings := CanvasSettings{100, 100}
+	_, err := minerlib.OperationToShape(op, settings)
+	AssertEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8]")
+
+}
+
 /*
 type Shape struct {
 	Owner    string // Public key of owner artnode
@@ -141,7 +163,6 @@ type Operation struct {
 }
 */
 
-// TODO[sharon]: Add more tests, i.e. same vs different owners
 func TestDrawAllShapes(t *testing.T) {
 	convexPolygon := ConvexPolygon()
 	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34}
@@ -180,7 +201,7 @@ func Square1() Shape {
 	so3 := LineSegment{Point{6, 3}, Point{5, 3}}
 	so4 := LineSegment{Point{5, 3}, Point{5, 2}}
 	soSides := []LineSegment{so1, so2, so3, so4}
-	return Shape{"owner1", "square1", soSides, "transparent", "stroke"}
+	return Shape{"owner1", "square1", soSides, "transparent", "stroke", Point{0, 0}, 0}
 }
 
 func Square2() Shape {
@@ -189,7 +210,7 @@ func Square2() Shape {
 	si3 := LineSegment{Point{9, 5}, Point{8, 5}}
 	si4 := LineSegment{Point{8, 5}, Point{8, 4}}
 	siSides := []LineSegment{si1, si2, si3, si4}
-	return Shape{"owner2", "square2", siSides, "transparent", "stroke"}
+	return Shape{"owner2", "square2", siSides, "transparent", "stroke", Point{0, 0}, 0}
 }
 
 func Square3() Shape {
@@ -198,7 +219,7 @@ func Square3() Shape {
 	s3 := LineSegment{Point{5, 4}, Point{4, 4}}
 	s4 := LineSegment{Point{4, 4}, Point{4, 3}}
 	sides := []LineSegment{s1, s2, s3, s4}
-	return Shape{"owner3", "square3", sides, "transparent", "stroke"}
+	return Shape{"owner3", "square3", sides, "transparent", "stroke", Point{0, 0}, 0}
 }
 
 func Triangle2() Shape {
@@ -206,7 +227,7 @@ func Triangle2() Shape {
 	s2 := LineSegment{Point{6, 6}, Point{1, 4}}
 	s3 := LineSegment{Point{1, 4}, Point{6, 1}}
 	sides := []LineSegment{s1, s2, s3}
-	return Shape{"owner4", "triangle1", sides, "filled", "stroke"}
+	return Shape{"owner4", "triangle1", sides, "filled", "stroke", Point{0, 0}, 0}
 }
 
 func Triangle1() Shape {
@@ -214,7 +235,7 @@ func Triangle1() Shape {
 	s2 := LineSegment{Point{3, 5}, Point{1, 5}}
 	s3 := LineSegment{Point{1, 5}, Point{2, 3}}
 	sides := []LineSegment{s1, s2, s3}
-	return Shape{"owner5", "triangle2", sides, "filled", "stroke"}
+	return Shape{"owner5", "triangle2", sides, "filled", "stroke", Point{0, 0}, 0}
 }
 
 func ConvexPolygon() Shape {
@@ -227,7 +248,7 @@ func ConvexPolygon() Shape {
 	c7 := LineSegment{Point{10, 6}, Point{2, 6}}
 	c8 := LineSegment{Point{2, 6}, Point{2, 2}}
 	cSides := []LineSegment{c1, c2, c3, c4, c5, c6, c7, c8}
-	return Shape{"owner6", "concave_polygon", cSides, "solid", "stroke"}
+	return Shape{"owner6", "concave_polygon", cSides, "solid", "stroke", Point{0, 0}, 0}
 }
 
 func ConcatOps(ops map[string]Operation) string {

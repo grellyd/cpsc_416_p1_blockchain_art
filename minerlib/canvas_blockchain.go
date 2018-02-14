@@ -39,6 +39,8 @@ type Shape struct {
 	Sides  []LineSegment
 	Fill   string
 	Stroke string
+	Center Point
+	Radius float64
 }
 
 /*
@@ -142,7 +144,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 		command := []rune(allPieces[index])[0]
 		switch unicode.ToLower(command) {
 		case 'm':
-			opFloats, err := StrToFloatSlice(allPieces[index+1], 2)
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 2, svgString)
 			if err != nil {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
@@ -153,7 +155,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 			curPt = ResolvePoint(curPt, newPt, unicode.IsUpper(command))
 			index++
 		case 'l':
-			opFloats, err := StrToFloatSlice(allPieces[index+1], 2)
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 2, svgString)
 			if err != nil {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
@@ -165,7 +167,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'h':
-			opFloats, err := StrToFloatSlice(allPieces[index+1], 1)
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 1, svgString)
 			if err != nil {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
@@ -178,7 +180,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'v':
-			opFloats, err := StrToFloatSlice(allPieces[index+1], 1)
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 1, svgString)
 			if err != nil {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
@@ -194,7 +196,18 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 			s.Sides = append(s.Sides, LineSegment{curPt, initialPt})
 			curPt = initialPt
 		case 'c':
-			// TODO[sharon]: circle
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 2, svgString)
+			if err != nil {
+				return s, blockartlib.InvalidShapeSvgStringError(svgString)
+			}
+			s.Center = Point{opFloats[0], opFloats[1]}
+			index++
+		case 'r':
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 1, svgString)
+			if err != nil {
+				return s, blockartlib.InvalidShapeSvgStringError(svgString)
+			}
+			s.Radius = opFloats[0]
 		default:
 			// Get a letter that isn't one of the defined ones
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
@@ -210,15 +223,15 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	return s, err
 }
 
-func StrToFloatSlice(s string, expectLen int) (floatSlice []float64, err error) {
+func StrToFloatSlice(s string, expectLen int, svg string) (floatSlice []float64, err error) {
 	opFloats := regexp.MustCompile(",").Split(s, -1)
 	if len(opFloats) != expectLen {
-		return floatSlice, err
+		return floatSlice, blockartlib.InvalidShapeSvgStringError(svg)
 	}
 	for _, f := range opFloats {
 		floatVal, err := strconv.ParseFloat(strings.Trim(f, " "), 64)
 		if err != nil {
-			return floatSlice, err
+			return floatSlice, blockartlib.InvalidShapeSvgStringError(svg)
 		}
 		floatSlice = append(floatSlice, floatVal)
 	}
@@ -320,6 +333,10 @@ func (s *Shape) ShapeToSVGPath() (svg string) {
 	return svg
 }
 	
+func (s *Shape) IsCircle() bool {
+	return s.Center.X >= 0 && s.Center.Y >= 0 && s.Radius > 0
+}
+
 func (p *Point) PointToString() (s string) {
 	s += strconv.FormatFloat(p.X, 'f', -1, 64)
 	s += ","
