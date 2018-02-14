@@ -23,6 +23,17 @@ import (
 	"minerlib/compute"
 )
 
+/*
+Let the Genesis Block be a special case of block:
+    It is a block with:
+		- a set hash
+		- No operations
+		- A nil miner key
+		- A nonce of 0
+	It can be identified by its nil public key.
+	In other words, it's ParentHash is its assigned hash
+*/
+
 type Block struct {
   ParentHash string
   Operations []*blockartlib.Operation
@@ -30,9 +41,21 @@ type Block struct {
   Nonce uint32
 }
 
+func NewBlock(parentHash string, publicKey *ecdsa.PublicKey) (b *Block) {
+	return &Block {
+		ParentHash: parentHash,
+		MinerPublicKey: publicKey,
+		Nonce: 0,
+		Operations: []*blockartlib.Operation{},
+	}
+}
+
 func (b* Block) Mine(difficulty uint8) error {
 	if b.Nonce != 0 {
 		return fmt.Errorf("Block already mined!")
+	}
+	if b.MinerPublicKey == nil {
+		return fmt.Errorf("Cannot mine the genesis block!")
 	}
 	data, err := b.bodyBytes()
 	if err != nil {
@@ -47,6 +70,10 @@ func (b* Block) Mine(difficulty uint8) error {
 }
 
 func (b *Block) Hash() (hash string, err error) {
+	if b.MinerPublicKey == nil {
+		// Genesis Block
+		return b.ParentHash, nil
+	}
 	if b.Nonce == 0 {
 		return "", fmt.Errorf("Block not yet mined!")
 	}

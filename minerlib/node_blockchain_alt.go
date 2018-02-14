@@ -1,8 +1,9 @@
 package minerlib
 
 import (
-	"crypto/ecdsa"
-	"crypto/x509"
+	"fmt"
+	"blockartlib"
+	"keys"
 )
 
 type BCTreeNode struct {
@@ -19,16 +20,23 @@ type BCChainNode struct {
 	Next *BCTreeNode
 }
 
-func NewBCNodeAlt (block *Block, parent *BCTreeNode, ownerInkLvl uint32, miner *Miner, currHash string) *BCTreeNode {
-	var m = make(map[string]uint32)
-	var currInkLvl uint32
-	mappingKey := encode1(block.MinerPublicKey)
-	if len(block.Operations) != 0 {
-		currInkLvl = ownerInkLvl + miner.Settings.InkPerOpBlock
-	} else {
-		currInkLvl = ownerInkLvl + miner.Settings.InkPerNoOpBlock
+func NewBCNodeAlt (block *Block, parent *BCTreeNode, ownerInkLvl uint32, settings *blockartlib.MinerNetSettings) *BCTreeNode {
+	currHash, err := block.Hash()
+	if err != nil {
+		fmt.Printf("NewNode Error while hashing given block: %v", err)
 	}
-	m[mappingKey] = currInkLvl
+	var m = make(map[string]uint32)
+	// If not genesis node
+	if block.MinerPublicKey != nil {
+		var currInkLvl uint32
+		mappingKey := keys.EncodePublicKey(block.MinerPublicKey)
+		if len(block.Operations) != 0 {
+			currInkLvl = ownerInkLvl + settings.InkPerOpBlock
+		} else {
+			currInkLvl = ownerInkLvl + settings.InkPerNoOpBlock
+		}
+		m[mappingKey] = currInkLvl
+	}
 	var bcNode = BCTreeNode{
 		m,
 		block,
@@ -46,11 +54,4 @@ func NewBCChainNode(current *BCTreeNode) *BCChainNode {
 		nil,
 	}
 	return &bccNode
-}
-
-func encode1(publicKey *ecdsa.PublicKey) (string) {
-	x509EncodedPub, _ := x509.MarshalPKIXPublicKey(publicKey)
-	var c []byte = x509EncodedPub
-	return string(c)
-
 }

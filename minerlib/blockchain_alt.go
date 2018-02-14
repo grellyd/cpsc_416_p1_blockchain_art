@@ -17,42 +17,31 @@ type BCTree struct {
 	//Leaves []*BCTreeNode
 }
 
-
-// @grellyd: Removing this top layer of indirection into the miner
-// not actually taking it out as I don't want to deal with the compile errors yet...
-
-
-// maps hashes to blocks for the invalid blocks
-type Forest map[string]*Block
-
 type BCStorage struct {
 	BC *BlockchainAlt
 	BCT *BCTree
-	For *Forest
 }
 
-func NewBCRepresentation (genBlock *Block, miner *Miner, hash string) (*BCStorage) {
-	bcNode := NewBCNodeAlt(genBlock,nil, 0, miner, hash)
+func NewBlockchain (genBlock *Block, settings *blockartlib.MinerNetSettings) (*BCStorage) {
+	bcNode := NewBCNodeAlt(genBlock,nil, 0, settings)
 	//var leaves = make([]*BCTreeNode, 0)
 	//leaves = append(leaves, bcNode)
 	//bct := BCTree{bcNode, leaves}
 	bct := BCTree{bcNode}
 	bccNode := NewBCChainNode(bcNode)
 	bc := BlockchainAlt{bccNode, bccNode}
-	var forest Forest = make(Forest, 0)
 	var bcs = BCStorage{
 		&bc,
 		&bct,
-		&forest,
 	}
 	return &bcs
 }
 
-/// STUBS for expected behaviour
-
+// TODO: Remove bool return for err. Bool is unused and swallowed. Error would be more useful.
+//		 See minerlib#MineBlocks()
 // REQUIRES: valid block (block that has parent on the tree among the leaves and valid in operations)
 // EFFECTS: returns true if blockchain has been switched, false if blockchain is the same
-func (bcs *BCStorage) AppendBlockToTree (block *Block, miner *Miner, hash string) bool {
+func (bcs *BCStorage) AppendBlock (block *Block, settings *blockartlib.MinerNetSettings) bool {
 	// finds the child to which to append
 	// checks against blockchain if the block should go there
 	//leaves := bcs.BCT.Leaves
@@ -61,7 +50,7 @@ func (bcs *BCStorage) AppendBlockToTree (block *Block, miner *Miner, hash string
 	d := parentNode.Depth + 1
 	k := keyToString(block.MinerPublicKey)
 	var inkOnNode uint32 = parentNode.OwnerInkLvl[k]
-	bcTreeNode := NewBCNodeAlt(block,parentNode, inkOnNode, miner, hash)
+	bcTreeNode := NewBCNodeAlt(block,parentNode, inkOnNode, settings)
 	bcTreeNode.Depth = d
 	parentNode.Children = append(parentNode.Children, bcTreeNode)
 	// TODO: add here update the block length
@@ -82,48 +71,15 @@ func (bcs *BCStorage) AppendBlockToTree (block *Block, miner *Miner, hash string
 		}
 		return false
 	}
+}
 
-	return true
-
-
-	/*	var bcNode *BCTreeNode
-	if len(leaves) == 0 {
-		d := 1
-		v := bcs.BCT.GenesisNode
-		k := keyToString(block.MinerPublicKey)
-		var inkOnNode uint32 = v.OwnerInkLvl[k]
-		bcNode = NewBCNodeAlt(block,v, inkOnNode, miner, hash)
-		bcNode.Depth = d
-		fmt.Println("leaves before append: ", leaves)
-		v.Children = append(v.Children, bcNode)
-		leaves = append(leaves, bcNode)
-		bcs.BCT.Leaves = leaves
-		fmt.Println("leaves after append: ", bcs.BCT.Leaves)
-		bccNode := NewBCChainNode(bcNode)
-		bcs.BC.LastNode.Next = bcNode
-		bcs.BC.LastNode = bccNode
-		fmt.Println("BC after append: ", bcs.BC)
-		return false
+func (bcs *BCStorage) BlockPresent(b *Block) (present bool, err error) {
+	hash, err := b.Hash()
+	if err != nil {
+		return false, fmt.Errorf("error while hashing block to check: %v", err)
 	}
-
-	for i, v := range leaves {
-		if v.CurrentHash == block.ParentHash {
-			d := v.Depth + 1
-			k := keyToString(block.MinerPublicKey)
-			var inkOnNode uint32 = v.OwnerInkLvl[k]
-			bcNode = NewBCNodeAlt(block,v, inkOnNode, miner, hash)
-			bcNode.Depth = d
-			// put a new node among the leaves
-			fmt.Println("leaves before append: ", leaves)
-			v.Children = append(v.Children, bcNode)
-			leaves1 := append(leaves[:i], bcNode)
-			leaves = append(leaves1, leaves[i+1:]...)
-			bcs.BCT.Leaves = leaves
-			fmt.Println("leaves after append: ", bcs.BCT.Leaves)
-			break
-		}
-
-	}*/
+	treeNode := FindBCTreeNode(bcs.BCT.GenesisNode, hash)
+	return treeNode != nil, nil
 }
 
 func FindBCTreeNode (bct *BCTreeNode, nodeHash string) *BCTreeNode {
@@ -158,27 +114,12 @@ func (bcs *BCStorage) GetChildrenNodes (hashOfBlock string) ([]string, error) {
 	return children, nil
 }
 
-// REQUIRES: valid hash
-func (bcs *BCStorage) AddToForest (blockHash string, block *Block) {
-	forest := *bcs.For
-	forest[blockHash] = block
-	bcs.For = &forest
-	return
-}
-
-// REQUIRES: valid hash
-func (bcs *BCStorage) RemoveFromForest (blockHash string) {
-	forest := *bcs.For
-	delete(forest, blockHash)
-	bcs.For = &forest
-	return
-
-}
-
-func (bcs *BCStorage) IsInForest (blockHash string) bool {
-	forest := *bcs.For
-	_, ok := forest[blockHash]
-	return ok
+func (bcs *BCStorage) LastNodeHash() (string, error) {
+	hash, err := bcs.BC.LastNode.Current.BlockResiding.Hash()
+	if err != nil {
+		return "", fmt.Errorf("Unable to retrieve last node hash: %v", err)
+	}
+	return hash, nil
 }
 
 func keyToString (key *ecdsa.PublicKey) string {
@@ -271,3 +212,66 @@ func (bc *Blockchain) AppendNeighboursBlockToTree (block *Block, miner *Miner, h
 
 
 
+	/*	var bcNode *BCTreeNode
+	if len(leaves) == 0 {
+		d := 1
+		v := bcs.BCT.GenesisNode
+		k := keyToString(block.MinerPublicKey)
+		var inkOnNode uint32 = v.OwnerInkLvl[k]
+		bcNode = NewBCNodeAlt(block,v, inkOnNode, miner, hash)
+		bcNode.Depth = d
+		fmt.Println("leaves before append: ", leaves)
+		v.Children = append(v.Children, bcNode)
+		leaves = append(leaves, bcNode)
+		bcs.BCT.Leaves = leaves
+		fmt.Println("leaves after append: ", bcs.BCT.Leaves)
+		bccNode := NewBCChainNode(bcNode)
+		bcs.BC.LastNode.Next = bcNode
+		bcs.BC.LastNode = bccNode
+		fmt.Println("BC after append: ", bcs.BC)
+		return false
+	}
+
+	for i, v := range leaves {
+		if v.CurrentHash == block.ParentHash {
+			d := v.Depth + 1
+			k := keyToString(block.MinerPublicKey)
+			var inkOnNode uint32 = v.OwnerInkLvl[k]
+			bcNode = NewBCNodeAlt(block,v, inkOnNode, miner, hash)
+			bcNode.Depth = d
+			// put a new node among the leaves
+			fmt.Println("leaves before append: ", leaves)
+			v.Children = append(v.Children, bcNode)
+			leaves1 := append(leaves[:i], bcNode)
+			leaves = append(leaves1, leaves[i+1:]...)
+			bcs.BCT.Leaves = leaves
+			fmt.Println("leaves after append: ", bcs.BCT.Leaves)
+			break
+		}
+
+	}*/
+
+/*
+ // REQUIRES: valid hash
+func (bcs *BCStorage) AddToForest (blockHash string, block *Block) {
+	forest := *bcs.For
+	forest[blockHash] = block
+	bcs.For = &forest
+	return
+}
+
+// REQUIRES: valid hash
+func (bcs *BCStorage) RemoveFromForest (blockHash string) {
+	forest := *bcs.For
+	delete(forest, blockHash)
+	bcs.For = &forest
+	return
+
+}
+
+func (bcs *BCStorage) IsInForest (blockHash string) bool {
+	forest := *bcs.For
+	_, ok := forest[blockHash]
+	return ok
+}
+*/

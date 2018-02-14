@@ -1,5 +1,6 @@
 package minerlib
 
+/*
 type Blockchain struct {
 	GenesisHash string
 	CurrentNode *BlockchainNode
@@ -41,3 +42,4 @@ func (b *Blockchain) AddBlock(blk *Block) (err error) {
 func (b *Blockchain) BlockPresent(blk *Block) (present bool, err error) {
 	return true, nil
 }
+*/
