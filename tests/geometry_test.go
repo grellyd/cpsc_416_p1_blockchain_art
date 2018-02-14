@@ -12,14 +12,10 @@ func TestIntersectionsVertical(t *testing.T) {
 	l3 := LineSegment{Point{5, 4}, Point{5, 7}}
 
 	t1 := minerlib.IsLinesIntersecting(l1, l2) // Expect false
-	if t1 {
-		t.Errorf("intersect(l1, l2). Expected false, got %v\n", t1)
-	}
+	ExpectFalse(t, t1, "intersect(l1, l2). Expected false, got true.\n")
 
 	t2 := minerlib.IsLinesIntersecting(l1, l3) // Expect true
-	if !t2 {
-		t.Errorf("intersect(l1, l3). Expected false, got %v\n", t2)
-	}
+	ExpectTrue(t, t2, "intersect(l1, l3). Expected false, got true.\n")
 }
 
 func TestIsLinesIntersecting(t *testing.T) {
@@ -141,15 +137,11 @@ func TestShapesOverlappingConvex(t *testing.T) {
 	triangleIn := Triangle2()
 
 	isOverlap := minerlib.IsShapesOverlapping(square, triangleIn) // Expect true
-	if !isOverlap {
-		t.Errorf("1) square and triangleIn. Expected true. Got %v\n", isOverlap)
-	}
+	ExpectTrue(t, isOverlap, "1) square and triangleIn. Expected true. Got false.\n")
 
 	triangleIn.Fill = minerlib.TRANSPARENT
 	isOverlap = minerlib.IsShapesOverlapping(square, triangleIn) // Expect false
-	if isOverlap {
-		t.Errorf("2) square and triangleIn. Expected false. Got %v\n", isOverlap)
-	}
+	ExpectFalse(t, isOverlap, "2) square and triangleIn. Expected false. Got true\n")
 
 	isOverlap = minerlib.IsShapesOverlapping(square, triangleOut) // Expect false
 	ExpectFalse(t, isOverlap, "3) square and triangleOut. Expected false. Got true\n")
@@ -159,12 +151,19 @@ func TestCirclesIntersecting(t *testing.T) {
 	circle661 := Circle6_6_1()
 	circle671 := Circle6_7_1()
 	circle1061 := Circle10_6_1()
+	convex := ConvexPolygon()
 
 	isOverlap := minerlib.IsShapesOverlapping(circle661, circle1061) // Expect false
 	ExpectFalse(t, isOverlap, "1) circle661 and circle1061. Expected false. Got true.\n")
 
 	isOverlap = minerlib.IsShapesOverlapping(circle661, circle671) // Expect true
 	ExpectTrue(t, isOverlap, "2) circle661 and circle671. Expected true. Got false.\n")
+
+	isOverlap = minerlib.IsShapesOverlapping(circle661, convex)
+	ExpectTrue(t, isOverlap, "3) circle661 and convex.\n")
+
+	isOverlap = minerlib.IsShapesOverlapping(circle671, convex)
+	ExpectTrue(t, isOverlap, "4) circle671 and convex.\n")
 }
 
 func TestDrawAllShapes(t *testing.T) {

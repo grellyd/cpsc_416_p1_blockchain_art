@@ -37,12 +37,12 @@ func ExpectContains(t *testing.T, testStr string, strArr []string) {
 
 func ExpectTrue(t *testing.T, b bool, errStr string) {
 	if !b {
-		t.Errorf(errStr)
+		t.Errorf(errStr + "Expected true. Got false.\n")
 	}
 }
 
 func ExpectFalse(t *testing.T, b bool, errStr string) {
 	if b {
-		t.Errorf(errStr)
+		t.Errorf(errStr + "Expected false. Got true.\n")
 	}
 }
