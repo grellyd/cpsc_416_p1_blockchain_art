@@ -14,7 +14,6 @@ import (
 
 // Represents a type of shape in the BlockArt system.
 // 1 for a line, 2 for a circle
-// TODO[sharon]: make an iota?
 type ShapeType int
 
 const (
@@ -41,7 +40,8 @@ type OperationType int
 
 const (
 	NOP OperationType = iota
-	OP
+	DRAW
+	DELETE
 )
 
 type Operation struct {
@@ -49,7 +49,7 @@ type Operation struct {
 	OperationNumber int
 	OperationSig string
 	Shape ShapeType
-	Fill string
+	Fill string // Can be "transparent" or "filled"
 	Stroke string
 	ShapeSVGString string
 	ArtNodePubKey string

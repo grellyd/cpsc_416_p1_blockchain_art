@@ -1,6 +1,7 @@
 package minerlib
 
 import (
+	"strings"
 	"blockartlib"
 	"math"
 	"regexp"
@@ -17,15 +18,6 @@ const TRANSPARENT = "transparent"
 type CanvasData struct {
 	Shapes []Shape
 }
-
-/*type BCTreeNode struct {
-	MinerInfo map[string]int // Map hash/identifier of miner to ink level
-	// Might change int to a struct which contains more info
-	BlockHash string // Hash of the block corresponding to this node
-	Parent    *BCTreeNode
-	Children  []*BCTreeNode
-	Depth     int
-}*/
 
 type Point struct {
 	X, Y float64
@@ -63,27 +55,39 @@ type Operation struct {
 }
 */
 
-// Attempt to draw all shapes in list
-// validOps are succesfully drawn.
+/* Attempt to draw all shapes in list. Successfully drawn operations are in
+	 validOps. They are attempted in a greedy fashion from the start.
+	 validOps and invalidOps are maps. Key = OperationSig, value = Operation
+	 Handles NOP blocks
+*/
 // TODO[sharon]: Handle delete operations
+// TODO[sharon]: make this shorter with a map of the commands and number of numbers they take
 func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation, err error) {
 	validOps = make(map[string]Operation)
 	invalidOps = make(map[string]Operation)
 	var drawnShapes []Shape
-	for i, op := range ops {
-		cur, err := OperationToShape(op, canvasSettings)
+	for _, op := range ops {
+		if op.Type == blockartlib.NOP {
+			continue
+		}
+		shape, err := OperationToShape(op, canvasSettings)
 		if err != nil {
 			return validOps, invalidOps, err
 		}
+		overlapsSomething := false
 		for _, valid := range drawnShapes {
-			if valid.Owner == cur.Owner {
+			if valid.Owner == shape.Owner {
 				continue
 			}
-			if IsShapesOverlapping(valid, cur) {
-				invalidOps[op.OperationSig] = ops[i]
-			} else {
-				validOps[op.OperationSig] = ops[i]
+			if IsShapesOverlapping(valid, shape) {
+				overlapsSomething = true
 			}
+		}
+		if overlapsSomething {
+			invalidOps[op.OperationSig] = op
+		} else {
+			validOps[op.OperationSig] = op
+			drawnShapes = append(drawnShapes, shape)
 		}
 	}
 	return validOps, invalidOps, err
@@ -121,54 +125,51 @@ func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
 	return AddPoints(initial, target)
 }
 
+// TODO[sharon]: more error checking
 func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err error) {
 	svgString := op.ShapeSVGString
 
-	// [A-Za-z]|[-0-9., ]*
-	// ["M", "   3,  8  ", "H", ...
-	// Turn all letters of svgString into a rune slice
-
-	opCommands := []rune(regexp.MustCompile("[^a-zA-Z]").ReplaceAllString(svgString, ""))
-	opFloatStrings := regexp.MustCompile("[^-.0-9]+").Split(svgString, -1)
-
-	var opFloats []float64
-	for i := 0; i < len(opFloatStrings); i++ {
-		if opFloatStrings[i] == "" {
-			continue
-		}
-		floatVal, err := strconv.ParseFloat(opFloatStrings[i], 64)
-		if err != nil {
-			return s, blockartlib.InvalidShapeSvgStringError(svgString)
-		}
-		opFloats = append(opFloats, floatVal)
-	}
+	re := regexp.MustCompile("[A-Za-z]|[-0-9., ]*")
+	allPieces := re.FindAllString(svgString, -1)
 
 	s.Fill = op.Fill
 	s.Stroke = op.Stroke
+	s.Owner = op.ArtNodePubKey
 
 	curPt := Point{0, 0}
 	initialPt := Point{0, 0}
-	var index int
-	//var isTransparent bool // set based on fill
-	for _, op := range opCommands {
-		switch unicode.ToLower(op) {
+	for index := 0; index < len(allPieces); index++ {
+		command := []rune(allPieces[index])[0]
+		switch unicode.ToLower(command) {
 		case 'm':
-			newPt := Point{opFloats[index], opFloats[index+1]}
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 2)
+			if err != nil {
+				return s, blockartlib.InvalidShapeSvgStringError(svgString)
+			}
+			newPt := Point{opFloats[0], opFloats[1]}
 			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			index += 2
-			curPt = ResolvePoint(curPt, newPt, unicode.IsUpper(op))
+			curPt = ResolvePoint(curPt, newPt, unicode.IsUpper(command))
+			index++
 		case 'l':
-			newPt := ResolvePoint(curPt, Point{opFloats[index], opFloats[index+1]}, unicode.IsUpper(op))
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 2)
+			if err != nil {
+				return s, blockartlib.InvalidShapeSvgStringError(svgString)
+			}
+			newPt := ResolvePoint(curPt, Point{opFloats[0], opFloats[1]}, unicode.IsUpper(command))
 			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
 			}
-			index += 2
+			index++
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'h':
-			newPt := ResolvePoint(curPt, Point{opFloats[index], curPt.Y}, unicode.IsUpper(op))
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 1)
+			if err != nil {
+				return s, blockartlib.InvalidShapeSvgStringError(svgString)
+			}
+			newPt := ResolvePoint(curPt, Point{opFloats[0], curPt.Y}, unicode.IsUpper(command))
 			newPt.Y = curPt.Y
 			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
@@ -177,7 +178,11 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 			s.Sides = append(s.Sides, LineSegment{curPt, newPt})
 			curPt = newPt
 		case 'v':
-			newPt := ResolvePoint(curPt, Point{curPt.X, opFloats[index]}, unicode.IsUpper(op))
+			opFloats, err := StrToFloatSlice(allPieces[index+1], 1)
+			if err != nil {
+				return s, blockartlib.InvalidShapeSvgStringError(svgString)
+			}
+			newPt := ResolvePoint(curPt, Point{curPt.X, opFloats[0]}, unicode.IsUpper(command))
 			newPt.X = curPt.X
 			if !InBounds(newPt, canvasSettings) {
 				return s, blockartlib.InvalidShapeSvgStringError(svgString)
@@ -205,6 +210,21 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	return s, err
 }
 
+func StrToFloatSlice(s string, expectLen int) (floatSlice []float64, err error) {
+	opFloats := regexp.MustCompile(",").Split(s, -1)
+	if len(opFloats) != expectLen {
+		return floatSlice, err
+	}
+	for _, f := range opFloats {
+		floatVal, err := strconv.ParseFloat(strings.Trim(f, " "), 64)
+		if err != nil {
+			return floatSlice, err
+		}
+		floatSlice = append(floatSlice, floatVal)
+	}
+	return floatSlice, nil
+}
+
 func AddPoints(p1, p2 Point) (p Point) {
 	p.X = p1.X + p2.X
 	p.Y = p1.Y + p2.Y
@@ -230,7 +250,6 @@ func IsLinesIntersecting(l1, l2 LineSegment) bool {
 		(o4 == 0 && OnSegment(l2.Point1, l1.Point2, l2.Point2)) {
 		return true
 	}
-
 	return false
 }
 
@@ -274,7 +293,7 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 func IsPointContainedInShape(p Point, s Shape) bool {
 	segment := LineSegment{p, Point{0, p.Y}}
 	var numIntersections int
-	var prevY float64
+	prevY := s.Sides[len(s.Sides) - 1].Point1.Y
 	for _, side := range s.Sides {
 		if side.Point1.Y == side.Point2.Y {
 			continue
@@ -288,6 +307,22 @@ func IsPointContainedInShape(p Point, s Shape) bool {
 			}
 			numIntersections++
 		}
+		prevY = side.Point1.Y
 	}
 	return numIntersections%2 != 0
+}
+
+func (s *Shape) ShapeToSVGPath() (svg string) {
+	svg += "M" + s.Sides[0].Point1.PointToString()
+	for _, side := range s.Sides {
+		svg += "L" + side.Point2.PointToString()
+	}
+	return svg
+}
+	
+func (p *Point) PointToString() (s string) {
+	s += strconv.FormatFloat(p.X, 'f', -1, 64)
+	s += ","
+	s += strconv.FormatFloat(p.Y, 'f', -1, 64)
+	return s
 }

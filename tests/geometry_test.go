@@ -50,21 +50,7 @@ func TestIsLinesIntersecting(t *testing.T) {
 	}
 }
 
-
-/*
-type Operation struct {
-	Type OperationType
-	OperationNumber int
-	OperationSig string
-	Shape ShapeType
-	Fill string
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
-	Nonce uint32
-}
-*/
-
+// TODO[sharon]: Test error case
 func TestInkArea(t *testing.T) {
 	svg := "M 8,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
@@ -100,7 +86,7 @@ func TestShapesOverlappingConcave(t *testing.T) {
 	}
 
 	c := ConvexPolygon()
-	
+
 	isOverlap = minerlib.IsShapesOverlapping(squareOut, c) // Expect false
 	if isOverlap {
 		t.Errorf("2) squareOut and c. Expected false. Got %v\n", isOverlap)
@@ -123,25 +109,54 @@ func TestShapesOverlappingConvex(t *testing.T) {
 	triangleOut := Triangle1()
 	triangleIn := Triangle2()
 
-	isOverlap := minerlib.IsShapesOverlapping(square, triangleIn)
+	isOverlap := minerlib.IsShapesOverlapping(square, triangleIn) // Expect true
 	if !isOverlap {
 		t.Errorf("1) square and triangleIn. Expected true. Got %v\n", isOverlap)
 	}
 
 	triangleIn.Fill = minerlib.TRANSPARENT
-	isOverlap = minerlib.IsShapesOverlapping(square, triangleIn)
-	if !isOverlap {
+	isOverlap = minerlib.IsShapesOverlapping(square, triangleIn) // Expect false
+	if isOverlap {
 		t.Errorf("2) square and triangleIn. Expected false. Got %v\n", isOverlap)
 	}
-	
-	isOverlap = minerlib.IsShapesOverlapping(square, triangleOut)
+
+	isOverlap = minerlib.IsShapesOverlapping(square, triangleOut) // Expect false
 	if isOverlap {
 		t.Errorf("3) square and triangleOut. Expected false. Got %v\n", isOverlap)
 	}
 }
 
-func TestDrawAllShapes(t *testing.T) {
+/*
+type Operation struct {
+	Type OperationType
+	OperationNumber int
+	OperationSig string
+	Shape ShapeType
+	Fill string
+	Stroke string
+	ShapeSVGString string
+	ArtNodePubKey string
+	Nonce uint32
+}
+*/
 
+// TODO[sharon]: Add more tests, i.e. same vs different owners
+func TestDrawAllShapes(t *testing.T) {
+	convexPolygon := ConvexPolygon()
+	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34}
+	squareOut := Square1()
+	squareOutOp := Operation{blockartlib.DRAW, 2, "square_out", blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34}
+	squareIn := Square2()
+	squareInOp := Operation{blockartlib.DRAW, 2, "square_in", blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode2", 34}
+	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp}
+	settings := CanvasSettings{1024, 1024}
+	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
+	validString := PrintAllOps(validOps, "VALID: ")
+	invalidString := PrintAllOps(invalidOps, "INVALID: ")
+	if validString != "convex_polygon by artnode0, square_out by artnode1, " ||
+		invalidString != "square_in by artnode2, "{
+		t.Errorf("Expected convex_polygon by artnode0, square_out by artnode1, instead have %v\n", validString)
+	}
 }
 
 func Square1() Shape {
@@ -166,12 +181,12 @@ func Square3() Shape {
 	s1 := LineSegment{Point{4, 3}, Point{5, 3}}
 	s2 := LineSegment{Point{5, 3}, Point{5, 4}}
 	s3 := LineSegment{Point{5, 4}, Point{4, 4}}
-	s4 := LineSegment{Point{4, 2}, Point{4, 3}}
+	s4 := LineSegment{Point{4, 4}, Point{4, 3}}
 	sides := []LineSegment{s1, s2, s3, s4}
 	return Shape{"owner3", "square3", sides, "transparent", "stroke"}
 }
 
-func Triangle1() Shape {
+func Triangle2() Shape {
 	s1 := LineSegment{Point{6, 1}, Point{6, 6}}
 	s2 := LineSegment{Point{6, 6}, Point{1, 4}}
 	s3 := LineSegment{Point{1, 4}, Point{6, 1}}
@@ -179,7 +194,7 @@ func Triangle1() Shape {
 	return Shape{"owner4", "triangle1", sides, "filled", "stroke"}
 }
 
-func Triangle2() Shape {
+func Triangle1() Shape {
 	s1 := LineSegment{Point{2, 3}, Point{3, 5}}
 	s2 := LineSegment{Point{3, 5}, Point{1, 5}}
 	s3 := LineSegment{Point{1, 5}, Point{2, 3}}
@@ -197,5 +212,13 @@ func ConvexPolygon() Shape {
 	c7 := LineSegment{Point{10, 6}, Point{2, 6}}
 	c8 := LineSegment{Point{2, 6}, Point{2, 2}}
 	cSides := []LineSegment{c1, c2, c3, c4, c5, c6, c7, c8}
-	return Shape{"owner6", "convex_polygon", cSides, "solid", "stroke"}
+	return Shape{"owner6", "concave_polygon", cSides, "solid", "stroke"}
+}
+
+func PrintAllOps(ops map[string]Operation, info string) string {
+	opSigs := ""
+	for _, op := range ops {
+		opSigs += op.OperationSig + " by " + op.ArtNodePubKey + ", "
+	}
+	return opSigs
 }
