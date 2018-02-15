@@ -16,9 +16,6 @@ var doneMining chan struct{}
 var earlyExitSignal chan struct{}
 var exited chan struct{}
 
-// pipeline channels
-var operationQueue chan *blockartlib.Operation
-
 // waitgroups
 var minersGroup sync.WaitGroup
 
@@ -44,6 +41,8 @@ type Miner struct {
 	Settings        *blockartlib.MinerNetSettings
 	LocalCanvas     CanvasData
 	BlockForest     map[string]*Block
+	// pipeline channel
+	operationQueue chan *blockartlib.Operation
 }
 
 // Miner constructor
@@ -60,11 +59,18 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		Settings:        &blockartlib.MinerNetSettings{},
 		LocalCanvas:     CanvasData{},
 		BlockForest:     map[string]*Block{},
+		operationQueue: make(chan *blockartlib.Operation, MAX_WAITING_OPS),
 	}
 	return m
 }
 
 func (m *Miner) IsEnoughInk() (err error) {
+	return nil
+}
+
+func (m *Miner) AddOp(o *blockartlib.Operation) error {
+	// blocks until space in buffered channel
+	m.operationQueue <- o
 	return nil
 }
 
@@ -75,7 +81,6 @@ func (m *Miner) CreateGenesisBlock() (g *Block) {
 func (m *Miner) StartMining() (err error) {
 	fmt.Printf("[miner] Starting Mining Process\n")
 	// setup channels
-	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
 	doneMining = make(chan struct{})
 	earlyExitSignal = make(chan struct{})
 	for i := 0; i < NUM_MINING_TASKS; i++ {
@@ -117,10 +122,10 @@ func (m *Miner) MineBlocks() (err error) {
 			}
 			b := NewBlock(parentHash, m.PublKey)
 			difficulty := uint8(0)
-			if len(operationQueue) >= OP_THRESHOLD {
+			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
 				for i := 0; i <= OP_THRESHOLD; i++ {
-					b.Operations = append(b.Operations, <-operationQueue)
+					b.Operations = append(b.Operations, <- m.operationQueue)
 				}
 			} else {
 				difficulty = m.Settings.PoWDifficultyNoOpBlock
@@ -277,6 +282,8 @@ func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err err
 
 // sends out the block to other miners
 func (m *Miner) DisseminateBlock(block *Block) (err error) {
+	// TODO: notify waiting artNodes if your block is op number of nodes deep now
+	// TODO: Not sure this is the right spot for this.
 	for _,v := range m.Neighbors {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
