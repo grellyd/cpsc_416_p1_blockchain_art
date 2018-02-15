@@ -1,11 +1,14 @@
-package minerlib
+package tests
 
 import (
 	"blockartlib"
 	"testing"
 	"fmt"
 	"keys"
+	"minerlib"
 )
+
+type Block = minerlib.Block
 
 var publicKeyStr = "3076301006072a8648ce3d020106052b81040022036200040426be3b44287dafed30cbb4b9bea7ecb9baf6910b4aaa70825fc604509a9bc36a2c6750638d1f44e6d95f1dfc68bc3d4e7a799f048d7019448f2b793a53c91129276a8c96d4ad7d58317cef1099b26f769671aa235071750e7b7511229b9f2c"
 
@@ -66,12 +69,12 @@ func TestUnmarshall(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		block, err := UnmarshallBinary(test.data)
+		block, err := minerlib.UnmarshallBinary(test.data)
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestUnmarshall(%v)\" produced err: %v", test, err)
 		}
 		if block == nil {
-			t.Errorf("Bad Exit: No block produced, instead of %d", test.block)
+			t.Errorf("Bad Exit: No block produced, instead of %v", test.block)
 		}
 	}
 }
@@ -94,7 +97,7 @@ func TestMarshallUnMarshall(t *testing.T) {
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestMarshallUnmarshall(%v)\" produced err: %v", test, err)
 		}
-		newBlock, err := UnmarshallBinary(data)
+		newBlock, err := minerlib.UnmarshallBinary(data)
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestMarshallUnmarshall(%v)\" produced err: %v", test, err)
 		}
