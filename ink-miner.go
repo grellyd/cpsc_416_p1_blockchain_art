@@ -90,6 +90,10 @@ func main() {
 	checkError(err)
 	fmt.Println("Connected to neighbor miners; received BCTree")
 
+	err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
+	checkError(err)
+	fmt.Println("Requested BCStorage from neighbour")
+
 	// Set up receiver for other Miners
 	minerReceiverInst := new(MinerReceiverInstance)
 	rpc.Register(minerReceiverInst)

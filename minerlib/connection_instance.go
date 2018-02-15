@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/gob"
+	"fmt"
 	"net"
 	"net/rpc"
 	"time"
@@ -23,13 +24,15 @@ func (m *ServerInstance) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (er
 	gob.Register(&elliptic.CurveParams{})
 
 	//for uint8(len(*lom))<minNeighbours { // TODO: uncomment for production
-	for uint8(len(*lom)) < 2 {
-		//fmt.Println("request lom")
-		err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
-		if err != nil {
-			return err
-		}
+	//for uint8(len(*lom))<2 {
+	//fmt.Println("request lom")
+	fmt.Println("getting miners")
+	err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
+	if err != nil {
+		fmt.Println("bla")
+		return err
 	}
+	//}
 	return nil
 }
 

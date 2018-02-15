@@ -271,7 +271,7 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 }
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
-func (m *Miner) RequestBCTreeFromNeighbor() (err error) {
+func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err error) {
 	return nil
 }
 
