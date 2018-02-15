@@ -67,7 +67,12 @@ func (an ArtNode) GetGenesisBlock() (blockHash string, err error) {
 }
 
 func (an ArtNode) GetChildren(blockHash string) (blockHashes []string, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetBlockChildren", blockHash, &blockHashes)
+	if err != nil {
+		return blockHashes, DisconnectedError("miner unavailable")
+	}
 	return blockHashes, err
+
 }
 
 func (an ArtNode) CloseCanvas() (inkRemaining uint32, err error) {

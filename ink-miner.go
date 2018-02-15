@@ -210,10 +210,10 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
 	fmt.Println("In RPC getting children hashes")
-	// bla, err := m.Blockchain.GetChildrenNodes(*hash)
-	// *reply = bla
-	// return err
-	return nil
+	bla, err := m.Blockchain.GetChildrenNodes(*hash)
+	*reply = bla
+	CheckError(err)
+	return err
 }
 
 // RPC Connections with other Miners
