@@ -216,6 +216,17 @@ func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error
 	return err
 }
 
+func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *string) error {
+	err := m.AddOp(&op)
+	if err != nil {
+		return fmt.Errorf("unable to submit operation: %v", err)
+	}
+	// setup return of completed shape after validation depth
+	shapeHashTemp := "this is totally the shape hash"
+	shapeHash = &shapeHashTemp
+	return nil
+}
+
 // RPC Connections with other Miners
 type MinerInstance int
 

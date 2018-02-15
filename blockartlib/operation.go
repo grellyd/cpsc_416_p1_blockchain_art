@@ -26,18 +26,26 @@ type Operation struct {
 	Stroke string
 	ShapeSVGString string
 	ArtNodePubKey string
-	Nonce uint32
+	ValidateBlockNum uint8
+	ShapeHash string
+	// Nonce uint32
 }
 
 // Let the OpSig be the MD5 Hash of the operation type, operation number, and the ArtNode's Public Key
-func (o *Operation) GenerateSig() {
+func (o *Operation) GenerateSig() error {
 	data := []byte{}
 	h := md5.New()
 	data = append(data, uint32AsByteArr(uint32(o.Type))...)
 	data = append(data, uint32AsByteArr(o.OperationNumber)...)
 	h.Write(append(data, []byte(o.ArtNodePubKey)...))
 	o.OperationSig = hex.EncodeToString(h.Sum(nil))
-	return
+	return nil
+}
+
+func (o *Operation) GetNumber() error {
+	// TODO set operation number
+	o.OperationNumber = 5
+	return nil
 }
 
 func (o *Operation)Marshall() (data []byte, err error) {

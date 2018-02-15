@@ -14,6 +14,7 @@ import (
 
 // Represents a type of shape in the BlockArt system.
 // 1 for a line, 2 for a circle
+// 0 for invalid
 type ShapeType int
 
 const (
