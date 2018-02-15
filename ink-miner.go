@@ -12,13 +12,7 @@ import (
 	"net/rpc"
 	"os"
 	"time"
-	"keys"
-	"crypto/ecdsa"
-	"encoding/gob"
-	"crypto/elliptic"
 	"reflect"
-	"encoding/hex"
-	"crypto/x509"
 )
 
 var m minerlib.Miner // singleton for miner
