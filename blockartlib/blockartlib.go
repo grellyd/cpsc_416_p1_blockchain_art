@@ -36,31 +36,6 @@ type KeyPair struct {
 	Public *ecdsa.PublicKey
 }
 
-type OperationType int
-
-const (
-	NOP OperationType = iota
-	DRAW
-	DELETE
-)
-
-type Operation struct {
-	Type OperationType
-	OperationNumber int
-	OperationSig string
-	Shape ShapeType
-	Fill string // Can be "transparent" or "filled"
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
-	Nonce uint32
-}
-
-func (o *Operation) GenerateSig() error {
-	// TODO: A function of the Op and the pub key
-	return nil
-}
-
 type ArtNodeInstruction struct {
 	MinerID		int //keep reference to the connected miner
 	MinerAddr 	string
