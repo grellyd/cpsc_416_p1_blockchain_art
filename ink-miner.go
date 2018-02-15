@@ -12,7 +12,6 @@ import (
 	"net/rpc"
 	"os"
 	"time"
-	"reflect"
 )
 
 var m minerlib.Miner // singleton for miner
@@ -22,8 +21,6 @@ var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
 	
-//var localIP = "127.0.0.1:0"
-
 func main() {
 	fmt.Println("start")
 	args := os.Args[1:]
@@ -156,9 +153,6 @@ func serviceRequests(localListener *net.TCPListener) {
 
 func CheckError(err error) {
 	if err != nil {
-		// induce a panic for stacktrace
-		//a := []string{"hola"}
-		//fmt.Printf("Error: %v %v\n", err, a[32])
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -171,12 +165,8 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-//func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
 func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
-	// TODO: Fix w/e is up with unicode vs strings
-	//priv, pub := keys.Decode(privStr, pubStr)
-	priv, pub, err := keys.Generate()
-	CheckError(err)
+	priv, pub := keys.Decode(privStr, pubStr)
 	pair := blockartlib.KeyPair{
 		Private: priv,
 		Public:  pub,
@@ -187,9 +177,7 @@ func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
 
 // =========================
 // Connection Instances
-// TODO: Extract out from ink-miner.go
 // =========================
-
 
 // RPC Connections with ArtNode
 type ArtNodeInstance int // same as above
@@ -198,11 +186,7 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 	fmt.Println("In rpc call to register the AN")
 	privateKey := keys.DecodePrivateKey(an.PrivKey)
 	publicKey := keys.DecodePublicKey(an.PubKey)
-	/*if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
-
-		fmt.Println("Private keys do not match.")
-		return blockartlib.DisconnectedError("Key pair isn't valid")
-	}*/ if !reflect.DeepEqual(privateKey, m.PrivKey) && !reflect.DeepEqual(publicKey, m.PublKey){
+	if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
 		fmt.Println("Private keys do not match.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
 	}else {
