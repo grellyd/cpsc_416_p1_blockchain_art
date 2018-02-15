@@ -1,18 +1,19 @@
 package minerlib
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"encoding/gob"
+	"fmt"
 	"net"
 	"net/rpc"
 	"time"
-	"crypto/ecdsa"
-	"encoding/gob"
-	"crypto/elliptic"
 )
 
 type ServerInstance struct {
-	Addr net.TCPAddr
+	Addr      net.TCPAddr
 	RPCClient *rpc.Client
-	Public *ecdsa.PublicKey
+	Public    *ecdsa.PublicKey
 }
 
 // requests another miner's ID (info) from the server
@@ -23,19 +24,21 @@ func (m *ServerInstance) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (er
 	gob.Register(&elliptic.CurveParams{})
 
 	//for uint8(len(*lom))<minNeighbours { // TODO: uncomment for production
-	for uint8(len(*lom))<2 {
-		//fmt.Println("request lom")
-		err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
-		if err != nil {
-			return err
-		}
+	//for uint8(len(*lom))<2 {
+	//fmt.Println("request lom")
+	fmt.Println("getting miners")
+	err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
+	if err != nil {
+		fmt.Println("bla")
+		return err
 	}
+	//}
 	return nil
 }
 
 func (m *ServerInstance) SendHeartbeat(t time.Time) (err error) {
 	var ignored bool
-	err = m.RPCClient.Call( "RServer.HeartBeat", m.Public, &ignored)
+	err = m.RPCClient.Call("RServer.HeartBeat", m.Public, &ignored)
 	if err != nil {
 		return err
 	}
@@ -51,6 +54,6 @@ type ArtNodeConnection struct {
 }
 
 type MinerConnection struct {
-	Addr net.TCPAddr
+	Addr      net.TCPAddr
 	RPCClient *rpc.Client
 }

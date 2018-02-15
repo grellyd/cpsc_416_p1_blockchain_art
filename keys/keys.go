@@ -17,6 +17,8 @@ func Generate() (privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, err e
 		return nil, nil, err
 	}
 	publicKey = &privateKey.PublicKey
+	prK := EncodePrivateKey(privateKey)
+	fmt.Println(prK)
 	return privateKey, publicKey, nil
 }
 

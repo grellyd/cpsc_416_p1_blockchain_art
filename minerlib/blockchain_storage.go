@@ -1,20 +1,19 @@
 package minerlib
 
 import (
-	"fmt"
 	"blockartlib"
-	"keys"
 	"crypto/ecdsa"
-
+	"fmt"
+	"keys"
 )
 
 type BCStorage struct {
-	BC *Blockchain
+	BC  *Blockchain
 	BCT *BCTree
 }
 
-func NewBlockchainStorage (genBlock *Block, settings *blockartlib.MinerNetSettings) (*BCStorage) {
-	bcNode := NewBCTreeNode(genBlock,nil, 0, settings)
+func NewBlockchainStorage(genBlock *Block, settings *blockartlib.MinerNetSettings) *BCStorage {
+	bcNode := NewBCTreeNode(genBlock, nil, 0, settings)
 	//var leaves = make([]*BCTreeNode, 0)
 	//leaves = append(leaves, bcNode)
 	//bct := BCTree{bcNode, leaves}
@@ -32,7 +31,7 @@ func NewBlockchainStorage (genBlock *Block, settings *blockartlib.MinerNetSettin
 //		 See minerlib#MineBlocks()
 // REQUIRES: valid block (block that has parent on the tree among the leaves and valid in operations)
 // EFFECTS: returns true if blockchain has been switched, false if blockchain is the same
-func (bcs *BCStorage) AppendBlock (block *Block, settings *blockartlib.MinerNetSettings) bool {
+func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSettings) bool {
 	// finds the child to which to append
 	// checks against blockchain if the block should go there
 	//leaves := bcs.BCT.Leaves
@@ -46,7 +45,7 @@ func (bcs *BCStorage) AppendBlock (block *Block, settings *blockartlib.MinerNetS
 	d := parentNode.Depth + 1
 	k := keyToString(block.MinerPublicKey)
 	var inkOnNode uint32 = parentNode.OwnerInkLvl[k]
-	bcTreeNode := NewBCTreeNode(block,parentNode, inkOnNode, settings)
+	bcTreeNode := NewBCTreeNode(block, parentNode, inkOnNode, settings)
 	bcTreeNode.Depth = d
 	parentNode.Children = append(parentNode.Children, bcTreeNode)
 	// TODO: add here update the block length
@@ -60,8 +59,8 @@ func (bcs *BCStorage) AppendBlock (block *Block, settings *blockartlib.MinerNetS
 		return false
 	} else {
 		if bcTreeNode.Depth > bcs.BC.LastNode.Current.Depth {
-			nodesToInclude := walkUpToRoot (bcs.BCT, bcTreeNode)
-			rebuildBlockchain (bcs.BC, nodesToInclude)
+			nodesToInclude := walkUpToRoot(bcs.BCT, bcTreeNode)
+			rebuildBlockchain(bcs.BC, nodesToInclude)
 			fmt.Println("BC after append: ", bcs.BC)
 			return true
 		}
@@ -86,10 +85,9 @@ func (bcs *BCStorage) LastNodeHash() (string, error) {
 	return hash, nil
 }
 
-
 // function which return children of the block
-func (bcs *BCStorage) GetChildrenNodes (hashOfBlock string) ([]string, error) {
-	children :=  make([]string, 0)
+func (bcs *BCStorage) GetChildrenNodes(hashOfBlock string) ([]string, error) {
+	children := make([]string, 0)
 	node := FindBCTreeNode(bcs.BCT.GenesisNode, hashOfBlock)
 	if node == nil {
 		return children, blockartlib.InvalidBlockHashError("no such node on a tree")
@@ -101,13 +99,13 @@ func (bcs *BCStorage) GetChildrenNodes (hashOfBlock string) ([]string, error) {
 }
 
 // HELPER FUNCTIONS
-func keyToString (key *ecdsa.PublicKey) string {
+func keyToString(key *ecdsa.PublicKey) string {
 	return keys.EncodePublicKey(key)
 }
 
-func rebuildBlockchain (bc *Blockchain, newNodes []*BCTreeNode) {
+func rebuildBlockchain(bc *Blockchain, newNodes []*BCTreeNode) {
 	bc.LastNode = bc.GenesisNode
-	for len(newNodes) !=0 {
+	for len(newNodes) != 0 {
 		nn := newNodes[len(newNodes)-1]
 		bcc := NewBlockchainNode(nn)
 		appendBlockToBC(bc, bcc)
@@ -116,7 +114,7 @@ func rebuildBlockchain (bc *Blockchain, newNodes []*BCTreeNode) {
 	return
 }
 
-func walkUpToRoot (bcs *BCTree, bcn *BCTreeNode) []*BCTreeNode {
+func walkUpToRoot(bcs *BCTree, bcn *BCTreeNode) []*BCTreeNode {
 	newChildren := make([]*BCTreeNode, 0)
 	for bcn.CurrentHash != bcs.GenesisNode.CurrentHash {
 		newChildren = append(newChildren, bcn)
@@ -125,7 +123,7 @@ func walkUpToRoot (bcs *BCTree, bcn *BCTreeNode) []*BCTreeNode {
 	return newChildren
 }
 
-func appendBlockToBC (bc *Blockchain, bccNod *BlockchainNode) {
+func appendBlockToBC(bc *Blockchain, bccNod *BlockchainNode) {
 	bc.LastNode.Next = bccNod.Current // updates Next for the last node
 	bc.LastNode = bccNod
 	return

@@ -2,29 +2,26 @@ package minerlib
 
 import (
 	"blockartlib"
-	"fmt"
 	"crypto/ecdsa"
+	"fmt"
+	"minerlib/compute"
 	"net"
+	"net/rpc"
 	"sync"
 	"time"
-	"minerlib/compute"
 )
-
 
 // signal channels
 var doneMining chan struct{}
 var earlyExitSignal chan struct{}
 var exited chan struct{}
 
-// pipeline channels
-var operationQueue chan *blockartlib.Operation
-
-// waitgroups 
+// waitgroups
 var minersGroup sync.WaitGroup
 
 const (
-	OP_THRESHOLD = 4
-	MAX_WAITING_OPS = 10
+	OP_THRESHOLD     = 4
+	MAX_WAITING_OPS  = 10
 	MAX_EMPTY_BLOCKS = 3
 	NUM_MINING_TASKS = 1
 )
@@ -33,38 +30,47 @@ const (
 type Forest map[string]*Block
 
 type Miner struct {
-	InkLevel uint32
-	ServerNodeAddr *net.TCPAddr
+	InkLevel        uint32
+	ServerNodeAddr  *net.TCPAddr
 	ServerHrtBtAddr *net.TCPAddr
-	ArtNodes []*ArtNodeConnection
-	Neighbors []*MinerConnection
-	PublKey *ecdsa.PublicKey
-	PrivKey *ecdsa.PrivateKey
-	Blockchain *BCStorage
-	Settings *blockartlib.MinerNetSettings
-	LocalCanvas CanvasData
-	BlockForest map[string]*Block
+	ArtNodes        []*ArtNodeConnection
+	Neighbors       []*MinerConnection
+	PublKey         *ecdsa.PublicKey
+	PrivKey         *ecdsa.PrivateKey
+	Blockchain      *BCStorage
+	Settings        *blockartlib.MinerNetSettings
+	LocalCanvas     CanvasData
+	BlockForest     map[string]*Block
+	// pipeline channel
+	operationQueue chan *blockartlib.Operation
 }
 
 // Miner constructor
 func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) {
 	var m = Miner{
-		InkLevel: 0,
-		ServerNodeAddr: serverAddr,
+		InkLevel:        0,
+		ServerNodeAddr:  serverAddr,
 		ServerHrtBtAddr: nil,
-		ArtNodes: []*ArtNodeConnection{},
-		Neighbors: []*MinerConnection{},
-		PublKey: keys.Public,
-		PrivKey: keys.Private,
-		Blockchain: nil,
-		Settings: &blockartlib.MinerNetSettings{},
-		LocalCanvas: CanvasData{},
-		BlockForest: map[string]*Block{},
+		ArtNodes:        []*ArtNodeConnection{},
+		Neighbors:       []*MinerConnection{},
+		PublKey:         keys.Public,
+		PrivKey:         keys.Private,
+		Blockchain:      nil,
+		Settings:        &blockartlib.MinerNetSettings{},
+		LocalCanvas:     CanvasData{},
+		BlockForest:     map[string]*Block{},
+		operationQueue: make(chan *blockartlib.Operation, MAX_WAITING_OPS),
 	}
 	return m
 }
 
 func (m *Miner) IsEnoughInk() (err error) {
+	return nil
+}
+
+func (m *Miner) AddOp(o *blockartlib.Operation) error {
+	// blocks until space in buffered channel
+	m.operationQueue <- o
 	return nil
 }
 
@@ -75,17 +81,16 @@ func (m *Miner) CreateGenesisBlock() (g *Block) {
 func (m *Miner) StartMining() (err error) {
 	fmt.Printf("[miner] Starting Mining Process\n")
 	// setup channels
-	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
-	doneMining  = make(chan struct{})
+	doneMining = make(chan struct{})
 	earlyExitSignal = make(chan struct{})
-	for i := 0; i < NUM_MINING_TASKS; i++{
+	for i := 0; i < NUM_MINING_TASKS; i++ {
 		go m.MineBlocks()
 		minersGroup.Add(1)
 	}
 	return nil
 }
 
-func (m *Miner)TestEarlyExit() {
+func (m *Miner) TestEarlyExit() {
 	time.Sleep(6000 * time.Millisecond)
 	fmt.Printf("[miner] Killing...\n")
 	err := m.StopMining()
@@ -102,11 +107,11 @@ func (m *Miner) MineBlocks() (err error) {
 	fmt.Printf("[miner] Starting to Mine Blocks\n")
 	for {
 		select {
-		case <- doneMining:
+		case <-doneMining:
 			// done
 			fmt.Printf("[miner] Done Mining Blocks\n")
 			return nil
-		case <- earlyExitSignal:
+		case <-earlyExitSignal:
 			minersGroup.Done()
 			fmt.Printf("[miner] Early Exit\n")
 			return nil
@@ -117,10 +122,10 @@ func (m *Miner) MineBlocks() (err error) {
 			}
 			b := NewBlock(parentHash, m.PublKey)
 			difficulty := uint8(0)
-			if len(operationQueue) >= OP_THRESHOLD {
+			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
 				for i := 0; i <= OP_THRESHOLD; i++ {
-					b.Operations = append(b.Operations, <- operationQueue)
+					b.Operations = append(b.Operations, <- m.operationQueue)
 				}
 			} else {
 				difficulty = m.Settings.PoWDifficultyNoOpBlock
@@ -141,7 +146,7 @@ func (m *Miner) MineBlocks() (err error) {
 }
 
 // validates incoming block from other miner
-func (m *Miner) ValidBlock(b *Block) (valid bool, err error){
+func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
 	hash, err := b.Hash()
 	if err != nil {
 		return false, fmt.Errorf("Unable validate block: %v", err)
@@ -194,7 +199,7 @@ func (m *Miner) ValidBlock(b *Block) (valid bool, err error){
 // this stops the process of mining blocks
 // Commands the lower level threads to stop.
 // Waitgroup finishes when these exit
-func (m *Miner) StopMining() (err error){
+func (m *Miner) StopMining() (err error) {
 	fmt.Printf("[miner] Stopping Mining by command\n")
 	close(earlyExitSignal)
 	minersGroup.Wait()
@@ -204,11 +209,11 @@ func (m *Miner) StopMining() (err error){
 
 /////// functions to perform operations on the blockchain
 
-func (m *Miner) AddBlockToBC() (err error){
+func (m *Miner) AddBlockToBC() (err error) {
 	return nil
 }
 
-func (m *Miner) RemoveBlockFromBC() (err error){
+func (m *Miner) RemoveBlockFromBC() (err error) {
 	return nil
 }
 
@@ -224,13 +229,71 @@ func (m *Miner) RetrieveSettings() (err error) {
 
 /////// functions to interact with other miners
 
-func (m *Miner) ConnectToOtherMiner() (err error) {
+func (m *Miner) OpenNeighborConnections() (err error) {
+	/* Opens RPC connections to neighbouring Miners and fills in the
+	   RPCClient field in the corresponding MinerConnection struct */
+	for _, neighbor := range m.Neighbors {
+		neighbor.RPCClient, err = rpc.Dial("tcp", neighbor.Addr.String())
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Opened RPC connection to neighbor with tcpAddr %s\n", neighbor.Addr.String())
+	}
+
+	return nil
+}
+
+// TODO: Actually handle the case where the blockchain we choose is invalid
+func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor net.TCPAddr, err error) {
+	/* Makes the RPC call to register itself to neighbouring miners.
+	   Neighbours will respond with the length of their Blockchain;
+	   does NOT currently account for the fact that the given chain
+	   may be invalid.
+
+	   RETURNS: the net.TCPAddress of the neighbour with the longest
+	   blockchain depth
+	*/
+
+	// Connect to each neighbour miner and keep track of the one with the largest depth
+	var bestMinerAddr net.TCPAddr
+	largestDepth := 0
+	depth := 0
+
+	for _, connection := range m.Neighbors {
+		err = connection.RPCClient.Call("MinerInstance.ConnectNewNeighbor", localAddr, &depth)
+		if err != nil {
+			// TODO: Should we just ignore this miner then and move on to the next one?
+			return net.TCPAddr{}, err
+		}
+
+		if (depth >= largestDepth) {
+			largestDepth = depth
+			bestMinerAddr = connection.Addr
+		}
+	}
+
+	return bestMinerAddr, nil
+}
+
+// TODO: Actually handle the case where the blockchain we choose is invalid
+func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err error) {
 	return nil
 }
 
 // sends out the block to other miners
-func (m *Miner) DisseminateBlock() (err error) {
-	return nil
+func (m *Miner) DisseminateBlock(block *Block) (err error) {
+	// TODO: notify waiting artNodes if your block is op number of nodes deep now
+	// TODO: Not sure this is the right spot for this.
+	for _,v := range m.Neighbors {
+		marshalledBlock, err := block.MarshallBinary()
+		blockartlib.CheckErr(err)
+		var b bool
+		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
+		if !b {
+			fmt.Println("Bad block") // TODO: think what to do in this case
+		}
+	}
+	return err
 }
 
 /////// helpers
@@ -243,18 +306,18 @@ func (m *Miner) DrawInk() (err error) {
 	return nil
 }
 
-func (m *Miner) IsMinerInList () (err error) {
+func (m *Miner) IsMinerInList() (err error) {
 	return nil
 }
 
-func (m *Miner) AddMinersToList (lom *[]net.Addr) (err error) {
+func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
 	if len(*lom) == 0 {
 		return nil
 	} else if len(m.Neighbors) == 0 {
 		for _, val := range *lom {
 			addMinerToList(m, val)
 		}
-	}else if len(m.Neighbors) > 0 {
+	} else if len(m.Neighbors) > 0 {
 		for _, val := range *lom {
 			if len(m.Neighbors) == 256 {
 				return nil
@@ -267,18 +330,18 @@ func (m *Miner) AddMinersToList (lom *[]net.Addr) (err error) {
 	return nil
 }
 
-func addMinerToList (m *Miner, addr net.Addr) error {
-	var newNeighbour = MinerConnection{}
+func addMinerToList(m *Miner, addr net.Addr) error {
+	var newNeighbor = MinerConnection{}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr.String())
 	if err != nil {
 		return err
 	}
-	newNeighbour.Addr = *tcpAddr
-	m.Neighbors = append(m.Neighbors, &newNeighbour)
+	newNeighbor.Addr = *tcpAddr
+	m.Neighbors = append(m.Neighbors, &newNeighbor)
 	return nil
 }
 
-func isMinerInList (m *Miner, addr net.Addr) bool {
+func isMinerInList(m *Miner, addr net.Addr) bool {
 	for _, v := range m.Neighbors {
 		if v.Addr.String() == addr.String() {
 			return true
@@ -286,4 +349,3 @@ func isMinerInList (m *Miner, addr net.Addr) bool {
 	}
 	return false
 }
-

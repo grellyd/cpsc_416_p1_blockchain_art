@@ -1,21 +1,21 @@
 package minerlib
 
 import (
-	"fmt"
 	"blockartlib"
+	"fmt"
 	"keys"
 )
 
 type BCTreeNode struct {
-	OwnerInkLvl map[string]uint32 // Map [PubKey]to ink level
-	BlockResiding *Block // Block residing at the current node
-	Parent   *BCTreeNode // Previous node in the blockchain
-	CurrentHash   string // Previous node in the blockchain
-	Children []*BCTreeNode
-	Depth int // length of BC
+	OwnerInkLvl   map[string]uint32 // Map [PubKey]to ink level
+	BlockResiding *Block            // Block residing at the current node
+	Parent        *BCTreeNode       // Previous node in the blockchain
+	CurrentHash   string            // Previous node in the blockchain
+	Children      []*BCTreeNode
+	Depth         int // length of BC
 }
 
-func NewBCTreeNode (block *Block, parent *BCTreeNode, ownerInkLvl uint32, settings *blockartlib.MinerNetSettings) *BCTreeNode {
+func NewBCTreeNode(block *Block, parent *BCTreeNode, ownerInkLvl uint32, settings *blockartlib.MinerNetSettings) *BCTreeNode {
 	currHash, err := block.Hash()
 	if err != nil {
 		fmt.Printf("NewNode Error while hashing given block: %v", err)
@@ -43,7 +43,7 @@ func NewBCTreeNode (block *Block, parent *BCTreeNode, ownerInkLvl uint32, settin
 	return &bcNode
 }
 
-func FindBCTreeNode (bct *BCTreeNode, nodeHash string) *BCTreeNode {
+func FindBCTreeNode(bct *BCTreeNode, nodeHash string) *BCTreeNode {
 	if bct != nil {
 		if bct.CurrentHash == nodeHash {
 			return bct

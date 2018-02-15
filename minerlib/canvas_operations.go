@@ -60,7 +60,11 @@ type Operation struct {
 /* Attempt to draw all shapes in list. Successfully drawn operations are in
 validOps. They are attempted in a greedy fashion from the start.
 validOps and invalidOps are maps. Key = OperationSig, value = Operation
+<<<<<<< HEAD
 Handles NOP blocks. They all get added to validOps.
+=======
+Handles NOP blocks
+>>>>>>> origin/master
 */
 // TODO[sharon]: Handle delete operations
 // TODO[sharon]: make this shorter with a map of the commands and number of numbers they take

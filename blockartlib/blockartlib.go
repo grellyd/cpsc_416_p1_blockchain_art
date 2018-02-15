@@ -14,6 +14,7 @@ import (
 
 // Represents a type of shape in the BlockArt system.
 // 1 for a line, 2 for a circle
+// 0 for invalid
 type ShapeType int
 
 const (
@@ -34,31 +35,6 @@ type CanvasSettings struct {
 type KeyPair struct {
 	Private *ecdsa.PrivateKey
 	Public *ecdsa.PublicKey
-}
-
-type OperationType int
-
-const (
-	NOP OperationType = iota
-	DRAW
-	DELETE
-)
-
-type Operation struct {
-	Type OperationType
-	OperationNumber int
-	OperationSig string
-	Shape ShapeType
-	Fill string // Can be "transparent" or "filled"
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
-	Nonce uint32
-}
-
-func (o *Operation) GenerateSig() error {
-	// TODO: A function of the Op and the pub key
-	return nil
 }
 
 type ArtNodeInstruction struct {
