@@ -237,7 +237,7 @@ func (m *Miner) OpenNeighborConnections() (err error) {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Opened RPC connection to neighbor with tcpAddr %s", neighbor.Addr.String())
+		fmt.Printf("Opened RPC connection to neighbor with tcpAddr %s\n", neighbor.Addr.String())
 	}
 
 	return nil
@@ -260,13 +260,13 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 	depth := 0
 
 	for _, connection := range m.Neighbors {
-		err = connection.RPCClient.Call("MinerReceiverInstance.ConnectNewNeighbor", localAddr, &depth)
+		err = connection.RPCClient.Call("MinerInstance.ConnectNewNeighbor", localAddr, &depth)
 		if err != nil {
 			// TODO: Should we just ignore this miner then and move on to the next one?
 			return net.TCPAddr{}, err
 		}
 
-		if depth > largestDepth {
+		if (depth >= largestDepth) {
 			largestDepth = depth
 			bestMinerAddr = connection.Addr
 		}
