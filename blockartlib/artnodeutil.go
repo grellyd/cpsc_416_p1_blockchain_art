@@ -55,6 +55,10 @@ func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining
 }
 
 func (an ArtNode) GetShapes(blockHash string) (shapeHashes []string, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetShapesFromBlock", &blockHash, &shapeHashes)
+	if err != nil {
+		return shapeHashes, DisconnectedError("miner unavailable") // TODO: check type of error
+	}
 	return shapeHashes, err
 }
 

@@ -216,6 +216,20 @@ func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error
 	return err
 }
 
+func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]string) error {
+	fmt.Println("In RPC getting shape from block")
+	treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
+	if treeNode == nil {
+		return blockartlib.InvalidBlockHashError("invalid hash")
+	}
+	block := treeNode.BlockResiding
+	ops := block.Operations
+	for _,v := range ops {
+		*reply = append(*reply, v.OperationSig)
+	}
+	return nil
+}
+
 // RPC Connections with other Miners
 type MinerInstance int
 
