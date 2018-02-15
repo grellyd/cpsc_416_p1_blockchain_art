@@ -46,6 +46,11 @@ func (bcs *BCStorage) AppendBlock (block *Block, settings *blockartlib.MinerNetS
 	// checks against blockchain if the block should go there
 	//leaves := bcs.BCT.Leaves
 	parentNode := FindBCTreeNode(bcs.BCT.GenesisNode, block.ParentHash)
+	if parentNode == nil {
+		err := fmt.Errorf("No such parent node exists!")
+		fmt.Printf("%v\n", err)
+		return false
+	}
 	fmt.Println("Parent hash ", parentNode.CurrentHash)
 	d := parentNode.Depth + 1
 	k := keyToString(block.MinerPublicKey)

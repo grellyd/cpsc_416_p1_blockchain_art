@@ -30,13 +30,6 @@ func TestBlockChain (t *testing.T) {
 	var canv = minerlib.CanvasData{}
 
 	fmt.Println("canvas")
-	var genBlock = minerlib.Block {
-		ParentHash: "83218ac34c1834c26781fe4bde918ee4",
-		Operations: nil,
-		MinerPublicKey: nil,
-		Nonce: 0,
-	}
-	fmt.Println("genBlock")
 
 	var miner = minerlib.Miner{
 		InkLevel: 0,
@@ -51,9 +44,11 @@ func TestBlockChain (t *testing.T) {
 		LocalCanvas: canv,
 	}
 	fmt.Println("miner")
+	genBlock := miner.CreateGenesisBlock()
+	fmt.Println("genBlock")
 
-
-	var bc = minerlib.NewBlockchain(&genBlock, &set)
+	// The following hashes have to change
+	var bc = minerlib.NewBlockchain(genBlock, &set)
 	fmt.Println("New Blockchain", bc)
 
 	miner.Blockchain = bc
@@ -102,15 +97,24 @@ func TestBlockChain (t *testing.T) {
 	}
 
 	// TESTS must create a single BC B1-B2-B3
-	bc.AppendBlock(&block1, miner.Settings)
+	res := bc.AppendBlock(&block1, miner.Settings)
+	if !res {
+		t.Errorf("Error when appending block '%v' to '%v'", block1, bc)
+	}
 	fmt.Println("Tree1", bc.BCT)
 	fmt.Println("Blockchain1", bc.BC.LastNode.Current.CurrentHash)
 
-	bc.AppendBlock(&block2, miner.Settings)
+	res = bc.AppendBlock(&block2, miner.Settings)
+	if !res {
+		t.Errorf("Error when appending block '%v' to '%v'", block2, bc)
+	}
 	fmt.Println("Tree2", bc.BCT)
 	fmt.Println("Blockchain2", bc.BC.LastNode.Current.CurrentHash)
 
-	bc.AppendBlock(&block3, miner.Settings)
+	res = bc.AppendBlock(&block3, miner.Settings)
+	if !res {
+		t.Errorf("Error when appending block '%v' to '%v'", block3, bc)
+	}
 	fmt.Println("Tree3", bc.BCT)
 	fmt.Println("Blockchain3", bc.BC.LastNode.Current.CurrentHash)
 
@@ -118,23 +122,32 @@ func TestBlockChain (t *testing.T) {
 	// B1 - B2 - B3
 	//    - B4
 
-	bc.AppendBlock(&block4, miner.Settings)
+	res = bc.AppendBlock(&block4, miner.Settings)
+	if !res {
+		t.Errorf("Error when appending block '%v' to '%v'", block4, bc)
+	}
 	fmt.Println("Tree4", bc.BCT)
 	fmt.Println("Blockchain4", bc.BC.LastNode.Current.CurrentHash)
 
 	// B1 - B2 - B3
 	//    - B4 - B5
-	b := bc.AppendBlock(&block5, miner.Settings)
+	res = bc.AppendBlock(&block5, miner.Settings)
+	if !res {
+		t.Errorf("Error when appending block '%v' to '%v'", block5, bc)
+	}
 	fmt.Println("Tree5", bc.BCT)
 	fmt.Println("Blockchain4", bc.BC.LastNode.Current.CurrentHash)
-	fmt.Println("BC shouldn't change: ", b)
+	// fmt.Println("BC shouldn't change: ", b)
 
 	// B1 - B2 - B3
 	//    - B4 - B5 - B6 <- longest
-	b = bc.AppendBlock(&block6, miner.Settings)
+	res = bc.AppendBlock(&block6, miner.Settings)
+	if !res {
+		t.Errorf("Error when appending block '%v' to '%v'", block6, bc)
+	}
 	fmt.Println("Tree6", bc.BCT)
 	fmt.Println("Blockchain6", bc.BC.LastNode.Current.CurrentHash)
-	fmt.Println("BC should change: ", b)
+	// fmt.Println("BC should change: ", b)
 
 	children, er := bc.GetChildrenNodes("83218ac34c1834c26781fe4bde900000")
 	fmt.Println("Children ", children, "Error ", er)
