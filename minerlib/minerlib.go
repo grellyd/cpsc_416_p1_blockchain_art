@@ -2,35 +2,39 @@ package minerlib
 
 import (
 	"blockartlib"
+	"time"
+	"net"
+	"net/rpc"
 	"fmt"
 	"crypto/ecdsa"
-	"net"
-	"sync"
-	"time"
-	"minerlib/compute"
+	"crypto/x509"
+	"reflect"
+	"encoding/gob"
+	"crypto/elliptic"
 )
 
+/*type Blockchain struct {
+	//GenesisNode *BCTreeNode
+	GenesisNode *BCTreeNode
+	//CurrentBlock *BCTreeNode
+	//NextBlock *Block
+	// perhaps longest chain, addable block, etc.
+}*/
 
-// signal channels
-var doneMining chan struct{}
-var earlyExitSignal chan struct{}
-var exited chan struct{}
+// Structs to manage the connections to other entities
+type ArtNodeConnection struct {
+	// Addr to Dial
+	Addr net.TCPAddr
+	// RPC Client to Call
+	RPCClient *rpc.Client
+}
 
-// pipeline channels
-var operationQueue chan *blockartlib.Operation
-
-// waitgroups 
-var minersGroup sync.WaitGroup
-
-const (
-	OP_THRESHOLD = 4
-	MAX_WAITING_OPS = 10
-	MAX_EMPTY_BLOCKS = 3
-	NUM_MINING_TASKS = 1
-)
-
-// maps hashes to blocks for the invalid blocks
-type Forest map[string]*Block
+type MinerConnection struct {
+	Addr net.TCPAddr
+	RPCClient *rpc.Client
+	InkLvl uint32
+	NeighbourPubKey *ecdsa.PublicKey
+}
 
 type Miner struct {
 	InkLevel uint32
@@ -40,165 +44,91 @@ type Miner struct {
 	Neighbors []*MinerConnection
 	PublKey *ecdsa.PublicKey
 	PrivKey *ecdsa.PrivateKey
-	Blockchain *BCStorage
+	Chain BCStorage
 	Settings *blockartlib.MinerNetSettings
 	LocalCanvas CanvasData
-	BlockForest map[string]*Block
 }
 
-// Miner constructor
-func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) {
-	var m = Miner{
-		InkLevel: 0,
-		ServerNodeAddr: serverAddr,
-		ServerHrtBtAddr: nil,
-		ArtNodes: []*ArtNodeConnection{},
-		Neighbors: []*MinerConnection{},
-		PublKey: keys.Public,
-		PrivKey: keys.Private,
-		Blockchain: nil,
-		Settings: &blockartlib.MinerNetSettings{},
-		LocalCanvas: CanvasData{},
-		BlockForest: map[string]*Block{},
+type MinerInfo struct {
+	Address net.Addr
+	Key     ecdsa.PublicKey
+}
+
+type MinerCaller struct {
+	Addr net.TCPAddr
+	RPCClient *rpc.Client
+	Public *ecdsa.PublicKey
+}
+
+/*
+func (m *Miner) callAll() {
+	for _, artNode := range m.ArtNodes {
+		artNode.RPCClient, err = rpc.Dial(artNode.Addr)
+		err = artNode.RPCClient.Call("All", arg, response)
 	}
-	return m
+}
+*/
+
+// Miner constructor
+func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair, config *blockartlib.MinerNetSettings) (miner Miner, err error) {
+	var m = Miner{
+		0,
+		serverAddr,
+		nil,
+		[]*ArtNodeConnection{},
+		[]*MinerConnection{},
+		keys.Public,
+		keys.Private,
+		BCStorage{},
+		config,
+		CanvasData{},
+	}
+	return m, nil
+	//return nil, nil
+}
+
+func (m *Miner) ValidateNewArtIdent(an *blockartlib.ArtNodeInstruction) (err error) {
+	privateKey, _ := x509.ParseECPrivateKey([]byte(an.PrivKey))
+	genericPublicKey, _ := x509.ParsePKIXPublicKey([]byte(an.PubKey))
+	publicKey := genericPublicKey.(*ecdsa.PublicKey)
+
+	if !reflect.DeepEqual(privateKey, m.PrivKey) && !reflect.DeepEqual(publicKey, m.PublKey){
+		fmt.Println("Private keys do not match.")
+		return blockartlib.DisconnectedError("Key pair isn't valid")
+	}
+	fmt.Println("keys match")
+	return nil
+
 }
 
 func (m *Miner) IsEnoughInk() (err error) {
 	return nil
 }
 
-func (m *Miner) CreateGenesisBlock() (g *Block) {
-	return NewBlock(m.Settings.GenesisBlockHash, nil)
-}
-
-func (m *Miner) StartMining() (err error) {
-	fmt.Printf("[miner] Starting Mining Process\n")
-	// setup channels
-	operationQueue = make(chan *blockartlib.Operation, MAX_WAITING_OPS)
-	doneMining  = make(chan struct{})
-	earlyExitSignal = make(chan struct{})
-	for i := 0; i < NUM_MINING_TASKS; i++{
-		go m.MineBlocks()
-		minersGroup.Add(1)
-	}
+func (m *Miner) GenerateNoopBlock() (err error) {
 	return nil
 }
 
-func (m *Miner)TestEarlyExit() {
-	time.Sleep(6000 * time.Millisecond)
-	fmt.Printf("[miner] Killing...\n")
-	err := m.StopMining()
-	if err != nil {
-		fmt.Printf("%v\n", err)
-	}
-	err = m.StartMining()
-	if err != nil {
-		fmt.Printf("%v\n", err)
-	}
-}
-
-func (m *Miner) MineBlocks() (err error) {
-	fmt.Printf("[miner] Starting to Mine Blocks\n")
-	for {
-		select {
-		case <- doneMining:
-			// done
-			fmt.Printf("[miner] Done Mining Blocks\n")
-			return nil
-		case <- earlyExitSignal:
-			minersGroup.Done()
-			fmt.Printf("[miner] Early Exit\n")
-			return nil
-		default:
-			parentHash, err := m.Blockchain.LastNodeHash()
-			if err != nil {
-				return fmt.Errorf("Unable to get parent hash: %v", err)
-			}
-			b := NewBlock(parentHash, m.PublKey)
-			difficulty := uint8(0)
-			if len(operationQueue) >= OP_THRESHOLD {
-				difficulty = m.Settings.PoWDifficultyOpBlock
-				for i := 0; i <= OP_THRESHOLD; i++ {
-					b.Operations = append(b.Operations, <- operationQueue)
-				}
-			} else {
-				difficulty = m.Settings.PoWDifficultyNoOpBlock
-			}
-
-			fmt.Printf("[miner] Starting Mining: %v\n", b)
-			err = b.Mine(difficulty)
-			hash, err := b.Hash()
-			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
-
-			_ = m.Blockchain.AppendBlock(b, m.Settings)
-			if err != nil {
-				fmt.Printf("MineBlocks created Error: %v", err)
-				return err
-			}
-		}
-	}
+func (m *Miner) GenerateOpBlock() (err error) {
+	return nil
 }
 
 // validates incoming block from other miner
-func (m *Miner) ValidBlock(b *Block) (valid bool, err error){
-	hash, err := b.Hash()
-	if err != nil {
-		return false, fmt.Errorf("Unable validate block: %v", err)
-	}
-	difficulty := uint8(0)
-	if len(b.Operations) > 0 {
-		difficulty = m.Settings.PoWDifficultyOpBlock
-		// check each op has a valid sig
-		for _, op := range b.Operations {
-			// TODO
-			expectedSig := ""
-			err = nil
-			if err != nil {
-				return false, fmt.Errorf("Unable validate block: %v", err)
-			}
-			if op.OperationSig != expectedSig {
-				return false, nil
-			}
-		}
-	} else {
-		difficulty = m.Settings.PoWDifficultyNoOpBlock
-	}
-	// check nonce adds up
-	if !compute.Valid(hash, difficulty) {
-		return false, nil
-	}
-
-	// check previous block is in tree
-	present, err := m.Blockchain.BlockPresent(b)
-	if err != nil {
-		return false, fmt.Errorf("Unable validate block: %v", err)
-	}
-	if present {
-		return true, nil
-	} else {
-		// failing that, check its ancestors in the forest, and those pass ValidBlock
-		if m.BlockForest[b.ParentHash] != nil {
-			parentValid, err := m.ValidBlock(m.BlockForest[b.ParentHash])
-			if err != nil {
-				return false, fmt.Errorf("Unable validate block: %v", err)
-			}
-			if parentValid {
-				return true, nil
-			}
-		}
-		return false, nil
-	}
+func (m *Miner) ValidateBlock() (err error){
+	// TODO: include here check against the block produced (or paused?)
+	// if block arrived during generating process
+	// or before sending the generated block out ===> TODO: DOUBLE SPENDING CHECK
+	return nil
 }
 
-// this stops the process of mining blocks
-// Commands the lower level threads to stop.
-// Waitgroup finishes when these exit
+// this should pause (or delete?) process of mining ink
+// in case we want to keep the point at which we've stopped
 func (m *Miner) StopMining() (err error){
-	fmt.Printf("[miner] Stopping Mining by command\n")
-	close(earlyExitSignal)
-	minersGroup.Wait()
-	fmt.Printf("[miner] Stopped\n")
+	return nil
+}
+
+// this should resume process of mining ink
+func (m *Miner) ResumeMining() (err error){
 	return nil
 }
 
@@ -217,8 +147,52 @@ func (m *Miner) RemoveBlockFromBC() (err error){
 /////// functions to interact with server
 
 // retrieves settings from server
+func (m *Miner) ConnectServer(servConnector *rpc.Client, minerAddr string) (err error) {
+	//1st rpc call
+	//2nd retrieve settings ==> 2 in 1
+	gob.Register(&net.TCPAddr{})
+	gob.Register(&elliptic.CurveParams{})
+	puk := *m.PublKey
+	a, _ := net.ResolveTCPAddr("tcp",minerAddr)
+	var minerInfo = MinerInfo{
+		net.Addr(a),
+		puk,
+	}
+
+	err = servConnector.Call("RServer.Register", minerInfo, m.Settings)
+	blockartlib.CheckErr(err)
+	fmt.Println("Settings ", m.Settings)
+	return nil
+}
 
 func (m *Miner) RetrieveSettings() (err error) {
+	return nil
+}
+
+// requests another miner's ID (info) from the server
+func (m *MinerCaller) RequestMiner(lom *[]net.Addr, minNeighbours uint8) (err error) {
+	gob.Register(&net.TCPAddr{})
+	gob.Register(&[]net.Addr{})
+	gob.Register(&[]net.TCPAddr{})
+	gob.Register(&elliptic.CurveParams{})
+
+	//for uint8(len(*lom))<minNeighbours { // TODO: uncomment for production
+	for uint8(len(*lom))<2 {
+		//fmt.Println("request lom")
+		err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *MinerCaller) SendHeartbeat(t time.Time) (err error) {
+	var ignored bool
+	err = m.RPCClient.Call( "RServer.HeartBeat", m.Public, &ignored)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
