@@ -29,6 +29,9 @@ const (
 	NUM_MINING_TASKS = 1
 )
 
+// maps hashes to blocks for the invalid blocks
+type Forest map[string]*Block
+
 type Miner struct {
 	InkLevel uint32
 	ServerNodeAddr *net.TCPAddr
@@ -37,7 +40,7 @@ type Miner struct {
 	Neighbors []*MinerConnection
 	PublKey *ecdsa.PublicKey
 	PrivKey *ecdsa.PrivateKey
-	Blockchain *Blockchain
+	Blockchain *BCStorage
 	Settings *blockartlib.MinerNetSettings
 	LocalCanvas CanvasData
 	BlockForest map[string]*Block
@@ -63,6 +66,10 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 
 func (m *Miner) IsEnoughInk() (err error) {
 	return nil
+}
+
+func (m *Miner) CreateGenesisBlock() (g *Block) {
+	return NewBlock(m.Settings.GenesisBlockHash, nil)
 }
 
 func (m *Miner) StartMining() (err error) {
@@ -104,28 +111,11 @@ func (m *Miner) MineBlocks() (err error) {
 			fmt.Printf("[miner] Early Exit\n")
 			return nil
 		default:
-			// parentHash, err := m.Chain.BC.LastNode.Current.BlockResiding.Hash()
-			// if err != nil {
-			// 	fmt.Printf("MineBlocks created Error: %v", err)
-			// 	return err
-			// }
-			var parentHash string
-			fmt.Printf("Current Head: %v\n", m.Blockchain.CurrentNode)
-			if m.Blockchain.CurrentNode == nil {
-				// empty chain
-				parentHash = m.Blockchain.GenesisHash
-			} else {
-				parentHash, err = m.Blockchain.CurrentNode.Block.Hash()
-				if err != nil {
-					fmt.Printf("MineBlocks created Error: %v", err)
-					return err
-				}
+			parentHash, err := m.Blockchain.LastNodeHash()
+			if err != nil {
+				return fmt.Errorf("Unable to get parent hash: %v", err)
 			}
-			b := &Block{
-				ParentHash: parentHash,
-				MinerPublicKey: m.PublKey,
-			}
-
+			b := NewBlock(parentHash, m.PublKey)
 			difficulty := uint8(0)
 			if len(operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
@@ -141,7 +131,7 @@ func (m *Miner) MineBlocks() (err error) {
 			hash, err := b.Hash()
 			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
 
-			err = m.Blockchain.AddBlock(b)
+			_ = m.Blockchain.AppendBlock(b, m.Settings)
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err

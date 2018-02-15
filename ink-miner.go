@@ -60,21 +60,24 @@ func main() {
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, serverConn.SendHeartbeat)
 
-	m.Blockchain, err = minerlib.NewBlockchain(m.Settings.GenesisBlockHash)
+	// TODO: Check in with neighbors
+	// TODO: Ask Neighbors for blockchain that already exists
+	genesisBlock := m.CreateGenesisBlock()
+
+	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	checkError(err)
 	go m.StartMining()
-	go m.TestEarlyExit()
+	// go m.TestEarlyExit()
 
 	// Ask for Neighbors
 	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
-	checkError(err)
+	checkError(fmt.Errorf("Error while requesting miners"))
 	fmt.Println("miners1: ", miners)
 
 	err = m.AddMinersToList(&miners)
 	checkError(err)
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
 	
-	// TODO: Check in with neighbors
 
 	serviceRequests(localListener)
 }
@@ -82,6 +85,7 @@ func main() {
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
 	// dial to server
 	serverRPCClient, err := rpc.Dial("tcp", serverAddr.String())
+	checkError(err)
 	// setup gob
 	gob.Register(&net.TCPAddr{})
 	gob.Register(&elliptic.CurveParams{})
@@ -123,12 +127,16 @@ func serviceRequests(localListener *net.TCPListener) {
 			OpQueue = OpQueue[1:]
 			fmt.Println("connected to queue ", b, "len ", len(OpQueue))
 		}
+		// DrawOperations to validate
+		// For valid add to miner op channel
 	}
 }
 
 func checkError(err error) {
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		// induce a panic for stacktrace
+		a := []string{"hola"}
+		fmt.Printf("Error: %v %v\n", err, a[32])
 		os.Exit(1)
 	}
 }
