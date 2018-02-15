@@ -224,7 +224,7 @@ func (m *Miner) RetrieveSettings() (err error) {
 
 /////// functions to interact with other miners
 
-func (m *Miner) ConnectToOtherMiner() (err error) {
+func (m *Miner) ConnectToOtherMiners() (err error) {
 	return nil
 }
 

@@ -71,7 +71,8 @@ func main() {
 
 	// Ask for Neighbors
 	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
-	checkError(fmt.Errorf("Error while requesting miners"))
+	checkError(fmt.Errorf("Error while requesti
+	// Set up RPC server for other miners to hitng miners"))
 	fmt.Println("miners1: ", miners)
 
 	err = m.AddMinersToList(&miners)
@@ -79,6 +80,10 @@ func main() {
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
 	
 
+	// Set up receiver for other Miners
+	minerReceiverInst := new(MinerReceiverInstance)
+	rpc.Register(minerReceiverInst)
+	
 	serviceRequests(localListener)
 }
 
@@ -200,6 +205,11 @@ func (si *ArtNodeInstance) GetBlockChildren (hash *string, reply *[]string) erro
 	// *reply = bla
 	// return err
 	return nil
+}
+
+type MinerReceiverInstance int
+
+func (si *MinerReceiverInstance) ConnectNewNeighbour (hash *string, reply *[]string) error {
 }
 
 // struct for communicating info about a miner to the server
