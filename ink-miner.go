@@ -64,7 +64,7 @@ func main() {
 	// TODO: Ask Neighbors for blockchain that already exists
 	genesisBlock := m.CreateGenesisBlock()
 
-	m.Blockchain = minerlib.NewBlockchain(genesisBlock, m.Settings)
+	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	checkError(err)
 	go m.StartMining()
 	// go m.TestEarlyExit()

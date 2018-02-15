@@ -15,12 +15,7 @@ type BCTreeNode struct {
 	Depth int // length of BC
 }
 
-type BCChainNode struct {
-	Current *BCTreeNode
-	Next *BCTreeNode
-}
-
-func NewBCNodeAlt (block *Block, parent *BCTreeNode, ownerInkLvl uint32, settings *blockartlib.MinerNetSettings) *BCTreeNode {
+func NewBCTreeNode (block *Block, parent *BCTreeNode, ownerInkLvl uint32, settings *blockartlib.MinerNetSettings) *BCTreeNode {
 	currHash, err := block.Hash()
 	if err != nil {
 		fmt.Printf("NewNode Error while hashing given block: %v", err)
@@ -48,10 +43,21 @@ func NewBCNodeAlt (block *Block, parent *BCTreeNode, ownerInkLvl uint32, setting
 	return &bcNode
 }
 
-func NewBCChainNode(current *BCTreeNode) *BCChainNode {
-	bccNode := BCChainNode{
-		current,
-		nil,
+func FindBCTreeNode (bct *BCTreeNode, nodeHash string) *BCTreeNode {
+	if bct != nil {
+		if bct.CurrentHash == nodeHash {
+			return bct
+		} else {
+			if len(bct.Children) == 0 {
+				return nil
+			}
+			for _, v := range bct.Children {
+				res := FindBCTreeNode(v, nodeHash)
+				if res != nil {
+					return res
+				}
+			}
+		}
 	}
-	return &bccNode
+	return nil
 }
