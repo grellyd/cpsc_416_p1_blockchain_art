@@ -47,7 +47,6 @@ type Shape struct {
 type Operation struct {
 	Type OperationType
 	OperationNumber int
-	OperationSig string
 	Shape ShapeType
 	Fill string
 	Stroke string
@@ -59,12 +58,8 @@ type Operation struct {
 
 /* Attempt to draw all shapes in list. Successfully drawn operations are in
 validOps. They are attempted in a greedy fashion from the start.
-validOps and invalidOps are maps. Key = OperationSig, value = Operation
-<<<<<<< HEAD
+validOps and invalidOps are maps. Key = shapehash, value = Operation
 Handles NOP blocks. They all get added to validOps.
-=======
-Handles NOP blocks
->>>>>>> origin/master
 */
 // TODO[sharon]: Handle delete operations
 // TODO[sharon]: make this shorter with a map of the commands and number of numbers they take
@@ -74,11 +69,11 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 	var drawnShapes []Shape
 	for _, op := range ops {
 		if op.Type == blockartlib.NOP {
-			validOps[op.OperationSig] = op
+			validOps[op.ShapeHash] = op
 			continue
 		}
 		if op.Type == blockartlib.DELETE {
-			validOps[op.OperationSig] = op
+			validOps[op.ShapeHash] = op
 			// TODO[sharon]: How to represent deletes? Add shapehash field to Operation?
 			continue
 		}
@@ -96,9 +91,9 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			}
 		}
 		if overlapsSomething {
-			invalidOps[op.OperationSig] = op
+			invalidOps[op.ShapeHash] = op
 		} else {
-			validOps[op.OperationSig] = op
+			validOps[op.ShapeHash] = op
 			drawnShapes = append(drawnShapes, shape)
 		}
 	}
@@ -157,7 +152,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	s.Fill = op.Fill
 	s.Stroke = op.Stroke
 	s.Owner = op.ArtNodePubKey
-	s.Hash = op.OperationSig
+	s.Hash = op.ShapeHash
 
 	curPt := Point{0, 0}
 	initialPt := Point{0, 0}

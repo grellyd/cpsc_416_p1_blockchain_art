@@ -162,7 +162,7 @@ func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
 			if err != nil {
 				return false, fmt.Errorf("Unable validate block: %v", err)
 			}
-			if op.OperationSig != expectedSig {
+			if op.ShapeHash != expectedSig {
 				return false, nil
 			}
 		}
