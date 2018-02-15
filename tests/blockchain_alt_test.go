@@ -48,7 +48,7 @@ func TestBlockChain (t *testing.T) {
 	fmt.Println("genBlock")
 
 	// The following hashes have to change
-	var bc = minerlib.NewBlockchain(genBlock, &set)
+	var bc = minerlib.NewBlockchainStorage(genBlock, &set)
 	fmt.Println("New Blockchain", bc)
 
 	miner.Blockchain = bc

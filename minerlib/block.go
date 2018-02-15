@@ -134,7 +134,7 @@ func (b *Block) bodyBytes() (data []byte, err error) {
 	}
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
-	gob.Register(Block{})
+	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	err = enc.Encode(b.ParentHash)
 	if err != nil {

@@ -1,8 +1,9 @@
-package compute
+package tests
 import (
 	"fmt"
 	"strings"
 	"testing"
+	"minerlib/compute"
 )
 // Inconsistent, as the naturing of random hash finding is.
 // Worst: times out.
@@ -50,15 +51,15 @@ func TestData(t *testing.T) {
 		// },
 	}
 	for _, test := range tests {
-		nonce, err := Data(test.data, test.difficulty)
+		nonce, err := compute.Data(test.data, test.difficulty)
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestData(%v)\" produced err: %v", test, err)
 		}
-		hash := MD5Hash(test.data, nonce)
+		hash := compute.MD5Hash(test.data, nonce)
 		fmt.Printf("Difficulty: %d, Nonce: %d, Hash: %s\n", test.difficulty, nonce, hash)
 		// sanity check num zeros as using same validity functions as mine.Data
 		numPresentZeros := strings.Count(hash, "0")
-		if !Valid(hash, test.difficulty) || numPresentZeros < int(test.difficulty) {
+		if !compute.Valid(hash, test.difficulty) || numPresentZeros < int(test.difficulty) {
 			t.Errorf("Bad Exit: Not enough zeros with %d! %d instead of %d", nonce, numPresentZeros, test.difficulty)
 		}
 	}
@@ -106,15 +107,15 @@ func TestDataConcurrent(t *testing.T) {
 		// },
 	}
 	for _, test := range tests {
-		nonce, err := DataConcurrent(test.data, test.difficulty)
+		nonce, err := compute.DataConcurrent(test.data, test.difficulty)
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestData(%v)\" produced err: %v", test, err)
 		}
-		hash := MD5Hash(test.data, nonce)
+		hash := compute.MD5Hash(test.data, nonce)
 		fmt.Printf("Difficulty: %d, Nonce: %d, Hash: %s\n", test.difficulty, nonce, hash)
 		// sanity check num zeros as using same validity functions as mine.Data
 		numPresentZeros := strings.Count(hash, "0")
-		if !Valid(hash, test.difficulty) || numPresentZeros < int(test.difficulty) {
+		if !compute.Valid(hash, test.difficulty) || numPresentZeros < int(test.difficulty) {
 			t.Errorf("Bad Exit: Not enough zeros with %d! %d instead of %d", nonce, numPresentZeros, test.difficulty)
 		}
 	}
