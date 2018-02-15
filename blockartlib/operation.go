@@ -28,7 +28,7 @@ type Operation struct {
 	ArtNodePubKey string
 	ValidateBlockNum uint8
 	ShapeHash string
-	// Nonce uint32
+	Nonce uint32
 }
 
 // Let the OpSig be the MD5 Hash of the operation type, operation number, and the ArtNode's Public Key

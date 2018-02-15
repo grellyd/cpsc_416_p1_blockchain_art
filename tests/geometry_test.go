@@ -54,14 +54,36 @@ func TestIsLinesIntersecting(t *testing.T) {
 // TODO[sharon]: Test error case
 func TestInkArea(t *testing.T) {
 	svg := "M 8,0 V 8 L 4,4 l -4,4 v -8 h 8"
-	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
+	// op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
+	op := Operation {
+		Type: 4,
+		OperationNumber: 2,
+		OperationSig: "opsig",
+		Shape: blockartlib.PATH,
+		Fill: "nonempty",
+		Stroke: "red",
+		ShapeSVGString: svg,
+		ArtNodePubKey: "pubkey",
+		ValidateBlockNum: 34,
+	}
 	settings := CanvasSettings{100, 100}
 	ink, _ := minerlib.InkNeeded(op, settings)
 	if ink != 48 {
 		t.Errorf("Expected ink to be 48 units. Instead was %v\n", ink)
 	}
 
-	transparentOp := Operation{4, 2, "opsig", blockartlib.PATH, "transparent", "red", svg, "pubkey", 34}
+	// transparentOp := Operation{4, 2, "opsig", blockartlib.PATH, "transparent", "red", svg, "pubkey", 34
+	transparentOp := Operation{
+		Type: 4,
+		OperationNumber:  2,
+		OperationSig:  "opsig",
+		Shape:  blockartlib.PATH,
+		Fill:  "transparent",
+		Stroke:  "red",
+		ShapeSVGString:  svg,
+		ArtNodePubKey:  "pubkey",
+		ValidateBlockNum:  34,
+	}
 	transparentInk, _ := minerlib.InkNeeded(transparentOp, settings)
 	if transparentInk != 36 {
 		t.Errorf("Expected ink to be 36 units. Instead was %v\n", transparentInk)
