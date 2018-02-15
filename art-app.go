@@ -16,10 +16,10 @@ import "blockartlib"
 import (
 	//"crypto/ecdsa"
 	//"strconv"
+	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"os"
-	"encoding/hex"
-	"crypto/x509"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 		return
 	}
 
-    validateNum := 2
+	validateNum := 2
 
 	// Add a line.
 	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 0 5", "transparent", "red")
