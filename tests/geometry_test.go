@@ -170,6 +170,11 @@ func TestCirclesIntersecting(t *testing.T) {
 	ExpectTrue(t, isOverlap, "5) circle 661 and circle 681.\n")
 }
 
+func TestOtherCircleCases(t *testing.T) {
+	// test square1 and circle 10,6 1. currently failing
+
+}
+
 func TestDrawAllShapes(t *testing.T) {
 	convexPolygon := ConvexPolygon()
 	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34}
@@ -177,13 +182,15 @@ func TestDrawAllShapes(t *testing.T) {
 	squareOutOp := Operation{blockartlib.DRAW, 2, "square_out", blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34}
 	squareIn := Square2()
 	squareInOp := Operation{blockartlib.DRAW, 2, "square_in", blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode2", 34}
-	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp}
+	circleOp := Operation{blockartlib.DRAW, 2, "circle", blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode3", 34}
+
+	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp}
 	settings := CanvasSettings{1024, 1024}
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
 	validString := ConcatOps(validOps)
 	invalidString := ConcatOps(invalidOps)
 	ExpectContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1"})
-	ExpectEquals(t, invalidString, "square_in by artnode2, ")
+	ExpectContains(t, invalidString, []string{"square_in by artnode2", "circle by artnode3"})
 }
 
 func TestDrawAllShapesWithOwnership(t *testing.T) {
@@ -193,12 +200,13 @@ func TestDrawAllShapesWithOwnership(t *testing.T) {
 	squareOutOp := Operation{blockartlib.DRAW, 2, "square_out", blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34}
 	squareIn := Square2()
 	squareInOp := Operation{blockartlib.DRAW, 2, "square_in", blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode0", 34}
-	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp}
+	circleOp := Operation{blockartlib.DRAW, 2, "circle", blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode0", 34}
+	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp}
 	settings := CanvasSettings{1024, 1024}
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
 	validString := ConcatOps(validOps)
 	invalidString := ConcatOps(invalidOps)
-	ExpectContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1", "square_in by artnode0"})
+	ExpectContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1", "square_in by artnode0", "circle by artnode0"})
 	ExpectEquals(t, invalidString, "")
 }
 

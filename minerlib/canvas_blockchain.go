@@ -83,8 +83,8 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			return validOps, invalidOps, err
 		}
 		overlapsSomething := false
-		for _, valid := range drawnShapes {
-			if valid.Owner == shape.Owner {
+ 		for _, valid := range drawnShapes {
+			if strings.Compare(valid.Owner, shape.Owner) == 0 {
 				continue
 			}
 			if IsShapesOverlapping(valid, shape) {
@@ -153,6 +153,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 	s.Fill = op.Fill
 	s.Stroke = op.Stroke
 	s.Owner = op.ArtNodePubKey
+	s.Hash = op.OperationSig
 
 	curPt := Point{0, 0}
 	initialPt := Point{0, 0}
@@ -231,7 +232,7 @@ func OperationToShape(op Operation, canvasSettings CanvasSettings) (s Shape, err
 		}
 	}
 
-	// Make sure the given polygon is closed
+	// Check the given polygon is closed
 	if op.Fill != TRANSPARENT && !s.IsCircle() {
 		if s.Sides[0].Point1 != s.Sides[len(s.Sides)-1].Point2 {
 			return s, blockartlib.InvalidShapeSvgStringError(svgString)
