@@ -329,11 +329,13 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 		return (centerSegment.Length() <= (s1.Radius + s2.Radius))
 	} else {
 		if s1.IsCircle() {
+			// Check if sides intersect, or polygon in circle.
 			for _, side := range s2.Sides {
 				if IsLineIntersectingCircle(side, s1) {
 					return true
 				}
 			}
+
 		} else {
 			for _, side := range s1.Sides {
 				if IsLineIntersectingCircle(side, s2) {
@@ -372,9 +374,6 @@ func IsLineIntersectingCircle(seg LineSegment, circle Shape) bool {
 	if IsPointInCircle(seg.Point1, circle) || IsPointInCircle(seg.Point2, circle) {
 		return true
 	} else {
-
-		//(cx + (dy / dlen) * radius, cy - (dx / dlen) * radius) to 
-		// (cx - (dy / dlen) * radius, cy + (dx / dlen) * radius)
 		dlen := seg.Length()
 		dx := seg.Point1.X - seg.Point2.X
 		dy := seg.Point1.Y - seg.Point2.Y

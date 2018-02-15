@@ -208,11 +208,21 @@ func TestCirclesIntersecting(t *testing.T) {
 }
 
 func TestOtherCircleCases(t *testing.T) {
-	// test square1 and circle 10,6 1. currently failing
 	square1 := Square1()
 	circle1061 := Circle10_6_1()
 	isOverlap := minerlib.IsShapesOverlapping(square1, circle1061)
 	ExpectFalse(t, isOverlap, "1) square1 and circle 10,6 1.\n")
+
+	// Circle in transparent polygon
+	square4 := Square4()
+	isOverlap = minerlib.IsShapesOverlapping(square4, circle1061)
+	ExpectFalse(t, isOverlap, "2) square4 transparent and circle 10,6 1.\n")
+
+	// Circle in filled polygon
+	square4.Fill = "nontransparent"
+	isOverlap = minerlib.IsShapesOverlapping(square4, circle1061)
+	ExpectTrue(t, isOverlap, "3) square4 filled and circle 10,6 1.\n")
+
 }
 
 func TestDrawAllShapes(t *testing.T) {
@@ -233,7 +243,6 @@ func TestDrawAllShapes(t *testing.T) {
 	ExpectContains(t, invalidString, []string{"square_in by artnode2", "circle by artnode3"})
 }
 
-// TODO[sharon]: fix. currently failing
 func TestDrawAllShapesWithOwnership(t *testing.T) {
 	convexPolygon := ConvexPolygon()
 	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "shapehash", 129}
@@ -276,6 +285,15 @@ func Square3() Shape {
 	s4 := LineSegment{Point{4, 4}, Point{4, 3}}
 	sides := []LineSegment{s1, s2, s3, s4}
 	return Shape{"owner3", "square3", sides, "transparent", "stroke", Point{0, 0}, 0}
+}
+
+func Square4() Shape {
+	s1 := LineSegment{Point{15, 0}, Point{15, 10}}
+	s2 := LineSegment{Point{15, 10}, Point{5, 10}}
+	s3 := LineSegment{Point{5, 10}, Point{5, 0}}
+	s4 := LineSegment{Point{5, 0}, Point{15, 0}}
+	sides := []LineSegment{s1, s2, s3, s4}
+	return Shape{"owner4", "square4", sides, "transparent", "stroke", Point{0, 0}, 0}
 }
 
 func Triangle2() Shape {
