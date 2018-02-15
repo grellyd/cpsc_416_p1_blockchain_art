@@ -372,21 +372,17 @@ func IsLineIntersectingCircle(seg LineSegment, circle Shape) bool {
 	if IsPointInCircle(seg.Point1, circle) || IsPointInCircle(seg.Point2, circle) {
 		return true
 	} else {
-		segSlope := (seg.Point1.Y - seg.Point2.Y) / (seg.Point1.X - seg.Point2.X)
-		orthSlope := 1 / segSlope
-		kPlus := circle.Radius / (math.Sqrt(1 + math.Pow(orthSlope, 2)))
-		point1 := Point{circle.Center.X + kPlus, circle.Center.Y + orthSlope*kPlus}
-		seg1 := LineSegment{point1, circle.Center}
 
-		kMinus := -circle.Radius / (math.Sqrt(1 + math.Pow(orthSlope, 2)))
-		point2 := Point{circle.Center.X + kMinus, circle.Center.Y + orthSlope*kMinus}
-		seg2 := LineSegment{point2, circle.Center}
-
-		if seg1.Length() <= circle.Radius || seg2.Length() <= circle.Radius {
-			return true
-		}
+		//(cx + (dy / dlen) * radius, cy - (dx / dlen) * radius) to 
+		// (cx - (dy / dlen) * radius, cy + (dx / dlen) * radius)
+		dlen := seg.Length()
+		dx := seg.Point1.X - seg.Point2.X
+		dy := seg.Point1.Y - seg.Point2.Y
+		segPt1 := Point{circle.Center.X + (dy / dlen) * circle.Radius, circle.Center.Y - (dx / dlen) * circle.Radius}
+		segPt2 := Point{circle.Center.X - (dy / dlen) * circle.Radius, circle.Center.Y + (dx / dlen) * circle.Radius}
+		cSeg := LineSegment{segPt1, segPt2}
+		return IsLinesIntersecting(seg, cSeg)
 	}
-	return false
 }
 
 func IsPointInCircle(p Point, circle Shape) bool {
