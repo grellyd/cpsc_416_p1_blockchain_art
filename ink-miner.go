@@ -13,8 +13,6 @@ import (
 	"encoding/gob"
 	"crypto/elliptic"
 	"reflect"
-	"encoding/hex"
-	"crypto/x509"
 )
 var m minerlib.Miner // singleton for miner
 var miners []net.Addr
@@ -142,9 +140,6 @@ func serviceRequests(localListener *net.TCPListener) {
 
 func CheckError(err error) {
 	if err != nil {
-		// induce a panic for stacktrace
-		//a := []string{"hola"}
-		//fmt.Printf("Error: %v %v\n", err, a[32])
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -157,12 +152,8 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-//func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
 func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
-	// TODO: Fix w/e is up with unicode vs strings
-	//priv, pub := keys.Decode(privStr, pubStr)
-	priv, pub, err := keys.Generate()
-	CheckError(err)
+	priv, pub := keys.Decode(privStr, pubStr)
 	pair := blockartlib.KeyPair{
 		Private: priv,
 		Public: pub,
@@ -173,7 +164,6 @@ func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
 
 // =========================
 // Connection Instances
-// TODO: Extract out from ink-miner.go
 // =========================
 
 
