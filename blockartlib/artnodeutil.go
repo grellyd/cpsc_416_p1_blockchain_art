@@ -55,6 +55,10 @@ func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining
 }
 
 func (an ArtNode) GetShapes(blockHash string) (shapeHashes []string, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetShapesFromBlock", &blockHash, &shapeHashes)
+	if err != nil {
+		return shapeHashes, DisconnectedError("miner unavailable") // TODO: check type of error
+	}
 	return shapeHashes, err
 }
 
@@ -67,7 +71,12 @@ func (an ArtNode) GetGenesisBlock() (blockHash string, err error) {
 }
 
 func (an ArtNode) GetChildren(blockHash string) (blockHashes []string, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetBlockChildren", blockHash, &blockHashes)
+	if err != nil {
+		return blockHashes, DisconnectedError("miner unavailable")
+	}
 	return blockHashes, err
+
 }
 
 func (an ArtNode) CloseCanvas() (inkRemaining uint32, err error) {
