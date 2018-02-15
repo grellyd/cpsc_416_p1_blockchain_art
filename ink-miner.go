@@ -68,7 +68,7 @@ func main() {
 
 	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	CheckError(err)
-	go m.StartMining()
+	//go m.StartMining()
 	// go m.TestEarlyExit()
 
 	// Ask for Neighbors
@@ -88,7 +88,7 @@ func main() {
 
 	neighborToReceiveBCFrom, err := m.ConnectToNeighborMiners(localAddr)
 	CheckError(err)
-	fmt.Println("Connected to neighbor miners; received BCTree")
+	fmt.Printf("Connected to neighbor miners; will ask for BlockChain from neighbour with address %s\n", neighborToReceiveBCFrom.String())
 
 	err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
 	CheckError(err)
@@ -221,6 +221,7 @@ type MinerInstance int
 
 func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *int) error {
 	// Add neighbor to list of neighbors
+	fmt.Printf("Got request to register a new neighbor with TCP address %s\n", neighborAddr.String())
 	var newNeighbor = minerlib.MinerConnection{}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", neighborAddr.String())
 	if err != nil {
@@ -231,6 +232,8 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 
 	// Return the length of our blockchain, so the new neighbor can decide
 	// if they want our tree.
+
+    fmt.Printf("ConnectNewNeighbor: Returning a reply depth of %d\n", *reply)
 	*reply = m.Blockchain.BC.LastNode.Current.Depth
 
 	return nil
