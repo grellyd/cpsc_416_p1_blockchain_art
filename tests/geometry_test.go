@@ -150,6 +150,7 @@ func TestShapesOverlappingConvex(t *testing.T) {
 func TestCirclesIntersecting(t *testing.T) {
 	circle661 := Circle6_6_1()
 	circle671 := Circle6_7_1()
+	circle681 := Circle6_8_1()
 	circle1061 := Circle10_6_1()
 	convex := ConvexPolygon()
 
@@ -164,6 +165,9 @@ func TestCirclesIntersecting(t *testing.T) {
 
 	isOverlap = minerlib.IsShapesOverlapping(circle671, convex)
 	ExpectTrue(t, isOverlap, "4) circle671 and convex.\n")
+
+	isOverlap = minerlib.IsShapesOverlapping(circle661, circle681)
+	ExpectTrue(t, isOverlap, "5) circle 661 and circle 681.\n")
 }
 
 func TestDrawAllShapes(t *testing.T) {
@@ -255,13 +259,18 @@ func ConvexPolygon() Shape {
 }
 
 func Circle6_6_1() Shape {
-	return Shape{"owner7", "concave_polygon", nil, "solid", "stroke", Point{6, 6}, 1}
+	return Shape{"owner7", "circle 6,6 1", nil, "solid", "stroke", Point{6, 6}, 1}
 }
 
 func Circle6_7_1() Shape {
-	return Shape{"owner8", "concave_polygon", nil, "solid", "stroke", Point{6, 7}, 1}
+	return Shape{"owner8", "circle 6,7 1", nil, "solid", "stroke", Point{6, 7}, 1}
+}
+
+func Circle6_8_1() Shape {
+	return Shape{"owner9", "circle 6,8 1", nil, "solid", "stroke", Point{6, 8}, 1}
 }
 
 func Circle10_6_1() Shape {
-	return Shape{"owner9", "concave_polygon", nil, "solid", "stroke", Point{10, 6}, 1}
+	return Shape{"owner10", "circle 10,6 1", nil, "solid", "stroke", Point{10, 6}, 1}
 }
+

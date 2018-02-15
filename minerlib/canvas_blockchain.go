@@ -321,7 +321,7 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 		}
 	} else if s1.IsCircle() && s2.IsCircle() {
 		centerSegment := LineSegment{s1.Center, s2.Center}
-		return (centerSegment.Length() > (s1.Radius + s2.Radius))
+		return (centerSegment.Length() <= (s1.Radius + s2.Radius))
 	} else {
 		if s1.IsCircle() {
 			for _, side := range s2.Sides {
