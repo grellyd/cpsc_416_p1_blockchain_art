@@ -12,6 +12,9 @@ import (
 	"crypto/ecdsa"
 	"encoding/gob"
 	"crypto/elliptic"
+	"reflect"
+	"encoding/hex"
+	"crypto/x509"
 )
 var m minerlib.Miner // singleton for miner
 var miners []net.Addr
@@ -19,7 +22,7 @@ var miners []net.Addr
 var serverConnector *rpc.Client
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
-
+	
 //var localIP = "127.0.0.1:0"
 
 func main() {
@@ -38,15 +41,15 @@ func main() {
 	CheckError(err)
 	localAddr, err := net.ResolveTCPAddr("tcp", localIP)
 	CheckError(err)
-
+	
 	// Create Miner
 	m = minerlib.NewMiner(serverAddr, keys)
-
+	
 	//setup an ArtNode Reciever
 	artNodeInst := new(ArtNodeInstance)
 	// register art node instance locally
 	rpc.Register(artNodeInst)
-
+	
 	// Add a listener on myself
 	localListener, err := net.ListenTCP("tcp", localAddr)
 	CheckError(err)
@@ -54,12 +57,12 @@ func main() {
 
 	// My Info to Send
 	localMinerInfo := MinerInfo{localListener.Addr(), m.PublKey}
-
+	
 	// Connect to server
 	serverConn, err := connectServer(serverAddr, localMinerInfo, m.Settings)
 	CheckError(err)
 	fmt.Println("Settings ", m.Settings)
-
+	
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-3) * time.Millisecond, serverConn.SendHeartbeat)
 
@@ -73,14 +76,16 @@ func main() {
 	// go m.TestEarlyExit()
 
 	// Ask for Neighbors
+	fmt.Println("bla1")
 	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
-	CheckError(fmt.Errorf("Error while requesting miners"))
+	//CheckError(fmt.Errorf("Error while requesting miners"))
+	CheckError(err)
 	fmt.Println("miners1: ", miners)
 
 	err = m.AddMinersToList(&miners)
 	CheckError(err)
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
-
+	
 
 	serviceRequests(localListener)
 }
@@ -97,7 +102,7 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	//2nd retrieve settings ==> 2 in 1
 	err = serverRPCClient.Call("RServer.Register", minerInfo, settings)
 	CheckError(err)
-	// Create the serverConnection.
+	// Create the serverConnection. 
 	// TODO: refactor to ServerInstance
 	tcpFromAddr, err := net.ResolveTCPAddr("tcp", minerInfo.Address.String())
 	CheckError(err)
@@ -152,7 +157,8 @@ func doEvery(d time.Duration, f func(time.Time) error) error {
 	return nil
 }
 
-func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
+//func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
+func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
 	// TODO: Fix w/e is up with unicode vs strings
 	//priv, pub := keys.Decode(privStr, pubStr)
 	priv, pub, err := keys.Generate()
@@ -162,6 +168,7 @@ func getKeyPair(pubStr string, privStr string) (*blockartlib.KeyPair, error) {
 		Public: pub,
 	}
 	return &pair, nil
+
 }
 
 // =========================
@@ -177,11 +184,14 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction , repl
 	fmt.Println("In rpc call to register the AN")
 	privateKey := keys.DecodePrivateKey(an.PrivKey)
 	publicKey := keys.DecodePublicKey(an.PubKey)
-	if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
+	/*if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
 
 		fmt.Println("Private keys do not match.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
-	} else {
+	}*/ if !reflect.DeepEqual(privateKey, m.PrivKey) && !reflect.DeepEqual(publicKey, m.PublKey){
+		fmt.Println("Private keys do not match.")
+		return blockartlib.DisconnectedError("Key pair isn't valid")
+	}else {
 		*reply = true
 		OpQueue = append(OpQueue, an)
 	}
@@ -223,3 +233,4 @@ type MinerInfo struct {
 	Address net.Addr
 	Key     *ecdsa.PublicKey
 }
+

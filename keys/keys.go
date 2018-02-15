@@ -17,6 +17,8 @@ func Generate() (privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, err e
 		return nil, nil, err
 	}
 	publicKey = &privateKey.PublicKey
+	prK := EncodePrivateKey(privateKey)
+	fmt.Println(prK)
 	return privateKey, publicKey, nil
 }
 
@@ -45,11 +47,11 @@ func Decode(pemEncoded string, pemEncodedPub string) (*ecdsa.PrivateKey, *ecdsa.
 }
 
 func DecodePrivateKey(pemEncoded string) (*ecdsa.PrivateKey) {
-	hexDecodedBytes, err := hex.DecodeString(pemEncoded)
-	if err != nil {
+	//hexDecodedBytes, err := hex.DecodeString(pemEncoded)
+	/*if err != nil {
 		fmt.Printf("Error while Dehexing Private Key: %v\n", err)
-	}
-	privateKey, err := x509.ParseECPrivateKey(hexDecodedBytes)
+	}*/
+	privateKey, err := x509.ParseECPrivateKey([]byte(pemEncoded))
 	if err != nil {
 		fmt.Printf("Error while Decoding Private Key: %v\n", err)
 	}
@@ -57,11 +59,11 @@ func DecodePrivateKey(pemEncoded string) (*ecdsa.PrivateKey) {
 }
 
 func DecodePublicKey(pemEncodedPub string) (*ecdsa.PublicKey) {
-	hexDecodedBytes, err := hex.DecodeString(pemEncodedPub)
+	/*hexDecodedBytes, err := hex.DecodeString(pemEncodedPub)
 	if err != nil {
 		fmt.Printf("Error while Dehexing Public Key: %v\n", err)
-	}
-	genericPublicKey, err := x509.ParsePKIXPublicKey(hexDecodedBytes)
+	}*/
+	genericPublicKey, err := x509.ParsePKIXPublicKey([]byte(pemEncodedPub))
 	if err != nil {
 		fmt.Printf("Error while Decoding Public Key: %v\n", err)
 	}
