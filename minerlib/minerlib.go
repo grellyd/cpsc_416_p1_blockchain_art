@@ -276,8 +276,17 @@ func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err err
 }
 
 // sends out the block to other miners
-func (m *Miner) DisseminateBlock() (err error) {
-	return nil
+func (m *Miner) DisseminateBlock(block *Block) (err error) {
+	for _,v := range m.Neighbors {
+		marshalledBlock, err := block.MarshallBinary()
+		blockartlib.CheckErr(err)
+		var b bool
+		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
+		if !b {
+			fmt.Println("Bad block") // TODO: think what to do in this case
+		}
+	}
+	return err
 }
 
 /////// helpers
