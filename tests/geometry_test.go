@@ -193,6 +193,7 @@ func TestDrawAllShapes(t *testing.T) {
 	ExpectContains(t, invalidString, []string{"square_in by artnode2", "circle by artnode3"})
 }
 
+// TODO[sharon]: fix. currently failing
 func TestDrawAllShapesWithOwnership(t *testing.T) {
 	convexPolygon := ConvexPolygon()
 	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34}
