@@ -206,7 +206,10 @@ func TestCirclesIntersecting(t *testing.T) {
 
 func TestOtherCircleCases(t *testing.T) {
 	// test square1 and circle 10,6 1. currently failing
-
+	square1 := Square1()
+	circle1061 := Circle10_6_1()
+	isOverlap := minerlib.IsShapesOverlapping(square1, circle1061)
+	ExpectFalse(t, isOverlap, "1) square1 and circle 10,6 1.\n")
 }
 
 func TestDrawAllShapes(t *testing.T) {
