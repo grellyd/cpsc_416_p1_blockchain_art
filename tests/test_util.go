@@ -16,7 +16,7 @@ type Shape = minerlib.Shape
 func ConcatOps(ops map[string]Operation) string {
 	opSigs := ""
 	for _, op := range ops {
-		opSigs += op.OperationSig + " by " + op.ArtNodePubKey + ", "
+		opSigs += op.ShapeHash + " by " + op.ArtNodePubKey + ", "
 	}
 	return opSigs
 }

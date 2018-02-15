@@ -236,7 +236,7 @@ func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]strin
 	block := treeNode.BlockResiding
 	ops := block.Operations
 	for _,v := range ops {
-		*reply = append(*reply, v.OperationSig)
+		*reply = append(*reply, v.ShapeHash)
 	}
 	return nil
 }

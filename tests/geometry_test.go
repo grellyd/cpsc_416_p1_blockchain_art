@@ -40,7 +40,6 @@ func TestInkArea(t *testing.T) {
 	op := Operation {
 		Type: 4,
 		OperationNumber: 2,
-		OperationSig: "opsig",
 		Shape: blockartlib.PATH,
 		Fill: "nonempty",
 		Stroke: "red",
@@ -58,7 +57,6 @@ func TestInkArea(t *testing.T) {
 	transparentOp := Operation{
 		Type: 4,
 		OperationNumber:  2,
-		OperationSig:  "opsig",
 		Shape:  blockartlib.PATH,
 		Fill:  "transparent",
 		Stroke:  "red",
@@ -76,7 +74,6 @@ func TestInkArea(t *testing.T) {
 type Operation struct {
 	Type OperationType
 	OperationNumber uint32
-	OperationSig string
 	Shape ShapeType
 	Fill string // Can be "transparent" or "filled"
 	Stroke string
@@ -89,7 +86,7 @@ type Operation struct {
 */
 func TestOpToCircleAndCircleInk(t *testing.T) {
 	svg := "c 10,10 r 5"
-	op := Operation{4, 2, "circle", blockartlib.PATH, "transparent", "red", svg, "pubkey", 28, "shapehash", 129}
+	op := Operation{4, 2, blockartlib.PATH, "transparent", "red", svg, "pubkey", 28, "shapehash", 129}
 	settings := CanvasSettings{100, 100}
 	circle, _ := minerlib.OperationToShape(op, settings)
 	if circle.Radius != 5 {
@@ -113,7 +110,7 @@ func TestOpToCircleAndCircleInk(t *testing.T) {
 func TestOutOfBoundsPoint(t *testing.T) {
 	// L -4,4 is out of bounds
 	svg := "M 8,0 V 8 L 4,4 L -4,4 v -8 h 8"
-	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 28, "shapehash", 129}
+	op := Operation{4, 2, blockartlib.PATH, "nonempty", "red", svg, "pubkey", 28, "shapehash", 129}
 	settings := CanvasSettings{100, 100}
 	_, err := minerlib.OperationToShape(op, settings)
 	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0 V 8 L 4,4 L -4,4 v -8 h 8]")
@@ -127,7 +124,7 @@ func TestOutOfBoundsPoint(t *testing.T) {
 func TestInvalidSVGString(t *testing.T) {
 	// Too many numbers after M
 	svg := "M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8"
-	op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34, "shapehash", 129}
+	op := Operation{4, 2, blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34, "shapehash", 129}
 	settings := CanvasSettings{100, 100}
 	_, err := minerlib.OperationToShape(op, settings)
 	ExpectEquals(t, err.Error(), "BlockArt: Bad shape svg string [M 8,0,0 V 8 L 4,4 l -4,4 v -8 h 8]")
@@ -214,12 +211,12 @@ func TestOtherCircleCases(t *testing.T) {
 
 func TestDrawAllShapes(t *testing.T) {
 	convexPolygon := ConvexPolygon()
-	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "shapehash", 129}
+	convexPolygonOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "convex_polygon", 129}
 	squareOut := Square1()
-	squareOutOp := Operation{blockartlib.DRAW, 2, "square_out", blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34, "shapehash", 129}
+	squareOutOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34, "square_out", 129}
 	squareIn := Square2()
-	squareInOp := Operation{blockartlib.DRAW, 2, "square_in", blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode2", 34, "shapehash", 129}
-	circleOp := Operation{blockartlib.DRAW, 2, "circle", blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode3", 34, "shapehash", 129}
+	squareInOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode2", 34, "square_in", 129}
+	circleOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode3", 34, "circle", 129}
 
 	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp}
 	settings := CanvasSettings{1024, 1024}
@@ -233,12 +230,12 @@ func TestDrawAllShapes(t *testing.T) {
 // TODO[sharon]: fix. currently failing
 func TestDrawAllShapesWithOwnership(t *testing.T) {
 	convexPolygon := ConvexPolygon()
-	convexPolygonOp := Operation{blockartlib.DRAW, 2, "convex_polygon", blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "shapehash", 129}
+	convexPolygonOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "convex_polygon", 129}
 	squareOut := Square1()
-	squareOutOp := Operation{blockartlib.DRAW, 2, "square_out", blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34, "shapehash", 129}
+	squareOutOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", squareOut.ShapeToSVGPath(), "artnode1", 34, "square_out", 129}
 	squareIn := Square2()
-	squareInOp := Operation{blockartlib.DRAW, 2, "square_in", blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode0", 34, "shapehash", 129}
-	circleOp := Operation{blockartlib.DRAW, 2, "circle", blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode0", 34, "shapehash", 129}
+	squareInOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode0", 34, "square_in", 129}
+	circleOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode0", 34, "circle", 129}
 	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp}
 	settings := CanvasSettings{1024, 1024}
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
