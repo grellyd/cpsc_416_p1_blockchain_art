@@ -2,7 +2,7 @@ package minerlib
 
 type BlockchainNode struct {
 	Current *BCTreeNode
-	Next *BCTreeNode
+	Next    *BCTreeNode
 }
 
 func NewBlockchainNode(current *BCTreeNode) *BlockchainNode {

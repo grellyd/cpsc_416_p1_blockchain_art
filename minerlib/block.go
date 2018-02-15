@@ -14,12 +14,12 @@ The set of operations will either be valid operations (OPs) or empty operations 
 package minerlib
 
 import (
-	"fmt"
 	"blockartlib"
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"bytes"
 	"encoding/gob"
+	"fmt"
 	"minerlib/compute"
 )
 
@@ -35,22 +35,22 @@ Let the Genesis Block be a special case of block:
 */
 
 type Block struct {
-  ParentHash string
-  Operations []*blockartlib.Operation
-  MinerPublicKey *ecdsa.PublicKey
-  Nonce uint32
+	ParentHash     string
+	Operations     []*blockartlib.Operation
+	MinerPublicKey *ecdsa.PublicKey
+	Nonce          uint32
 }
 
 func NewBlock(parentHash string, publicKey *ecdsa.PublicKey) (b *Block) {
-	return &Block {
-		ParentHash: parentHash,
+	return &Block{
+		ParentHash:     parentHash,
 		MinerPublicKey: publicKey,
-		Nonce: 0,
-		Operations: []*blockartlib.Operation{},
+		Nonce:          0,
+		Operations:     []*blockartlib.Operation{},
 	}
 }
 
-func (b* Block) Mine(difficulty uint8) error {
+func (b *Block) Mine(difficulty uint8) error {
 	if b.Nonce != 0 {
 		return fmt.Errorf("Block already mined!")
 	}
@@ -86,7 +86,7 @@ func (b *Block) Hash() (hash string, err error) {
 // ==================
 
 /*
-Note when encoding: 
+Note when encoding:
 	"An interface value can be transmitted only if the concrete value itself is transmittable.
 	"At least for now, that's equivalent to saying that interfaces holding typed nil pointers cannot be sent."
 From: https://github.com/golang/go/issues/3704#issuecomment-66067672 by Rob Pike
@@ -102,7 +102,7 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 	}
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
-	
+
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
 	err := enc.Encode(*b)
@@ -117,7 +117,7 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 func UnmarshallBinary(data []byte) (b *Block, err error) {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
-	
+
 	dec := gob.NewDecoder(bytes.NewReader(data))
 	blkPtr := &Block{}
 	err = dec.Decode(blkPtr)

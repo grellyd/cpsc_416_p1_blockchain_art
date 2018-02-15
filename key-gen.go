@@ -5,7 +5,7 @@ import (
 	"keys"
 )
 
-func main()  {
+func main() {
 	privateKey, publicKey, err := keys.Generate()
 	if err != nil {
 		fmt.Printf("%v\n", err)

@@ -1,11 +1,11 @@
 package minerlib
 
 import (
-	"strings"
 	"blockartlib"
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -56,9 +56,9 @@ type Operation struct {
 */
 
 /* Attempt to draw all shapes in list. Successfully drawn operations are in
-	 validOps. They are attempted in a greedy fashion from the start.
-	 validOps and invalidOps are maps. Key = OperationSig, value = Operation
-	 Handles NOP blocks
+validOps. They are attempted in a greedy fashion from the start.
+validOps and invalidOps are maps. Key = OperationSig, value = Operation
+Handles NOP blocks
 */
 // TODO[sharon]: Handle delete operations
 // TODO[sharon]: make this shorter with a map of the commands and number of numbers they take
@@ -293,7 +293,7 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 func IsPointContainedInShape(p Point, s Shape) bool {
 	segment := LineSegment{p, Point{0, p.Y}}
 	var numIntersections int
-	prevY := s.Sides[len(s.Sides) - 1].Point1.Y
+	prevY := s.Sides[len(s.Sides)-1].Point1.Y
 	for _, side := range s.Sides {
 		if side.Point1.Y == side.Point2.Y {
 			continue
@@ -319,7 +319,7 @@ func (s *Shape) ShapeToSVGPath() (svg string) {
 	}
 	return svg
 }
-	
+
 func (p *Point) PointToString() (s string) {
 	s += strconv.FormatFloat(p.X, 'f', -1, 64)
 	s += ","
