@@ -61,7 +61,7 @@ func (b* Block) Mine(difficulty uint8) error {
 	if err != nil {
 		return fmt.Errorf("Error while mining block: %v", err)
 	}
-	nonce, err := compute.DataConcurrent(data, difficulty)
+	nonce, err := compute.Data(data, difficulty)
 	if err != nil {
 		return fmt.Errorf("Error while mining block: %v", err)
 	}
