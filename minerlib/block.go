@@ -95,7 +95,7 @@ func (b *Block) Valid(opDiff uint8, nopDiff uint8) (valid bool, err error) {
 		difficulty = opDiff
 		// check each op has a valid sig
 		for _, op := range b.Operations {
-			// TODO
+			// TODO -> now in master
 			expectedSig := ""
 			err = nil
 			if err != nil {
@@ -110,9 +110,7 @@ func (b *Block) Valid(opDiff uint8, nopDiff uint8) (valid bool, err error) {
 		difficulty = nopDiff
 	}
 	// check nonce adds up
-	fmt.Printf("Hash: %v\n", hash)
 	if !compute.Valid(hash, difficulty) {
-		fmt.Printf("hash fail\n")
 		return false, nil
 	}
 	return true, nil

@@ -201,7 +201,6 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 				}
 			}
 		}
-		fmt.Printf("unable to find block or parent\n")
 		return false, nil
 	}
 }
@@ -433,9 +432,8 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
 	t = t[1:]
 	for _,v := range t {
-		fmt.Println("the block received: ", v)
 		b, err := UnmarshallBinary(v)
-		fmt.Printf("%v\n", b)
+		fmt.Println("the block received: ", b)
 		if err != nil {
 			fmt.Println("unmarshalling failed")
 			return
@@ -446,6 +444,7 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 			fmt.Printf("Invalid block: %v", err)
 			return
 		}
+		// TODO: check switch
 		m.Blockchain.AppendBlock(b, m.Settings)
 	}
 
