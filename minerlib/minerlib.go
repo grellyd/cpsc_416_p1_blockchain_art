@@ -14,7 +14,7 @@ import (
 
 
 const (
-	OP_THRESHOLD     = 4
+	OP_THRESHOLD     = 1 // TODO: Change this back when we have flags
 	MAX_WAITING_OPS  = 10
 	MAX_EMPTY_BLOCKS = 3
 	NUM_MINING_TASKS = 1
@@ -420,8 +420,10 @@ func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err e
 		return "", fmt.Errorf("unable to locate the art node")
 	}
 	fmt.Println("MINERLIB: Found ArtNode connection; returning shape hash response")
+	// TODO: Uncomment this when channels work
 	// blocks until a value comes into ShapeHashResponse
-	return <- artNodeConn.ShapeHashResponse, nil
+	// return <- artNodeConn.ShapeHashResponse, nil
+	return "thisIsAHash", nil
 }
 
 func (m *Miner) OnNewBlock(b Block) {
