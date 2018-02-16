@@ -82,7 +82,7 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			return validOps, invalidOps, err
 		}
 		overlapsSomething := false
- 		for _, valid := range drawnShapes {
+		for _, valid := range drawnShapes {
 			if strings.Compare(valid.Owner, shape.Owner) == 0 {
 				continue
 			}
@@ -320,24 +320,12 @@ func IsShapesOverlapping(s1, s2 Shape) bool {
 			return true
 		}
 	} else if s1.IsCircle() && s2.IsCircle() {
-		centerSegment := LineSegment{s1.Center, s2.Center}
-		return (centerSegment.Length() <= (s1.Radius + s2.Radius))
+		return IsCircleIntersectingCircle(s1, s2)
 	} else {
 		if s1.IsCircle() {
-			// Check if sides intersect, or polygon in circle.
-			for _, side := range s2.Sides {
-				if IsLineIntersectingCircle(side, s1) {
-					return true
-				}
-			}
-
+			return IsCircleIntersectingPolygon(s1, s2)
 		} else {
-			for _, side := range s1.Sides {
-				if IsLineIntersectingCircle(side, s2) {
-					return true
-				}
-			}
-
+			return IsCircleIntersectingPolygon(s2, s1)
 		}
 	}
 	return false
@@ -372,8 +360,8 @@ func IsLineIntersectingCircle(seg LineSegment, circle Shape) bool {
 		dlen := seg.Length()
 		dx := seg.Point1.X - seg.Point2.X
 		dy := seg.Point1.Y - seg.Point2.Y
-		segPt1 := Point{circle.Center.X + (dy / dlen) * circle.Radius, circle.Center.Y - (dx / dlen) * circle.Radius}
-		segPt2 := Point{circle.Center.X - (dy / dlen) * circle.Radius, circle.Center.Y + (dx / dlen) * circle.Radius}
+		segPt1 := Point{circle.Center.X + (dy/dlen)*circle.Radius, circle.Center.Y - (dx/dlen)*circle.Radius}
+		segPt2 := Point{circle.Center.X - (dy/dlen)*circle.Radius, circle.Center.Y + (dx/dlen)*circle.Radius}
 		cSeg := LineSegment{segPt1, segPt2}
 		return IsLinesIntersecting(seg, cSeg)
 	}
@@ -390,6 +378,52 @@ func (s *Shape) ShapeToSVGPath() (svg string) {
 		svg += "L" + side.Point2.PointToString()
 	}
 	return svg
+}
+
+func IsCircleIntersectingPolygon(c, p Shape) bool {
+	if c.Fill == TRANSPARENT {
+		isAllPointsInCircle := true
+		for _, side := range p.Sides {
+			isAllPointsInCircle = IsPointInCircle(side.Point1, c)
+		}
+		if isAllPointsInCircle {
+			return false
+		}
+	}
+	for _, side := range p.Sides {
+		if IsLineIntersectingCircle(side, c) {
+			return true
+		}
+	}
+	// Circle and polygon don't intersect
+	if p.Fill == TRANSPARENT || c.Fill == TRANSPARENT {
+		return false
+	} else {
+		return IsPointContainedInShape(c.Center, p)
+	}
+}
+
+func IsCircleIntersectingCircle(c1, c2 Shape) bool {
+	centerSegment := LineSegment{c1.Center, c2.Center}
+	if c2.Fill == TRANSPARENT && c2.Radius > c1.Radius {
+		if IsCircleContainedInCircle(c1, c2) {
+			return false
+		}
+	} else if c1.Fill == TRANSPARENT && c1.Radius > c2.Radius {
+		if IsCircleContainedInCircle(c2, c1) {
+			return false
+		}
+	}
+	return centerSegment.Length() <= (c1.Radius + c2.Radius)
+}
+
+// Returns true is c1 is contained in c2
+func IsCircleContainedInCircle(c1, c2 Shape) bool {
+	centerSegment := LineSegment{c1.Center, c2.Center}
+	if centerSegment.Length() + c1.Radius < c2.Radius {
+		return true
+	}
+	return false
 }
 
 func (s *Shape) IsCircle() bool {
