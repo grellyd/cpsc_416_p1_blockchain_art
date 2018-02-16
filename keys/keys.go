@@ -78,3 +78,7 @@ func MatchPublicKeys(key0 *ecdsa.PublicKey, key1 *ecdsa.PublicKey) (match bool) 
 func MatchPrivateKeys(key0 *ecdsa.PrivateKey, key1 *ecdsa.PrivateKey) (match bool) {
 	return reflect.DeepEqual(key0, key1)
 }
+
+func MatchingPair(privateKey *ecdsa.PrivateKey, publickKey *ecdsa.PublicKey) (match bool) {
+	return MatchPublicKeys(publickKey, &privateKey.PublicKey)
+}
