@@ -271,6 +271,26 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 	return nil
 }
 
+func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
+	fmt.Println("In RPC getting svg string")
+	//m.Blockchain.BC
+	temp := m.Blockchain.BC.GenesisNode
+	var b *Block
+	for {
+		if temp.Current == nil {
+			break
+		}
+		b = temp.Current.BlockResiding
+		for _, op := range b.Operations {
+			if op.ShapeHash == shapeHash {
+				*reply = minerlib.OpToSvg(*op, m.Settings.CanvasSettings)
+				return nil
+			}
+		}
+	}
+	return blockartlib.InvalidShapeHashError(shapeHash)
+}
+
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
 	fmt.Println("In RPC getting children hashes")
 	bla, err := m.Blockchain.GetChildrenNodes(*hash)
