@@ -44,6 +44,7 @@ type Miner struct {
 	earlyExitSignal chan struct{}
 	exited chan struct{}
 
+	OpValidateList	[][]*Operation
 	// pipeline channel
 	operationQueue chan *blockartlib.Operation
 }
@@ -62,6 +63,7 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		Settings:        &blockartlib.MinerNetSettings{},
 		LocalCanvas:     CanvasData{},
 		BlockForest:     map[string]*Block{},
+		OpValidateList: 	 [][]*Operation{},
 		operationQueue: make(chan *blockartlib.Operation, MAX_WAITING_OPS),
 	}
 	return m
@@ -156,6 +158,9 @@ func (m *Miner) MineBlocks() (err error) {
 					return err
 				}
 			}
+			_ = m.Blockchain.AppendBlock(b, m.Settings)
+			// TODO[Graham]: Diss
+			m.OnNewBlock(*b)
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
@@ -238,7 +243,7 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 		} else{
 			forestParent :=  m.BlockForest[b.ParentHash] 
 			if forestParent != nil {
-				// internally consistent
+				// internally consistentgi
 				parentValid, err := forestParent.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 				if err != nil {
 					return false, fmt.Errorf("Unable validate block: %v", err)
@@ -358,6 +363,46 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	return err
 }
 
+func (m *Miner) AddDisseminatedBlock(b *Block) {
+	// TODO
+	_, err := m.ValidBlock(b)
+	if err == nil {
+		// Add to blockchain
+		m.OnNewBlock(*b)
+	}
+}
+
+func (m *Miner) DisseminateOperation(op Operation) (err error) {
+	// TODO: If any changes are made in disseminate block, repeat here
+	for _, v := range m.Neighbors {
+		marshalledOp, err := op.Marshall()
+		blockartlib.CheckErr(err)
+		var b bool
+		err = v.RPCClient.Call("MinerInstance.ReceiveOperationFromNeighbour", &marshalledOp, &b)
+		if !b {
+			fmt.Println("bad op")
+		}
+	}
+	return err
+}
+
+func (m *Miner) OnNewBlock(b Block) {
+	for _, op := range b.Operations {
+		if m.HasArtNode(op.ArtNodePubKey) {
+			m.OpValidateList[op.ValidateBlockNum] = append(m.OpValidateList[op.ValidateBlockNum], op)
+		}
+	}
+	/*
+	for _, validated := range m.OpValidateList[0] {
+		// return to those artnodes
+	}
+	*/
+	for i := 0; i < len(m.OpValidateList); i++ {
+		m.OpValidateList[i] = m.OpValidateList[i+1]
+	}
+	m.OpValidateList[len(m.OpValidateList) - 1] = nil
+}
+
 /////// helpers
 
 func (m *Miner) AddInk() (err error) {
@@ -420,6 +465,17 @@ func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
 		}
 	}
 	return nil
+}
+
+func (m *Miner) HasArtNode(artNodePubKey string) bool {
+	hasArtNode := false
+	for _, conn := range m.ArtNodes {
+		if conn.ArtNodePubKey == artNodePubKey {
+			hasArtNode = true
+			break
+		}
+	}
+	return hasArtNode
 }
 
 func addMinerToList(m *Miner, addr net.Addr) error {

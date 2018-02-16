@@ -236,8 +236,6 @@ func allAlive(m *minerlib.Miner) bool {
 	return true
 }
 
-
-
 // =========================
 // Connection Instances
 // =========================
@@ -271,6 +269,26 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 	fmt.Println("In RPC getting ink from miner")
 	*reply = m.InkLevel
 	return nil
+}
+
+func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
+	fmt.Println("In RPC getting svg string")
+	//m.Blockchain.BC
+	temp := m.Blockchain.BC.GenesisNode
+	var b *Block
+	for {
+		if temp.Current == nil {
+			break
+		}
+		b = temp.Current.BlockResiding
+		for _, op := range b.Operations {
+			if op.ShapeHash == shapeHash {
+				*reply = minerlib.OpToSvg(*op, m.Settings.CanvasSettings)
+				return nil
+			}
+		}
+	}
+	return blockartlib.InvalidShapeHashError(shapeHash)
 }
 
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
@@ -337,7 +355,13 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 func (mi *MinerInstance) DisseminateBlockToNeighbour (blockMarshalled *[]byte, reply *bool) error {
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
-	*reply, err = m.ValidNewBlock(block)
+	m.AddDisseminatedBlock(block)
+	return err
+}
+
+func (mi *MinerInstance) DisseminateOpToNeighbour(opMarshalled *[]byte, reply *bool) error {
+	_, err := blockartlib.OperationUnmarshall(*opMarshalled)
+	CheckError(err)
 	return err
 }
 

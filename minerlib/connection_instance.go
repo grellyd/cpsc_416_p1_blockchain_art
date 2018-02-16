@@ -51,6 +51,7 @@ type ArtNodeConnection struct {
 	Addr net.TCPAddr
 	// RPC Client to Call
 	RPCClient *rpc.Client
+	ArtNodePubKey string
 }
 
 type MinerConnection struct {
