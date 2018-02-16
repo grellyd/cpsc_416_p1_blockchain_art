@@ -149,6 +149,7 @@ func (m *Miner) MineBlocks() (err error) {
 
 // validates incoming block from other miner
 func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
+	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	hash, err := b.Hash()
 	if err != nil {
@@ -292,6 +293,8 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
 func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err error) {
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	treeArray := make([][]byte, 0)
 	for i, v := range m.Neighbors {
 		if v.Addr.String() == neighborAddr.String() {
@@ -312,6 +315,7 @@ func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err err
 func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	// TODO: notify waiting artNodes if your block is op number of nodes deep now
 	// TODO: Not sure this is the right spot for this.
+	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	for _,v := range m.Neighbors {
 		marshalledBlock, err := block.MarshallBinary()
@@ -422,6 +426,7 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 	genBlock := m.CreateGenesisBlock()
 	fmt.Println("tree: ", t)
 	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
+	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
 	t = t[1:]
 	for _,v := range t {
 		fmt.Println("the block received: ", v)
