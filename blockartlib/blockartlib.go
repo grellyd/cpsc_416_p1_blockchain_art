@@ -8,8 +8,10 @@ library (blockartlib) to be used in project 1 of UBC CS 416 2017W2.
 package blockartlib
 
 import (
+	"fmt"
 	"crypto/ecdsa"
 	"time"
+	"networking"
 )
 
 // Represents a type of shape in the BlockArt system.
@@ -145,20 +147,20 @@ type Canvas interface {
 // Can return the following errors:
 // - DisconnectedError
 func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, setting CanvasSettings, err error) {
-	println("Started canvas")
-
+	fmt.Println("BLOCKARTLIB: Running OpenCanvas")
+    outboundIP := networking.GetOutboundIP()
 	var an = ArtNode {
 		0,
 		minerAddr,
 		&privKey,
 		&privKey.PublicKey,
 		false,
-		"127.0.0.1" + ":0",
+		fmt.Sprintf("%s:0", outboundIP),
 		nil}
 	err = an.Connect(an.MinerAddr, an.PrivKey)
 	CheckErr(err)
 
-	println("Miner addr ", an.MinerAddr, "LocalIP: ", an.LocalIP, "Miner Connection ", an.MinerConnection, "Alive: ", an.MinerAlive, "Error ", err )
+	fmt.Println("BLOCKARTLIB: Created new ArtNode for canvas.\nMiner addr ", an.MinerAddr, "\nLocalIP: ", an.LocalIP, "\nMiner Connection ", an.MinerConnection, "\nAlive: ", an.MinerAlive, "Error ", err )
 	time.Sleep(5*time.Second)
 	if err == nil {
 		return an, CanvasSettings{}, nil
