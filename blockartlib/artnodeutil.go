@@ -141,12 +141,12 @@ func (an ArtNode) GetChildren(blockHash string) (blockHashes []string, err error
 	return blockHashes, err
 }
 
-// TODO: Need to close the rpc channels
 func (an ArtNode) CloseCanvas() (inkRemaining uint32, err error) {
 	err = an.MinerConnection.Call("ArtNodeInstance.GetAvailableInk", true, &inkRemaining)
 	if err != nil {
 		return 0, DisconnectedError("miner unavailable")
 	}
+	an.MinerConnection.Close()
 	return inkRemaining, err
 }
 
