@@ -22,6 +22,7 @@ var serverConnector *rpc.Client
 var serverConn minerlib.ServerInstance
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
+var TreeQueue []string
 	
 func main() {
 	gob.Register(elliptic.P384())
@@ -101,7 +102,7 @@ func main() {
 		CheckError(err)
 		fmt.Printf("Connected to neighbour miners; will ask for BlockChain from neighbour with address %s\n", neighbourToReceiveBCFrom.String())
 
-		err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom)
+		err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom, &TreeQueue)
 		CheckError(err)
 		fmt.Println("Requested BCStorage from neighbour")
 	}
@@ -219,7 +220,7 @@ func UpdateNeighbours(t time.Time) (err error) {
 	if neighbourToReceiveBCFrom.Port == 0 {
 		return nil
 	}
-	err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom)
+	err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom, &TreeQueue)
 	CheckError(err)
 	fmt.Println("Requested BCStorage from neighbour in Update")
 
@@ -366,9 +367,18 @@ func (mi *MinerInstance) ReceiveOpFromNeighbour(opMarshalled *[]byte, reply *boo
 	return err
 }
 
-func (mi *MinerInstance) DisseminateTree (variable *bool, reply *[][]byte) error {
-	m.MarshallTree(reply, nil)
+func (mi *MinerInstance) DisseminateTree (variable *bool, reply *[]string) error {
+	*reply = m.MarshallTree(reply, nil)
 	return nil
+}
+
+func (mi *MinerInstance) GiveBlock (blockHash *string, reply *[][]byte) error {
+	block, err := m.Blockchain.FindBlockByHash(*blockHash)
+	if err !=nil {
+		fmt.Println("Error in GiveBlock RPC: ", err)
+	}
+	*reply, err = block.MarshallBinary()
+	return err
 }
 
 // struct for communicating info about a miner to the server

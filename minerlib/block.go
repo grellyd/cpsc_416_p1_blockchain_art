@@ -137,20 +137,26 @@ func (b *Block) MarshallBinary() (marshalled [][]byte, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error while encoding block in MarshallBinary: %v", err)
 	}
-	marshalled[0] = buff.Bytes()
+	marshalled = append(marshalled, buff.Bytes())
 
 	// Handle block's key separately
-	marshalled[1] = elliptic.Marshal(b.MinerPublicKey.Curve, b.MinerPublicKey.X, b.MinerPublicKey.Y)
+	//marshalled[1] = elliptic.Marshal(b.MinerPublicKey.Curve, b.MinerPublicKey.X, b.MinerPublicKey.Y)
+	m1 := elliptic.Marshal(b.MinerPublicKey.Curve, b.MinerPublicKey.X, b.MinerPublicKey.Y)
+	marshalled = append(marshalled, m1)
 	return marshalled, nil
 }
 
 // Unmarshalls bytes into a Block
 func UnmarshallBinary(data [][]byte) (b *Block, err error) {
+	fmt.Println("In unmarshalling binary")
+	fmt.Println("Data: ", data)
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
+	b = new(Block)
 
 	// Handle block
-	dec := gob.NewDecoder(bytes.NewReader(data[0]))
+	d1 := data[0]
+	dec := gob.NewDecoder(bytes.NewReader(d1))
 	err = dec.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
