@@ -14,9 +14,6 @@ type BCStorage struct {
 
 func NewBlockchainStorage(genBlock *Block, settings *blockartlib.MinerNetSettings) *BCStorage {
 	bcNode := NewBCTreeNode(genBlock, nil, 0, settings)
-	//var leaves = make([]*BCTreeNode, 0)
-	//leaves = append(leaves, bcNode)
-	//bct := BCTree{bcNode, leaves}
 	bct := BCTree{bcNode}
 	bccNode := NewBlockchainNode(bcNode)
 	bc := Blockchain{bccNode, bccNode}
@@ -43,7 +40,10 @@ func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSe
 	}
 	fmt.Println("Parent hash ", parentNode.CurrentHash)
 	d := parentNode.Depth + 1
+	fmt.Printf("k: %v\n", block.MinerPublicKey)
 	k := keyToString(block.MinerPublicKey)
+	fmt.Printf("k: %v\n", k)
+
 	var inkOnNode uint32 = parentNode.OwnerInkLvl[k]
 	bcTreeNode := NewBCTreeNode(block, parentNode, inkOnNode, settings)
 	bcTreeNode.Depth = d
@@ -83,6 +83,14 @@ func (bcs *BCStorage) LastNodeHash() (string, error) {
 		return "", fmt.Errorf("Unable to retrieve last node hash: %v", err)
 	}
 	return hash, nil
+}
+
+func (bcs *BCStorage) FindBlockByHash(hash string) (b *Block, err error) {
+	treeNode := FindBCTreeNode(bcs.BCT.GenesisNode, hash)
+	if treeNode != nil {
+		return treeNode.BlockResiding, nil
+	}
+	return nil, nil
 }
 
 // function which return children of the block
