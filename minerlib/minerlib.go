@@ -321,7 +321,7 @@ func (m *Miner) ConnectToNeighbourMiners(localAddr *net.TCPAddr) (bestNeighbour 
 }
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
-func (m *Miner) RequestBCStorageFromNeighbour(neighbourAddr *net.TCPAddr) (err error) {
+/*func (m *Miner) RequestBCStorageFromNeighbour(neighbourAddr *net.TCPAddr) (err error) {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	treeArray := make([][]byte, 0)
@@ -337,6 +337,24 @@ func (m *Miner) RequestBCStorageFromNeighbour(neighbourAddr *net.TCPAddr) (err e
 		reconstructTree(m, &treeArray)
 	}
 	return nil
+}*/
+
+func (m *Miner) RequestBCStorageFromNeighbour(neighbourAddr *net.TCPAddr, queue *[]string) (err error) {
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
+	//treeArray := make([][]byte, 0)
+	for i, v := range m.Neighbours {
+		if v.Addr.String() == neighbourAddr.String() {
+			err := v.RPCClient.Call("MinerInstance.DisseminateTree", true, &queue)
+			if err != nil {
+				deleteNeighbour(m, i)
+			}
+		}
+	}
+	if len(*queue) != 0 {
+		reconstructTree(m, neighbourAddr, queue)
+	}
+	return nil
 }
 
 // sends out the block to other miners
@@ -347,6 +365,7 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	gob.Register(elliptic.P384())
 	for _,v := range m.Neighbours {
 		marshalledBlock, err := block.MarshallBinary()
+		fmt.Println("Marshalled block in disseminateBlock: ", marshalledBlock)
 		blockartlib.CheckErr(err)
 		var b bool
 		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
@@ -455,7 +474,7 @@ func (m *Miner) IsMinerInList() (err error) {
 	return nil
 }
 
-func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
+/*func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	tree := m.Blockchain.BCT
@@ -475,7 +494,7 @@ func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
 					fmt.Println("error happened: ", err)
 					continue
 				}
-				*result = append(*result, marshalledBlock)
+				*result = append(*result, marshalledBlock[0])
 				b:= m.MarshallTree(result, node)
 				*result = append(*result, *b...)
 			}
@@ -483,6 +502,32 @@ func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
 	}
 
 	return result
+}*/
+
+func (m *Miner) MarshallTree (result *[]string, node *BCTreeNode) []string{
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
+	tree := m.Blockchain.BCT
+	if node == nil {
+		for range tree.GenesisNode.Children {
+			children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
+			blockartlib.CheckErr(err)
+			for _, v := range children {
+				node := FindBCTreeNode(tree.GenesisNode,v)
+				block := node.BlockResiding
+				blockHash, err := block.Hash()
+				if err != nil {
+					fmt.Println("Hashing on tree request unsuccessful")
+					return *result
+				}
+				*result = append(*result, blockHash)
+				b:= m.MarshallTree(result, node)
+				*result = append(*result, b...)
+			}
+		}
+	}
+
+	return *result
 }
 
 func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
@@ -542,7 +587,7 @@ func deleteNeighbour (m *Miner, index int) error {
 	return nil
 }
 
-func reconstructTree(m *Miner, tree *[][]byte) {
+/*func reconstructTree(m *Miner, tree *[][]byte) {
 	t := *tree
 	genBlock := m.CreateGenesisBlock()
 	fmt.Println("tree: ", t)
@@ -550,8 +595,44 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
 	t = t[1:]
 	for _,v := range t {
-		b, err := UnmarshallBinary(v)
+		var temp [][]byte
+		temp[0] = v
+		b, err := UnmarshallBinary(temp)
 		fmt.Println("the block received: ", b)
+		if err != nil {
+			fmt.Println("unmarshalling failed")
+			return
+		}
+		valid, err := m.ValidNewBlock(b)
+		blockartlib.CheckErr(err)
+		if err != nil || !valid{
+			fmt.Printf("Invalid block: %v", err)
+			return
+		}
+		m.Blockchain.AppendBlock(b, m.Settings)
+	}
+}*/
+
+func reconstructTree(m *Miner, senderAddr *net.TCPAddr, queue *[]string) {
+	q := *queue
+	genBlock := m.CreateGenesisBlock()
+	fmt.Println("queue: ", q)
+	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
+	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
+	q = q[1:]
+	blockArr := make([][]byte, 0)
+	var caller *rpc.Client
+	for _,v := range m.Neighbours {
+		if v.Addr.String() == senderAddr.String() {
+			caller = v.RPCClient
+			break
+		}
+	}
+
+	for _,v := range q {
+		err := caller.Call("MinerInstance.GiveBlock", &v, &blockArr)
+		fmt.Println("the block received: ", blockArr)
+		b, err := UnmarshallBinary(blockArr)
 		if err != nil {
 			fmt.Println("unmarshalling failed")
 			return

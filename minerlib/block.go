@@ -122,7 +122,7 @@ Therefore, the marshall function will error when given any nil pointers
 */
 
 // Marshalls the entire object
-func (b *Block) MarshallBinary() ([]byte, error) {
+func (b *Block) MarshallBinary() (marshalled [][]byte, err error) {
 	// Guard against nil pubkeys
 	if b.MinerPublicKey == nil {
 		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
@@ -130,27 +130,46 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 
+	// Handle entire block
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
-	err := enc.Encode(*b)
+	err = enc.Encode(*b)
 	if err != nil {
-		return nil, fmt.Errorf("Error while marshalling block: %v", err)
+		return nil, fmt.Errorf("Error while encoding block in MarshallBinary: %v", err)
 	}
-	return buff.Bytes(), nil
+	marshalled = append(marshalled, buff.Bytes())
+
+	// Handle block's key separately
+	//marshalled[1] = elliptic.Marshal(b.MinerPublicKey.Curve, b.MinerPublicKey.X, b.MinerPublicKey.Y)
+	m1 := elliptic.Marshal(b.MinerPublicKey.Curve, b.MinerPublicKey.X, b.MinerPublicKey.Y)
+	marshalled = append(marshalled, m1)
+	return marshalled, nil
 }
 
 // Unmarshalls bytes into a Block
-func UnmarshallBinary(data []byte) (b *Block, err error) {
+func UnmarshallBinary(data [][]byte) (b *Block, err error) {
+	fmt.Println("In unmarshalling binary")
+	fmt.Println("Data: ", data)
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
+	b = new(Block)
 
-	dec := gob.NewDecoder(bytes.NewReader(data))
-	blkPtr := &Block{}
-	err = dec.Decode(blkPtr)
+	// Handle block
+	d1 := data[0]
+	dec := gob.NewDecoder(bytes.NewReader(d1))
+	err = dec.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
 	}
-	return blkPtr, nil
+
+	// Handle key separately
+	b.MinerPublicKey.Curve = elliptic.P384()
+	if data[1] == nil {
+		return b, fmt.Errorf("data[1] is nil. Can't unmarshal")
+	}
+	b.MinerPublicKey.X, b.MinerPublicKey.Y = elliptic.Unmarshal(b.MinerPublicKey.Curve, data[1])
+
+	return b, nil
 }
 
 func (b *Block) bodyBytes() (data []byte, err error) {

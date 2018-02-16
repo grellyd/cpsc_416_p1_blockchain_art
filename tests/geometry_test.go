@@ -252,8 +252,11 @@ func TestDrawAllShapes(t *testing.T) {
 	squareInOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode2", 34, "square_in", 129}
 	circleOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode3", 34, "circle", 129}
 	// TODO[sharon]: add and delete square5
+	square5 := Square5()
+	square5DrawOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", square5.ShapeToSVGPath(), "artnode2", 34, "square_in", 129}
+	square5DeleteOp := Operation{blockartlib.DELETE, 2, blockartlib.PATH, "transparent", "red", square5.ShapeToSVGPath(), "artnode2", 34, "square_in", 129}
 
-	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp}
+	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp, square5DrawOp, square5DeleteOp}
 	settings := CanvasSettings{1024, 1024}
 	validOps, invalidOps, _ := minerlib.DrawOperations(operations, settings)
 	validString := ConcatOps(validOps)
