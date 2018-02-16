@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"keys"
+	"networking"
 	"minerlib"
 	"net"
 	"net/rpc"
@@ -34,8 +35,8 @@ func main() {
 		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
-	outboundIP :=  minerlib.GetOutboundIP()
-	localIP := fmt.Sprintf("%s:0", outboundIP)
+	outboundIP :=  networking.GetOutboundIP()
+	localIP := fmt.Sprintf("%s:8000", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
