@@ -29,4 +29,14 @@ So long as you've had your public SSH key added onto the machine, you should be 
 
 `start_miner.sh` - used to start a miner. Usage is `start_miner.sh <NAME_OF_MACHINE>` For example, `./start_miner.sh Miner1Art2`. If you are running the server locally, add a second argument: `./start_miner.sh Miner1Art2 local`.
 
+# Running an art node/test client
+There is currently no script for running an art node.
+
+However, it's pretty simple:
+
+1) Run a server
+2) Run a miner
+3) Run the following from within the top-level directory:
+
+go run art-app.go <MINER_IP>:8000 `cat azure/keyfiles/MINER_NAME.priv` `cat azure/keyfiles/MINER_NAME.pub`
 
