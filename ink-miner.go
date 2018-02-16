@@ -34,9 +34,8 @@ func main() {
 		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
-	localIP :=  minerlib.GetOutboundIP()
-	fmt.Printf("OutboundIP: %s\n\n", outboundIP);
-	var localIP = fmt.Sprintf("%s:8000, outboundIP)
+	outboundIP :=  minerlib.GetOutboundIP()
+	localIP := fmt.Sprintf("%s:0", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
