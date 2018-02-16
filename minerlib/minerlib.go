@@ -391,6 +391,8 @@ func (m *Miner) DisseminateOperation(op Operation) (err error) {
 }
 
 func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err error) {
+	fmt.Println("MINERLIB: Running GetShapeHash.")
+	fmt.Println("MINERLIB: Trying to find ArtNodeConnection using the ArtNode's public key")
 	artNodeConn, err := m.FindArtNodeConnection(op.ArtNodePubKey)
 	if err != nil {
 		return "", fmt.Errorf("unable to get shape hash: %v", err)
@@ -398,6 +400,7 @@ func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err e
 	if artNodeConn == nil {
 		return "", fmt.Errorf("unable to locate the art node")
 	}
+	fmt.Println("MINERLIB: Found ArtNode connection; returning shape hash response")
 	// blocks until a value comes into ShapeHashResponse
 	return <- artNodeConn.ShapeHashResponse, nil
 }
@@ -428,7 +431,9 @@ func (m *Miner) OnNewBlock(b Block) {
 }
 
 func (m *Miner) FindArtNodeConnection(artNodePublicKey string) (anc *ArtNodeConnection, err error) {
-	for _, an := range m.ArtNodes {
+	fmt.Println("MINER: Running FindArtNodeConnection with public key", artNodePublicKey)
+	for i, an := range m.ArtNodes {
+		fmt.Printf("Index %d, key %s\n", i, an.ArtNodePubKey)
 		if an.ArtNodePubKey == artNodePublicKey {
 			return an, nil
 		}

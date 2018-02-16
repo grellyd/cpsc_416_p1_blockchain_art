@@ -147,20 +147,10 @@ func serviceRequests(localListener *net.TCPListener) {
 		defer conn.Close()
 
 		go rpc.ServeConn(conn)
-		fmt.Println("after connection served")
+		fmt.Println("INK-MINER: serviceRequests RPC connection served")
 
 		time.Sleep(10 * time.Millisecond)
 
-		if len(OpQueue) != 0 {
-			fmt.Println("connect to queue")
-			artNodeConnector, err = rpc.Dial("tcp", OpQueue[0].LocalIP)
-			CheckError(err)
-			var b bool
-			err = artNodeConnector.Call("MinerInstance.ConnectMiner", true, &b)
-			CheckError(err)
-			OpQueue = OpQueue[1:]
-			fmt.Println("connected to queue ", b, "len ", len(OpQueue))
-		}
 		// DrawOperations to validate
 		// For valid add to miner op channel
 	}
@@ -244,16 +234,30 @@ func allAlive(m *minerlib.Miner) bool {
 type ArtNodeInstance int // same as above
 
 func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply *bool) error {
-	fmt.Println("In rpc call to register the AN")
+	fmt.Println("MINER: Running ConnectNode rpc call to register the AN")
 	privateKey := keys.DecodePrivateKey(an.PrivKey)
 	publicKey := keys.DecodePublicKey(an.PubKey)
 	// TODO check if already connected
 	if !keys.MatchingPair(privateKey, publicKey) {
-		fmt.Println("Invalid key pair.")
+		fmt.Println("MINER: Received Invalid key pair.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
 	}else {
+		fmt.Println("MINER: Creating new ArtNodeConnection's TCP address")
+		addr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
+		CheckError(err)
+		fmt.Println("MINER: ARtNodeConnection.Addr is ", addr.String())
+		fmt.Println("MINER: Creating new ArtNodeConneciton's RPC client")
+		rpcclient, err := rpc.Dial("tcp", an.LocalIP)
+		CheckError(err)
+		fmt.Println("MINER: Creating new ArtNodeConnection")
+		connection := minerlib.ArtNodeConnection {
+			*addr,
+			rpcclient,
+		    an.PubKey,
+			nil,
+		}
+        m.ArtNodes = append(m.ArtNodes, &connection) 
 		*reply = true
-		OpQueue = append(OpQueue, an)
 	}
 	return nil
 }
@@ -301,11 +305,14 @@ func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error
 
 func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *string) error {
 	// TODO use the an connection with the channel to wait
+	fmt.Println("INK-MINER: Running SubmitOperation")
+	fmt.Println("INK-MINER: Calling miner.AddOp on the operation")
 	err := m.AddOp(&op)
 	if err != nil {
 		return fmt.Errorf("unable to submit operation: %v", err)
 	}
 	// blocks until done at validation depth
+	fmt.Println("INK-MINER: Calling miner.GetShapeHash from within SubmitOperation")
 	hash, err := m.GetShapeHash(&op)
 	shapeHash = &hash
 	return err

@@ -3,7 +3,6 @@ package blockartlib
 import (
 	"os"
 	"keys"
-	"networking"
 	"net/rpc"
 	"net"
 	"fmt"
@@ -37,6 +36,7 @@ func (mi *MinerInstance) ConnectMiner (mins *bool, reply *bool) error {
 
 // CArtNodeVAS INTERFACE FUNCTIONS
 func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgString string, fill string, stroke string) (shapeHash string, blockHash string, inkRemaining uint32, err error) {
+	fmt.Println("ARTNODEUTIL: Calling AddShape")
 	op := Operation{
 		Type: DRAW,
 		OperationNumber: 0,
@@ -50,9 +50,10 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 	}
 	op.GetNumber()
 	op.GenerateSig()
+	fmt.Println("ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation")
 	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &blockHash)
 	if err != nil {
-		return "", "", 0, fmt.Errorf("unable to submit operation: %v", err)
+		return "", "", 0, fmt.Errorf("ARTNODEUTIL.AddShape: unable to submit operation: %v", err)
 	}
 	inkRemaining, err = an.GetInk()
 	if err != nil {
@@ -152,20 +153,18 @@ func (an ArtNode) CloseCanvas() (inkRemaining uint32, err error) {
 
 // MINER INTERACTION FUNCTIONS
 func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err error) {
-	// Establish RPC connection
+	fmt.Println("ARTNODEUTIL: Running Connect to connect to miner at address ", minerAddr)
+	// Establish RPC connection to Miner
 	minerInst := new(MinerInstance)
 	rpc.Register(minerInst)
 
-	localIP := networking.GetOutboundIP()
-	an.LocalIP = fmt.Sprintf("%s:0", localIP)
-	fmt.Printf("ArtNode local/outbound IP: %s\n", an.LocalIP)
+	fmt.Printf("ARTNODEUTIL: Resolving ArtNode local/outbound IP: %s\n", an.LocalIP)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 	CheckErr(err)
-	fmt.Println("TCP: ", tcpAddr)
 
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	CheckErr(err)
-	fmt.Println("listening on", listener.Addr().String())
+	fmt.Println("ARTNODEUTIL: ArtNode listening on", listener.Addr().String())
 
 	go rpc.Accept(listener)
 
@@ -174,8 +173,6 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 
 	CheckErr(err)
 
-
-	fmt.Println("Miner Connection: ", an.MinerConnection)
 	var reply bool // TODO: change when actual RPC will be alive
 	//gob.RegisterName("crypto/elliptic.CurveParams", elliptic.CurveParams{})
 	//gob.Register(elliptic.CurveParams{})
@@ -188,12 +185,12 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 		string(pk),
 		string(puk),
 		false,
-		an.LocalIP,
+		listener.Addr().String(),
 	}
-	fmt.Println("trying to connect via rpc")
+	fmt.Println("ARTNODEUTIL: trying to connec to Miner via RPC: ArtNodeInstance.ConnectNode")
 	err = an.MinerConnection.Call("ArtNodeInstance.ConnectNode", an1, &reply)
 	CheckErr(err)
-	fmt.Println("connected via rpc ", reply)
+	fmt.Println("ARTNODEUTIL connected via rpc without error; reply is: ", reply)
 	an.MinerAlive = true
 	//time.Sleep(1*time.Second)
 	return nil

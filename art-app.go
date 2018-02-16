@@ -29,7 +29,7 @@ func main() {
 	canvas, _, err := blockartlib.OpenCanvas(minerAddr, *privateKey)
 	fmt.Println("ART-APP: Canvas is ", canvas)
 	if checkError(err) != nil {
-		fmt.Println("ART-APP: there was an error", err)
+		fmt.Println("ART-APP: there was an error opening the canvas", err)
 		return
 	}
 
@@ -39,6 +39,8 @@ func main() {
 	fmt.Println("ART-APP: Calling AddShape to add a red line")
 	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 0 5", "transparent", "red")
 	if checkError(err) != nil {
+		fmt.Printf("ART-APP: There was an error with calling AddShape: \n")
+		fmt.Println(err)
 		return
 	}
 	shapes = append(shapes, shapeHash)
