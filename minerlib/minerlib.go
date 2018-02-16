@@ -49,8 +49,8 @@ type Miner struct {
 func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) {
 	var m = Miner{
 		InkLevel:        0,
-		ServerNodeAddr:  serverAddr,
-		ServerHrtBtAddr: nil,
+		ServerNodeAddr:  nil,
+		ServerHrtBtAddr: serverAddr,
 		ArtNodes:        []*ArtNodeConnection{},
 		Neighbors:       []*MinerConnection{},
 		PublKey:         keys.Public,
@@ -163,7 +163,7 @@ func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
 			if err != nil {
 				return false, fmt.Errorf("Unable validate block: %v", err)
 			}
-			if op.OperationSig != expectedSig {
+			if op.ShapeHash != expectedSig {
 				return false, nil
 			}
 		}
@@ -233,10 +233,15 @@ func (m *Miner) RetrieveSettings() (err error) {
 func (m *Miner) OpenNeighborConnections() (err error) {
 	/* Opens RPC connections to neighbouring Miners and fills in the
 	   RPCClient field in the corresponding MinerConnection struct */
-	for _, neighbor := range m.Neighbors {
+	for i, neighbor := range m.Neighbors {
+		if neighbor.Alive {
+			continue
+		}
+		fmt.Println("Before open RPC to neighbour: ", neighbor.Addr.String())
 		neighbor.RPCClient, err = rpc.Dial("tcp", neighbor.Addr.String())
 		if err != nil {
-			return err
+			deleteNeighbour(m, i)
+			return nil
 		}
 		fmt.Printf("Opened RPC connection to neighbor with tcpAddr %s\n", neighbor.Addr.String())
 	}
@@ -260,11 +265,17 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 	largestDepth := 0
 	depth := 0
 
-	for _, connection := range m.Neighbors {
+	fmt.Println("Our address before sending RPC call: ", localAddr.String())
+	for i, connection := range m.Neighbors {
+		/*fmt.Println("DISCONNECT!!!")
+		time.Sleep(4*time.Second)*/
 		err = connection.RPCClient.Call("MinerInstance.ConnectNewNeighbor", localAddr, &depth)
 		if err != nil {
 			// TODO: Should we just ignore this miner then and move on to the next one?
-			return net.TCPAddr{}, err
+			erro := deleteNeighbour(m, i)
+			blockartlib.CheckErr(erro)
+			//return net.TCPAddr{}, err
+			continue
 		}
 
 		if (depth >= largestDepth) {
@@ -349,4 +360,10 @@ func isMinerInList(m *Miner, addr net.Addr) bool {
 		}
 	}
 	return false
+}
+
+func deleteNeighbour (m *Miner, index int) error {
+	buf := m.Neighbors[:index]
+	m.Neighbors = append(buf, m.Neighbors[index+1:]...)
+	return nil
 }

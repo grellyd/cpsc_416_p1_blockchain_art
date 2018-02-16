@@ -39,7 +39,6 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 	op := Operation{
 		Type: DRAW,
 		OperationNumber: 0,
-		OperationSig: "",
 		Shape: shapeType,
 		Fill: fill,
 		Stroke: stroke,
@@ -84,7 +83,6 @@ func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining
 		Type: DELETE,
 		// TODO set operation number
 		OperationNumber: 0,
-		OperationSig: "",
 		Shape: 0,
 		Fill: "",
 		Stroke: "",

@@ -20,7 +20,6 @@ const (
 type Operation struct {
 	Type OperationType
 	OperationNumber uint32
-	OperationSig string
 	Shape ShapeType
 	Fill string // Can be "transparent" or "filled"
 	Stroke string
@@ -38,7 +37,7 @@ func (o *Operation) GenerateSig() error {
 	data = append(data, uint32AsByteArr(uint32(o.Type))...)
 	data = append(data, uint32AsByteArr(o.OperationNumber)...)
 	h.Write(append(data, []byte(o.ArtNodePubKey)...))
-	o.OperationSig = hex.EncodeToString(h.Sum(nil))
+	o.ShapeHash = hex.EncodeToString(h.Sum(nil))
 	return nil
 }
 
