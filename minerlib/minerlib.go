@@ -91,13 +91,12 @@ func (m *Miner) StartMining() (err error) {
 }
 
 func (m *Miner) TestEarlyExit() {
-	time.Sleep(6000 * time.Millisecond)
+	time.Sleep(10000 * time.Millisecond)
 	fmt.Printf("[miner] Killing...\n")
 	err := m.StopMining()
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
-	err = m.StartMining()
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
@@ -289,6 +288,19 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
 func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err error) {
+	treeArray := make([][]byte, 0)
+	for i, v := range m.Neighbors {
+		if v.Addr.String() == neighborAddr.String() {
+			err := v.RPCClient.Call("MinerInstance.DisseminateTree", true, &treeArray)
+			if err != nil {
+				deleteNeighbour(m, i)
+			}
+		}
+	}
+	if len(treeArray) != 0 {
+		reconstructTree(m, &treeArray)
+	}
+
 	return nil
 }
 
@@ -300,11 +312,15 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
 		var b bool
-		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
+		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
 		if !b {
 			fmt.Println("Bad block") // TODO: think what to do in this case
 		}
 	}
+	return err
+}
+
+func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	return err
 }
 
@@ -320,6 +336,29 @@ func (m *Miner) DrawInk() (err error) {
 
 func (m *Miner) IsMinerInList() (err error) {
 	return nil
+}
+
+func (m *Miner) MarshallTree (result *[][]byte) {
+	tree := m.Blockchain.BCT
+	//genBlock := tree.GenesisNode.BlockResiding
+	//marshalledGenBlock, _ := genBlock.MarshallBinary()
+	//*result = append(*result, marshalledGenBlock)
+	//for len(tree.GenesisNode.Children) != 0 {
+	for range tree.GenesisNode.Children {
+		children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
+		blockartlib.CheckErr(err)
+		for _, v := range children {
+			node := FindBCTreeNode(tree.GenesisNode,v)
+			block := node.BlockResiding
+			marshalledBlock, err := block.MarshallBinary()
+			if err != nil {
+				fmt.Println("error happened: ", err)
+				continue
+			}
+			*result = append(*result, marshalledBlock)
+		}
+	}
+	return
 }
 
 func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
@@ -366,4 +405,21 @@ func deleteNeighbour (m *Miner, index int) error {
 	buf := m.Neighbors[:index]
 	m.Neighbors = append(buf, m.Neighbors[index+1:]...)
 	return nil
+}
+
+func reconstructTree(m *Miner, tree *[][]byte) {
+	t := *tree
+	genBlock := m.CreateGenesisBlock()
+	fmt.Println("tree: ", t)
+	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
+	t = t[1:]
+	for _,v := range t {
+		b, err := UnmarshallBinary(v)
+		if err != nil {
+			fmt.Println("unmarshalling failed")
+			return
+		}
+		m.Blockchain.AppendBlock(b, m.Settings)
+	}
+
 }
