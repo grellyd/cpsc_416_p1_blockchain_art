@@ -1,12 +1,12 @@
 package blockartlib
 
 import (
+	"os"
 	"keys"
 	"net/rpc"
 	"net"
 	"fmt"
 	"crypto/ecdsa"
-	"crypto/x509"
 )
 
 /*
@@ -163,6 +163,7 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 
 	// connect to the miner
 	an.MinerConnection, err = rpc.Dial("tcp", an.MinerAddr)
+
 	CheckErr(err)
 
 
@@ -171,8 +172,8 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 	//gob.RegisterName("crypto/elliptic.CurveParams", elliptic.CurveParams{})
 	//gob.Register(elliptic.CurveParams{})
 
-	pk, _ := x509.MarshalECPrivateKey(an.PrivKey)
-	puk, _ := x509.MarshalPKIXPublicKey(an.PubKey)
+	pk := keys.EncodePrivateKey(an.PrivKey)
+	puk := keys.EncodePublicKey(an.PubKey)
 	an1 := ArtNodeInstruction{
 		0,
 		an.MinerAddr,
@@ -193,6 +194,7 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 func CheckErr(err error) {
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
 	}
 }
 

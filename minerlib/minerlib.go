@@ -125,6 +125,7 @@ func (m *Miner) MineBlocks() (err error) {
 			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
 				for i := 0; i <= OP_THRESHOLD; i++ {
+					// TODO: Check Valid operations
 					b.Operations = append(b.Operations, <- m.operationQueue)
 				}
 			} else {

@@ -140,8 +140,6 @@ type Canvas interface {
 // Can return the following errors:
 // - DisconnectedError
 func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, setting CanvasSettings, err error) {
-	// TODO
-	// For now return DisconnectedError
 	println("Started canvas")
 
 	var an = ArtNode {
@@ -152,12 +150,8 @@ func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, sett
 		false,
 		"127.0.0.1" + ":0",
 		nil}
-	//var settings CanvasSettings
 	err = an.Connect(an.MinerAddr, an.PrivKey)
 	CheckErr(err)
-
-	/*err = an.MinerConnection.Call("ArtNodeInstance.GetCanvasSetting", &an, &settings)
-	CheckErr(err)*/
 
 	println("Miner addr ", an.MinerAddr, "LocalIP: ", an.LocalIP, "Miner Connection ", an.MinerConnection, "Alive: ", an.MinerAlive, "Error ", err )
 	time.Sleep(5*time.Second)

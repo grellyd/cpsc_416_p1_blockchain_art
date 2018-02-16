@@ -68,7 +68,7 @@ func main() {
 
 	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	CheckError(err)
-	go m.StartMining()
+	// go m.StartMining()
 	// go m.TestEarlyExit()
 
 	// Ask for Neighbors
@@ -186,8 +186,9 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 	fmt.Println("In rpc call to register the AN")
 	privateKey := keys.DecodePrivateKey(an.PrivKey)
 	publicKey := keys.DecodePublicKey(an.PubKey)
-	if !keys.MatchPrivateKeys(privateKey, m.PrivKey) && !keys.MatchPublicKeys(publicKey, m.PublKey) {
-		fmt.Println("Private keys do not match.")
+	// TODO check if already connected
+	if !keys.MatchingPair(privateKey, publicKey) {
+		fmt.Println("Invalid key pair.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
 	}else {
 		*reply = true
@@ -198,6 +199,7 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 
 func (si *ArtNodeInstance) GetGenesisBlockHash(stub *bool, reply *string) error {
 	fmt.Println("In RPC getting hash of genesis block")
+	// TODO: check if connected
 	*reply = m.Settings.GenesisBlockHash
 	return nil
 }
