@@ -109,6 +109,7 @@ func (m *Miner) MineBlocks() (err error) {
 		select {
 		case <-doneMining:
 			// done
+			minersGroup.Done()
 			fmt.Printf("[miner] Done Mining Blocks\n")
 			return nil
 		case <-earlyExitSignal:
@@ -145,7 +146,14 @@ func (m *Miner) MineBlocks() (err error) {
 			hash, err := b.Hash()
 			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
 
-			_ = m.Blockchain.AppendBlock(b, m.Settings)
+			select {
+			case <-earlyExitSignal:
+				minersGroup.Done()
+				fmt.Printf("[miner] Early Exit\n")
+				return nil
+			default:
+				_ = m.Blockchain.AppendBlock(b, m.Settings)
+			}
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
