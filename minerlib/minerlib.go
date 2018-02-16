@@ -416,8 +416,6 @@ func deleteNeighbour (m *Miner, index int) error {
 }
 
 func reconstructTree(m *Miner, tree *[][]byte) {
-	gob.Register(&Block{})
-	gob.Register(elliptic.P384())
 	t := *tree
 	genBlock := m.CreateGenesisBlock()
 	fmt.Println("tree: ", t)
@@ -426,6 +424,7 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 	for _,v := range t {
 		fmt.Println("the block received: ", v)
 		b, err := UnmarshallBinary(v)
+		fmt.Printf("%v\n", b)
 		if err != nil {
 			fmt.Println("unmarshalling failed")
 			return
@@ -433,7 +432,7 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 		valid, err := m.ValidBlock(b)
 		blockartlib.CheckErr(err)
 		if err != nil || !valid{
-			fmt.Println("Invalid block ", err)
+			fmt.Printf("Invalid block: %v", err)
 			return
 		}
 		m.Blockchain.AppendBlock(b, m.Settings)

@@ -72,8 +72,8 @@ func main() {
 
 	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	CheckError(err)
-	// go m.StartMining()
-	// go m.TestEarlyExit()
+	go m.StartMining()
+	go m.TestEarlyExit()
 
 	// Ask for Neighbors
 	fmt.Println("Asking for neighbours")

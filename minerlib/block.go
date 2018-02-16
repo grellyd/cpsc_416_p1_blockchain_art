@@ -95,7 +95,6 @@ Therefore, the marshall function will error when given any nil pointers
 
 // Marshalls the entire object
 func (b *Block) MarshallBinary() ([]byte, error) {
-	//body, err := b.bodyBytes()
 	// Guard against nil pubkeys
 	if b.MinerPublicKey == nil {
 		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
@@ -110,7 +109,6 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 		return nil, fmt.Errorf("Error while marshalling block: %v", err)
 	}
 	return buff.Bytes(), nil
-	// return append(buff.Bytes(), compute.Uint32AsByteArr(b.Nonce)...), nil
 }
 
 // Unmarshalls bytes into a Block
