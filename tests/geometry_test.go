@@ -220,7 +220,26 @@ func TestOtherCircleCases(t *testing.T) {
 	isOverlap = minerlib.IsShapesOverlapping(square4, circle1061)
 	ExpectTrue(t, isOverlap, "3) square4 filled and circle 10,6 1.\n")
 
+	// Polygon in transparent circle
+	square2 := Square2()
+	circle844 := Circle8_4_4()
+	isOverlap = minerlib.IsShapesOverlapping(square2, circle844)
+	ExpectFalse(t, isOverlap, "4) square2, transparent circle 8,4 4.\n")
 
+	// Polygon in filled circle
+	circle844.Fill = "nontransparent"
+	isOverlap = minerlib.IsShapesOverlapping(square2, circle844)
+	ExpectTrue(t, isOverlap, "5) square2, filled circle 8,4 4.\n")
+
+	// Circle in transparent circle
+	circle842 := Circle8_4_2()
+	isOverlap = minerlib.IsShapesOverlapping(circle844, circle842)
+	ExpectTrue(t, isOverlap, "6) circle 8,4 4 and circle 8,4 2.\n")
+
+	// Circle in filled circle
+	circle844.Fill = minerlib.TRANSPARENT
+	isOverlap = minerlib.IsShapesOverlapping(circle844, circle842)
+	ExpectFalse(t, isOverlap, "7) transparent circle 8,4 4 and circle 8,4 2.\n")
 }
 
 func TestDrawAllShapes(t *testing.T) {
@@ -337,4 +356,12 @@ func Circle6_8_1() Shape {
 
 func Circle10_6_1() Shape {
 	return Shape{"owner10", "circle 10,6 1", nil, "solid", "stroke", Point{10, 6}, 1}
+}
+
+func Circle8_4_4() Shape {
+	return Shape{"owner11", "circle 8,4 4", nil, "transparent", "stroke", Point{8, 4}, 4}
+}
+
+func Circle8_4_2() Shape {
+	return Shape{"owner12", "circle 8,4 2", nil, "transparent", "stroke", Point{8, 4}, 2}
 }
