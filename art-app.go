@@ -17,6 +17,7 @@ import (
 )
 
 func main() {
+	validateNum := 0 // TODO: Change this to a bigger number for submission
 	shapes := []string{}
 	blocks := []string{}
 	minerAddr := os.Args[1]
@@ -32,8 +33,6 @@ func main() {
 		fmt.Println("ART-APP: there was an error opening the canvas", err)
 		return
 	}
-
-	validateNum := 2
 
 	// Add a line.
 	fmt.Println("ART-APP: Calling AddShape to add a red line")
@@ -70,6 +69,7 @@ func main() {
 		checkError(fmt.Errorf("Err! ink3 not > ink4"))
 	}
 
+	fmt.Println("Closing the canvas")
 	// Close the canvas.
 	_, err = canvas.CloseCanvas()
 	if checkError(err) != nil {
