@@ -122,11 +122,19 @@ func (m *Miner) MineBlocks() (err error) {
 			}
 			b := NewBlock(parentHash, m.PublKey)
 			difficulty := uint8(0)
+			// if there exist enough ops waiting
 			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
-				for i := 0; i <= OP_THRESHOLD; i++ {
-					// TODO: Check Valid operations
-					b.Operations = append(b.Operations, <- m.operationQueue)
+				for len(b.Operations) <= OP_THRESHOLD {
+					op := <- m.operationQueue
+					validatedOp, err := m.ValidateOperation(op)
+					if err != nil {
+						return fmt.Errorf("unable to validate mining op")
+					}
+					if !validatedOp {
+						continue
+					}
+					b.Operations = append(b.Operations, op)
 				}
 			} else {
 				difficulty = m.Settings.PoWDifficultyNoOpBlock
@@ -144,6 +152,22 @@ func (m *Miner) MineBlocks() (err error) {
 			}
 		}
 	}
+}
+
+func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
+	// check sigs
+	if op.ShapeHash != op.CalculateSig() {
+		return false, nil
+	}
+	// check drawable (implicitly already drawn)
+	validOps, invalidOps, err := DrawOperations([]blockartlib.Operation{*op}, m.Settings.CanvasSettings)
+	if err != nil {
+		return false, fmt.Errorf("unable to validate operation %v: %v", op, err)
+	}
+	if len(validOps) != 1 || len(invalidOps) != 0 || validOps[op.ShapeHash] != *op {
+		return false, nil
+	}
+	return true, nil
 }
 
 // validates incoming block from other miner
