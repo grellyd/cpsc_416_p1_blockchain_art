@@ -9,6 +9,8 @@ import (
 	"net/rpc"
 	"sync"
 	"time"
+	"encoding/gob"
+	"crypto/elliptic"
 )
 
 // signal channels
@@ -261,7 +263,7 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 
 	// Connect to each neighbour miner and keep track of the one with the largest depth
 	var bestMinerAddr net.TCPAddr
-	largestDepth := 0
+	largestDepth := m.Blockchain.BC.LastNode.Current.Depth
 	depth := 0
 
 	fmt.Println("Our address before sending RPC call: ", localAddr.String())
@@ -277,7 +279,8 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 			continue
 		}
 
-		if (depth >= largestDepth) {
+		//if (depth >= largestDepth) {
+		if (depth > largestDepth) {
 			largestDepth = depth
 			bestMinerAddr = connection.Addr
 		}
@@ -308,19 +311,16 @@ func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err err
 func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	// TODO: notify waiting artNodes if your block is op number of nodes deep now
 	// TODO: Not sure this is the right spot for this.
+	gob.Register(elliptic.P384())
 	for _,v := range m.Neighbors {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
 		var b bool
-		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
+		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
 		if !b {
 			fmt.Println("Bad block") // TODO: think what to do in this case
 		}
 	}
-	return err
-}
-
-func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	return err
 }
 
@@ -338,27 +338,34 @@ func (m *Miner) IsMinerInList() (err error) {
 	return nil
 }
 
-func (m *Miner) MarshallTree (result *[][]byte) {
+func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	tree := m.Blockchain.BCT
 	//genBlock := tree.GenesisNode.BlockResiding
 	//marshalledGenBlock, _ := genBlock.MarshallBinary()
 	//*result = append(*result, marshalledGenBlock)
 	//for len(tree.GenesisNode.Children) != 0 {
-	for range tree.GenesisNode.Children {
-		children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
-		blockartlib.CheckErr(err)
-		for _, v := range children {
-			node := FindBCTreeNode(tree.GenesisNode,v)
-			block := node.BlockResiding
-			marshalledBlock, err := block.MarshallBinary()
-			if err != nil {
-				fmt.Println("error happened: ", err)
-				continue
+	if node == nil {
+		for range tree.GenesisNode.Children {
+			children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
+			blockartlib.CheckErr(err)
+			for _, v := range children {
+				node := FindBCTreeNode(tree.GenesisNode,v)
+				block := node.BlockResiding
+				marshalledBlock, err := block.MarshallBinary()
+				if err != nil {
+					fmt.Println("error happened: ", err)
+					continue
+				}
+				*result = append(*result, marshalledBlock)
+				b:= m.MarshallTree(result, node)
+				*result = append(*result, *b...)
 			}
-			*result = append(*result, marshalledBlock)
 		}
 	}
-	return
+
+	return result
 }
 
 func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
@@ -408,12 +415,15 @@ func deleteNeighbour (m *Miner, index int) error {
 }
 
 func reconstructTree(m *Miner, tree *[][]byte) {
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	t := *tree
 	genBlock := m.CreateGenesisBlock()
 	fmt.Println("tree: ", t)
 	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
 	t = t[1:]
 	for _,v := range t {
+		fmt.Println("the block received: ", v)
 		b, err := UnmarshallBinary(v)
 		if err != nil {
 			fmt.Println("unmarshalling failed")
