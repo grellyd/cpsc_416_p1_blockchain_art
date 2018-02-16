@@ -66,8 +66,8 @@ Graham Todos Feb 15th:
     - not already done (subset of works on canvas)
 - generate operation numbers
 - Use disseminate in mine -> done 
-- use early exit when switching chains 
-- check for chain switch in disseminate receipt 
+- use early exit when switching chains  -> done
+- check for chain switch in disseminate receipt  -> done
 - check art apps are/are not connected when making a connect/request
 
 TODO
