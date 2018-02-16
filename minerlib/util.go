@@ -1,8 +1,11 @@
 package minerlib
 
 import (
+	"fmt"
 	"blockartlib"
 	"strconv"
+	"net"
+	"strings"
 )
 
 func OpToSvg(op Operation, settings CanvasSettings) (svg string) {
@@ -23,4 +26,17 @@ func OpToSvg(op Operation, settings CanvasSettings) (svg string) {
 	}
 	svg += "</svg>"
 	return svg
+}
+
+func GetOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if (err != nil) {
+		fmt.Println("Outbound IP couldn't be fetched; returning 127.0.0.1:0")
+		return "127.0.0.1:0"
+	}
+
+	defer conn.Close()
+	localAddr := conn.LocalAddr().String()
+	index := strings.LastIndex(localAddr, ":")
+	return localAddr[0:index]
 }
