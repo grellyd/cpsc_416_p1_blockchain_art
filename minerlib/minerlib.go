@@ -141,7 +141,7 @@ func (m *Miner) MineBlocks() (err error) {
 
 			_ = m.Blockchain.AppendBlock(b, m.Settings)
 			// TODO[Graham]: Diss
-			// TODO[sharon]: Add onNewBlock
+			m.OnNewBlock(*b)
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
@@ -325,11 +325,13 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	return err
 }
 
-func (m *Miner) AddDisseminatedBlock(b *Block) error {
-	// check block valid
-	// add to blockchain
-	// OnNewBlock(b) 
-	return nil
+func (m *Miner) AddDisseminatedBlock(b *Block) {
+	// TODO
+	_, err := m.ValidBlock(b)
+	if err == nil {
+		// Add to blockchain
+		m.OnNewBlock(*b)
+	}
 }
 
 func (m *Miner) DisseminateOperation(op Operation) (err error) {
