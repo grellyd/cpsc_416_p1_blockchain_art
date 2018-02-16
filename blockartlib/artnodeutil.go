@@ -67,7 +67,7 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 }
 
 func (an ArtNode) GetSvgString(shapeHash string) (svgString string, err error) {
-	err = an.MinerConnection.Call("ArtNodeInstance.GetSVGString", true, &svgString)
+	err = an.MinerConnection.Call("ArtNodeInstance.GetSVGString", shapeHash, &svgString)
 	if err != nil {
 		return "", DisconnectedError("miner unavailable")
 	}
