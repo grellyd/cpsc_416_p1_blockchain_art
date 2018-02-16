@@ -360,7 +360,7 @@ func (mi *MinerInstance) ReceiveBlockFromNeighbour (blockMarshalled *[][]byte, r
 	return err
 }
 
-func (mi *MinerInstance) DisseminateOpToNeighbour(opMarshalled *[]byte, reply *bool) error {
+func (mi *MinerInstance) ReceiveOpFromNeighbour(opMarshalled *[]byte, reply *bool) error {
 	_, err := blockartlib.OperationUnmarshall(*opMarshalled)
 	CheckError(err)
 	return err
