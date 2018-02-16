@@ -76,6 +76,14 @@ func (an ArtNode) GetSvgString(shapeHash string) (svgString string, err error) {
 	return svgString, err
 }
 
+func (an ArtNode) GetAllSvgStrings(blockHash string) (svgStrings []string, err error) {
+	err = an.MinerConnection.Call("ArtNodeInstance.GetAllSVGStrings", blockHash, &svgStrings)
+	if err != nil {
+		return svgStrings, DisconnectedError("miner unavailable")
+	}
+	return svgStrings, err
+}
+
 func (an ArtNode) GetInk() (inkRemaining uint32, err error) {
 	err = an.MinerConnection.Call("ArtNodeInstance.GetAvailableInk", true, &inkRemaining)
 	if err != nil {

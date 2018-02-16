@@ -6,7 +6,6 @@ import (
 )
 
 func OpToSvg(op Operation, settings CanvasSettings) (svg string) {
-	svg = "<svg>"
 	if op.Shape == blockartlib.PATH {
 		svg += "<path d=\"" + op.ShapeSVGString + "\" "
 		svg += "stroke=\"" + op.Stroke + "\" "
@@ -21,7 +20,6 @@ func OpToSvg(op Operation, settings CanvasSettings) (svg string) {
 	} else {
 		svg = ""
 	}
-	svg += "</svg>"
 	return svg
 }
 

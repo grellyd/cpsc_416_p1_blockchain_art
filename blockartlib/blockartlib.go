@@ -96,6 +96,11 @@ type Canvas interface {
 	// - InvalidShapeHashError
 	GetSvgString(shapeHash string) (svgString string, err error)
 
+	// Returns all svg strings from the canvas starting at blockHash.
+	// Can return the following errors:
+	// - DisconnectedError
+	GetAllSvgStrings(blockHash string) (svgStrings []string)
+
 	// Returns the amount of ink currently available.
 	// Can return the following errors:
 	// - DisconnectedError
