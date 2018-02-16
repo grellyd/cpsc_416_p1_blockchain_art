@@ -3,6 +3,7 @@ package blockartlib
 import (
 	"os"
 	"keys"
+	"networking"
 	"net/rpc"
 	"net"
 	"fmt"
@@ -151,6 +152,9 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 	minerInst := new(MinerInstance)
 	rpc.Register(minerInst)
 
+	localIP := networking.GetOutboundIP()
+	an.LocalIP = fmt.Sprintf("%s:0", localIP)
+	fmt.Printf("ArtNode local/outbound IP: %s\n", an.LocalIP)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 	CheckErr(err)
 	fmt.Println("TCP: ", tcpAddr)
@@ -158,7 +162,6 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 	listener, err := net.ListenTCP("tcp", tcpAddr)
 	CheckErr(err)
 	fmt.Println("listening on", listener.Addr().String())
-	an.LocalIP = listener.Addr().String()
 
 	go rpc.Accept(listener)
 

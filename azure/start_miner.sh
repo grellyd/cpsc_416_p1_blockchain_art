@@ -12,8 +12,10 @@ fi
 
 if [ $localServer ]; then
   serverAddr="127.0.0.1:12345"
+  echo "Calling ink-miner.go with server address $serverAddr"
 else
-  serverAddr="40.65.122.229:12345"
+  serverAddr="40.65.104.57:12345"
+  echo "Calling ink-miner.go with server address $serverAddr"
 fi
 
 pubfile="keyfiles/$minerName.pub"

@@ -25,15 +25,18 @@ func main() {
 
 	// Open a canvas.
 	// TODO: use settings
-	 canvas, _, err := blockartlib.OpenCanvas(minerAddr, *privateKey)
-	fmt.Println("Canvas", canvas, "error ", err)
+	fmt.Printf("ART-APP: Calling OpenCanvas to Miner with address %s\n", minerAddr)
+	canvas, _, err := blockartlib.OpenCanvas(minerAddr, *privateKey)
+	fmt.Println("ART-APP: Canvas is ", canvas)
 	if checkError(err) != nil {
+		fmt.Println("ART-APP: there was an error", err)
 		return
 	}
 
 	validateNum := 2
 
 	// Add a line.
+	fmt.Println("ART-APP: Calling AddShape to add a red line")
 	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 0 5", "transparent", "red")
 	if checkError(err) != nil {
 		return
@@ -42,6 +45,7 @@ func main() {
 	blocks = append(blocks, blockHash)
 
 	// Add another line.
+    fmt.Println("ART-APP: Calling AddShape to add another line")
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 5 0", "transparent", "blue")
 	if checkError(err) != nil {
 		return
@@ -53,6 +57,7 @@ func main() {
 	blocks = append(blocks, blockHash)
 
 	// Delete the first line.
+	fmt.Println("ART-APP: Deleting the first line")
 	ink3, err := canvas.DeleteShape(uint8(validateNum), shapeHash)
 	if checkError(err) != nil {
 		return

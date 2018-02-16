@@ -4,13 +4,13 @@ We have 7 virtual machines up on Azure: 1 server, 1 miner with no art nodes, 3 m
 
 The *username* for each VM is `supfoo`, and they live within the `supfoo416` resource group. The server names and their IP addresses are as follows:
 
-Server - 40.65.122.229
-Miner0Art1 - 20.190.43.114
-Miner1Art1 - 20.190.41.8
-Miner1Art2 - 20.190.43.178
-Miner1Art3 - 40.65.113.111
-Miner3Art1 - 40.65.117.234
-Miner3Art2 - 40.65.102.54
+Server - 40.65.104.57
+Miner0Art1 - 40.65.107.115
+Miner1Art1 - 40.65.107.130
+Miner1Art2 - 40.65.124.64
+Miner1Art3 - 40.65.107.162
+Miner3Art1 - 40.65.104.179
+Miner3Art2 - 40.65.108.120
 
 Server runs on port 12345,
 Miners run on port 8000,
@@ -29,4 +29,14 @@ So long as you've had your public SSH key added onto the machine, you should be 
 
 `start_miner.sh` - used to start a miner. Usage is `start_miner.sh <NAME_OF_MACHINE>` For example, `./start_miner.sh Miner1Art2`. If you are running the server locally, add a second argument: `./start_miner.sh Miner1Art2 local`.
 
+# Running an art node/test client
+There is currently no script for running an art node.
+
+However, it's pretty simple:
+
+1) Run a server
+2) Run a miner
+3) Run the following from within the top-level directory:
+
+go run art-app.go <MINER_IP>:8000 `cat azure/keyfiles/MINER_NAME.priv` `cat azure/keyfiles/MINER_NAME.pub`
 

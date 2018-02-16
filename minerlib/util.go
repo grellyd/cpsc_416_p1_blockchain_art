@@ -24,3 +24,5 @@ func OpToSvg(op Operation, settings CanvasSettings) (svg string) {
 	svg += "</svg>"
 	return svg
 }
+
+
