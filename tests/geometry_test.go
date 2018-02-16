@@ -70,20 +70,6 @@ func TestInkArea(t *testing.T) {
 	}
 }
 
-/*
-type Operation struct {
-	Type OperationType
-	OperationNumber uint32
-	Shape ShapeType
-	Fill string // Can be "transparent" or "filled"
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
-	ValidateBlockNum uint8
-	ShapeHash string
-	Nonce uint32
-}
-*/
 func TestOpToCircleAndCircleInk(t *testing.T) {
 	svg := "c 10,10 r 5"
 	op := Operation{4, 2, blockartlib.PATH, "transparent", "red", svg, "pubkey", 28, "shapehash", 129}
@@ -242,6 +228,21 @@ func TestOtherCircleCases(t *testing.T) {
 	ExpectFalse(t, isOverlap, "7) transparent circle 8,4 4 and circle 8,4 2.\n")
 }
 
+/*
+type Operation struct {
+	Type OperationType
+	OperationNumber uint32
+	Shape ShapeType
+	Fill string // Can be "transparent" or "filled"
+	Stroke string
+	ShapeSVGString string
+	ArtNodePubKey string
+	ValidateBlockNum uint8
+	ShapeHash string
+	Nonce uint32
+}
+*/
+
 func TestDrawAllShapes(t *testing.T) {
 	convexPolygon := ConvexPolygon()
 	convexPolygonOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "convex_polygon", 129}
@@ -250,6 +251,7 @@ func TestDrawAllShapes(t *testing.T) {
 	squareIn := Square2()
 	squareInOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", squareIn.ShapeToSVGPath(), "artnode2", 34, "square_in", 129}
 	circleOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "transparent", "red", "c 10,6 r 1", "artnode3", 34, "circle", 129}
+	// TODO[sharon]: add and delete square5
 
 	operations := []Operation{convexPolygonOp, squareOutOp, squareInOp, circleOp}
 	settings := CanvasSettings{1024, 1024}
@@ -311,6 +313,15 @@ func Square4() Shape {
 	s4 := LineSegment{Point{5, 0}, Point{15, 0}}
 	sides := []LineSegment{s1, s2, s3, s4}
 	return Shape{"owner4", "square4", sides, "transparent", "stroke", Point{0, 0}, 0}
+}
+
+func Square5() Shape {
+	s1 := LineSegment{Point{50, 50}, Point{50, 51}}
+	s2 := LineSegment{Point{50, 51}, Point{49, 51}}
+	s3 := LineSegment{Point{49, 51}, Point{49, 50}}
+	s4 := LineSegment{Point{49, 50}, Point{50, 50}}
+	sides := []LineSegment{s1, s2, s3, s4}
+	return Shape{"owner13", "square5", sides, "transparent", "stroke", Point{0, 0}, 0}
 }
 
 func Triangle2() Shape {
