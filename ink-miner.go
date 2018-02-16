@@ -357,13 +357,13 @@ func (mi *MinerInstance) ReceiveBlockFromNeighbour(blockMarshalled *[]byte, repl
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
 	*reply, err = m.ValidBlock(block)
+	// TODO: Add block to a blockchain?
 	return err
 }
 
-func (mi *MinerInstance) DisseminateOpToNeighbour(opMarshalled *[]byte, reply *bool) error {
+func (mi *MinerInstance) ReceiveOpFromNeighbour(opMarshalled *[]byte, reply *bool) error {
 	op, err := blockartlib.OperationUnmarshall(*opMarshalled)
 	CheckError(err)
-	
 	return err
 }
 

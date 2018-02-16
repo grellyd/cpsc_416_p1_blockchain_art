@@ -322,6 +322,16 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 }
 
 func (m *Miner) DisseminateOperation(op Operation) (err error) {
+	// TODO: If any changes are made in disseminate block, repeat here
+	for _, v := range m.Neighbors {
+		marshalledOp, err := op.Marshall()
+		blockartlib.CheckErr(err)
+		var b bool
+		err = v.RPCClient.Call("MinerInstance.ReceiveOperationFromNeighbour", &marshalledOp, &b)
+		if !b {
+			fmt.Println("bad op")
+		}
+	}
 	return err
 }
 
