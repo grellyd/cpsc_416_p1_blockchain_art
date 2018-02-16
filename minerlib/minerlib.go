@@ -355,7 +355,7 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
 		var b bool
-		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
+		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
 		if !b {
 			fmt.Println("Bad block") // TODO: think what to do in this case
 		}
@@ -365,7 +365,7 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 
 func (m *Miner) AddDisseminatedBlock(b *Block) {
 	// TODO
-	_, err := m.ValidBlock(b)
+	_, err := m.ValidNewBlock(b)
 	if err == nil {
 		// Add to blockchain
 		m.OnNewBlock(*b)
