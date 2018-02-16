@@ -402,12 +402,10 @@ func (m *Miner) OnNewBlock(b Block) {
 			m.OpValidateList[op.ValidateBlockNum] = append(m.OpValidateList[op.ValidateBlockNum], op)
 		}
 	}
-	/*
-	for _, validated := range m.OpValidateList[0] {
-		// return to those artnodes
+	if len(m.OpValidateList) >= 1 {
+		m.OpValidateList = m.OpValidateList[1:]
 	}
-	*/
-	m.OpValidateList = m.OpValidateList[1:]
+
 }
 
 /////// helpers
