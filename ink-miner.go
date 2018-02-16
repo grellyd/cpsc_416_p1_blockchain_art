@@ -284,7 +284,8 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 		b = temp.Current.BlockResiding
 		for _, op := range b.Operations {
 			if op.ShapeHash == shapeHash {
-				*reply = minerlib.OpToSvg(*op, m.Settings.CanvasSettings)
+				//*reply = minerlib.OpToSvg(*op, m.Settings.CanvasSettings)
+				*reply = "<path d=\"M5,2L6,2L6,3L5,3L5,2\" stroke=\"red\" fill =\"transparent\"/>"
 				return nil
 			}
 		}
