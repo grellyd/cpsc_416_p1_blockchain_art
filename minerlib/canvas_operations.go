@@ -43,26 +43,11 @@ type Shape struct {
 	Radius float64
 }
 
-/*
-type Operation struct {
-	Type OperationType
-	OperationNumber int
-	Shape ShapeType
-	Fill string
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
-	Nonce uint32
-}
-*/
-
 /* Attempt to draw all shapes in list. Successfully drawn operations are in
 validOps. They are attempted in a greedy fashion from the start.
 validOps and invalidOps are maps. Key = shapehash, value = Operation
 Handles NOP blocks. They all get added to validOps.
 */
-// TODO[sharon]: Handle delete operations
-// TODO[sharon]: make this shorter with a map of the commands and number of numbers they take
 func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation, err error) {
 	validOps = make(map[string]Operation)
 	invalidOps = make(map[string]Operation)
@@ -73,8 +58,11 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			continue
 		}
 		if op.Type == blockartlib.DELETE {
+			drawnShapes, err = RemoveDrawnShape(op, drawnShapes)
+			if err != nil {
+				return validOps, invalidOps, err
+			}
 			validOps[op.ShapeHash] = op
-			// TODO[sharon]: How to represent deletes? Add shapehash field to Operation?
 			continue
 		}
 		shape, err := OperationToShape(op, canvasSettings)
@@ -131,6 +119,17 @@ func InkNeeded(op Operation, settings CanvasSettings) (inkUnits uint32, err erro
 	}
 	inkUnits = uint32(math.Ceil(temp))
 	return inkUnits, nil
+}
+
+func RemoveDrawnShape(op Operation, drawnShapes []Shape) ([]Shape, error) {
+	for i, _ := range drawnShapes {
+		if drawnShapes[i].Hash == op.ShapeHash {
+			drawnShapes[i] = drawnShapes[len(drawnShapes)-1] 
+			drawnShapes = drawnShapes[:len(drawnShapes)-1]
+			return drawnShapes, nil
+		}
+	}
+	return drawnShapes, blockartlib.InvalidShapeHashError(op.ShapeHash)
 }
 
 func ResolvePoint(initial Point, target Point, isAbsolute bool) (p Point) {
