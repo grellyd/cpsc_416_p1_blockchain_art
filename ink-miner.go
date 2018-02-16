@@ -229,6 +229,8 @@ func allAlive(m *minerlib.Miner) bool {
 	return true
 }
 
+
+
 // =========================
 // Connection Instances
 // =========================
@@ -329,6 +331,11 @@ func (mi *MinerInstance) DisseminateBlockToNeighbour (blockMarshalled *[]byte, r
 	CheckError(err)
 	*reply, err = m.ValidBlock(block)
 	return err
+}
+
+func (mi *MinerInstance) DisseminateTree (variable *bool, reply *[][]byte) error {
+	m.MarshallTree(reply)
+	return nil
 }
 
 // struct for communicating info about a miner to the server
