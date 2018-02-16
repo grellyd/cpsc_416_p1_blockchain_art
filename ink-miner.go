@@ -358,6 +358,7 @@ func (mi *MinerInstance) ReceiveBlockFromNeighbour (blockMarshalled *[][]byte, r
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
 	m.AddDisseminatedBlock(block)
+	*reply = true
 	return err
 }
 

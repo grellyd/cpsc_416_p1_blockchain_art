@@ -53,15 +53,18 @@ func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSe
 
 	if bcs.BC.LastNode.Current.CurrentHash == block.ParentHash {
 		bccNode := NewBlockchainNode(bcTreeNode)
-		bcs.BC.LastNode.Next = bcTreeNode
+		//bcs.BC.LastNode.Next = bcTreeNode
+		bcs.BC.LastNode.Next = bccNode
 		bcs.BC.LastNode = bccNode
 		fmt.Println("BC after append: ", bcs.BC)
+		PrintBC(bcs)
 		return false
 	} else {
 		if bcTreeNode.Depth > bcs.BC.LastNode.Current.Depth {
 			nodesToInclude := walkUpToRoot(bcs.BCT, bcTreeNode)
 			rebuildBlockchain(bcs.BC, nodesToInclude)
 			fmt.Println("BC after append: ", bcs.BC)
+			PrintBC(bcs)
 			return true
 		}
 		return false
@@ -106,6 +109,20 @@ func (bcs *BCStorage) GetChildrenNodes(hashOfBlock string) ([]string, error) {
 	return children, nil
 }
 
+func (bcs *BCStorage) FindBlocksInBC (hashOfBlock string) []*Block {
+	genNode := bcs.BC.GenesisNode
+	//treeBl := genNode.Current
+	blockArr := new([]*Block)
+	for genNode !=nil {
+		if hashOfBlock == genNode.Current.CurrentHash {
+			*blockArr = append(*blockArr, genNode.Current.BlockResiding)
+			genNode = genNode.Next
+		}
+
+	}
+	return *blockArr
+}
+
 // HELPER FUNCTIONS
 func keyToString(key *ecdsa.PublicKey) string {
 	return keys.EncodePublicKey(key)
@@ -132,7 +149,38 @@ func walkUpToRoot(bcs *BCTree, bcn *BCTreeNode) []*BCTreeNode {
 }
 
 func appendBlockToBC(bc *Blockchain, bccNod *BlockchainNode) {
-	bc.LastNode.Next = bccNod.Current // updates Next for the last node
+	bc.LastNode.Next = bccNod // updates Next for the last node
 	bc.LastNode = bccNod
+
 	return
+}
+
+
+
+/*func printTree (bct *BCTree, bctNode *BCTreeNode) {
+	if bct.GenesisNode.CurrentHash == bctNode.CurrentHash
+	fmt.Println("----- Printing tree ------")
+	if bct != nil {
+		if len(bct.GenesisNode.Children) == 0 {
+			return
+		}
+			for _, v := range bct.Children {
+				res := FindBCTreeNode(v, nodeHash)
+				if res != nil {
+					return res
+				}
+			}
+		}
+	}
+
+}*/
+
+func PrintBC(bcs *BCStorage) {
+	genNode := bcs.BC.GenesisNode
+
+	for genNode !=nil {
+		fmt.Println(genNode.Current.CurrentHash)
+		genNode = genNode.Next
+
+	}
 }
