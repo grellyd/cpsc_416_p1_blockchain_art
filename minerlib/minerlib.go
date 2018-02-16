@@ -149,6 +149,7 @@ func (m *Miner) MineBlocks() (err error) {
 
 // validates incoming block from other miner
 func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
+	gob.Register(elliptic.P384())
 	hash, err := b.Hash()
 	if err != nil {
 		return false, fmt.Errorf("Unable validate block: %v", err)
@@ -427,6 +428,12 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 		b, err := UnmarshallBinary(v)
 		if err != nil {
 			fmt.Println("unmarshalling failed")
+			return
+		}
+		valid, err := m.ValidBlock(b)
+		blockartlib.CheckErr(err)
+		if err != nil || !valid{
+			fmt.Println("Invalid block ", err)
 			return
 		}
 		m.Blockchain.AppendBlock(b, m.Settings)
