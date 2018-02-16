@@ -299,11 +299,15 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 
 func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) error {
 	fmt.Println("In RPC getting svg string")
-	//treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
-
+	bcBlocks := m.Blockchain.FindBlocksInBC(blockHash)
+	for _, b := range bcBlocks {
+		for _, op := range b.Operations {
+			reply = append(reply, minerlib.OpToSvg(*op, m.Settings.CanvasSettings))
+		}
+	}
 	// iterate over blockchain, get all svg strings
-	reply = append(reply, "<path d=\"M5,2L6,2L6,3L5,3L5,2\" stroke=\"red\" fill =\"transparent\"/>")
-	return err
+	//reply = append(reply, "<path d=\"M5,2L6,2L6,3L5,3L5,2\" stroke=\"red\" fill =\"transparent\"/>")
+	return nil
 }
 
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
