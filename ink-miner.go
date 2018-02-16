@@ -292,6 +292,14 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 	return blockartlib.InvalidShapeHashError(shapeHash)
 }
 
+func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) error {
+	fmt.Println("In RPC getting svg string")
+	//treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
+
+	// iterate over blockchain, get all svg strings
+	return err
+}
+
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
 	fmt.Println("In RPC getting children hashes")
 	bla, err := m.Blockchain.GetChildrenNodes(*hash)
