@@ -4,11 +4,12 @@ import (
 	"blockartlib"
 	"crypto/ecdsa"
 	"fmt"
-	"minerlib/compute"
 	"net"
 	"net/rpc"
 	"sync"
 	"time"
+	"encoding/gob"
+	"crypto/elliptic"
 )
 
 // signal channels
@@ -141,49 +142,63 @@ func (m *Miner) MineBlocks() (err error) {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
 			}
+			return nil
 		}
 	}
 }
 
 // validates incoming block from other miner
-func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
-	hash, err := b.Hash()
+func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
+	blockValid, err := b.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 	if err != nil {
-		return false, fmt.Errorf("Unable validate block: %v", err)
+		return false, fmt.Errorf("Unable to validate block: %v", err)
 	}
-	difficulty := uint8(0)
-	if len(b.Operations) > 0 {
-		difficulty = m.Settings.PoWDifficultyOpBlock
-		// check each op has a valid sig
-		for _, op := range b.Operations {
-			if op.ShapeHash != op.CalculateSig() {
-				return false, nil
-			}
-		}
-	} else {
-		difficulty = m.Settings.PoWDifficultyNoOpBlock
-	}
-	// check nonce adds up
-	if !compute.Valid(hash, difficulty) {
+	if !blockValid {
 		return false, nil
 	}
-
-	// check previous block is in tree
+	// check if block is in tree
 	present, err := m.Blockchain.BlockPresent(b)
 	if err != nil {
 		return false, fmt.Errorf("Unable validate block: %v", err)
 	}
 	if present {
-		return true, nil
+		return false, nil
 	} else {
-		// failing that, check its ancestors in the forest, and those pass ValidBlock
-		if m.BlockForest[b.ParentHash] != nil {
-			parentValid, err := m.ValidBlock(m.BlockForest[b.ParentHash])
+		// not present, is parent in tree
+		parentBlock, err := m.Blockchain.FindBlockByHash(b.ParentHash)
+		if err != nil {
+			return false, fmt.Errorf("Unable validate block: %v", err)
+		}
+		if parentBlock != nil {
+			// is found parent internally valid
+			parentValid, err := parentBlock.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 			if err != nil {
 				return false, fmt.Errorf("Unable validate block: %v", err)
 			}
 			if parentValid {
 				return true, nil
+			}
+		// failing that, check its ancestors in the forest, and those pass ValidBlock
+		} else{
+			forestParent :=  m.BlockForest[b.ParentHash] 
+			if forestParent != nil {
+				// internally consistent
+				parentValid, err := forestParent.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
+				if err != nil {
+					return false, fmt.Errorf("Unable validate block: %v", err)
+				}
+				if !parentValid {
+					return false, nil
+				}
+				// forestParent validNewBlock too?
+				forestParentValid, err := m.ValidNewBlock(m.BlockForest[b.ParentHash])
+				if err != nil {
+					return false, fmt.Errorf("Unable validate block: %v", err)
+				}
+				if forestParentValid {
+					// TODO: Add forest Parent
+					return true, nil
+				}
 			}
 		}
 		return false, nil
@@ -235,7 +250,7 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 
 	// Connect to each neighbour miner and keep track of the one with the largest depth
 	var bestMinerAddr net.TCPAddr
-	largestDepth := 0
+	largestDepth := m.Blockchain.BC.LastNode.Current.Depth
 	depth := 0
 
 	fmt.Println("Our address before sending RPC call: ", localAddr.String())
@@ -251,7 +266,8 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 			continue
 		}
 
-		if (depth >= largestDepth) {
+		//if (depth >= largestDepth) {
+		if (depth > largestDepth) {
 			largestDepth = depth
 			bestMinerAddr = connection.Addr
 		}
@@ -262,6 +278,8 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
 func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err error) {
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	treeArray := make([][]byte, 0)
 	for i, v := range m.Neighbors {
 		if v.Addr.String() == neighborAddr.String() {
@@ -282,19 +300,17 @@ func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err err
 func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	// TODO: notify waiting artNodes if your block is op number of nodes deep now
 	// TODO: Not sure this is the right spot for this.
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	for _,v := range m.Neighbors {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
 		var b bool
-		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
+		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
 		if !b {
 			fmt.Println("Bad block") // TODO: think what to do in this case
 		}
 	}
-	return err
-}
-
-func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	return err
 }
 
@@ -312,27 +328,34 @@ func (m *Miner) IsMinerInList() (err error) {
 	return nil
 }
 
-func (m *Miner) MarshallTree (result *[][]byte) {
+func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
+	gob.Register(&Block{})
+	gob.Register(elliptic.P384())
 	tree := m.Blockchain.BCT
 	//genBlock := tree.GenesisNode.BlockResiding
 	//marshalledGenBlock, _ := genBlock.MarshallBinary()
 	//*result = append(*result, marshalledGenBlock)
 	//for len(tree.GenesisNode.Children) != 0 {
-	for range tree.GenesisNode.Children {
-		children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
-		blockartlib.CheckErr(err)
-		for _, v := range children {
-			node := FindBCTreeNode(tree.GenesisNode,v)
-			block := node.BlockResiding
-			marshalledBlock, err := block.MarshallBinary()
-			if err != nil {
-				fmt.Println("error happened: ", err)
-				continue
+	if node == nil {
+		for range tree.GenesisNode.Children {
+			children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
+			blockartlib.CheckErr(err)
+			for _, v := range children {
+				node := FindBCTreeNode(tree.GenesisNode,v)
+				block := node.BlockResiding
+				marshalledBlock, err := block.MarshallBinary()
+				if err != nil {
+					fmt.Println("error happened: ", err)
+					continue
+				}
+				*result = append(*result, marshalledBlock)
+				b:= m.MarshallTree(result, node)
+				*result = append(*result, *b...)
 			}
-			*result = append(*result, marshalledBlock)
 		}
 	}
-	return
+
+	return result
 }
 
 func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
@@ -386,13 +409,22 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 	genBlock := m.CreateGenesisBlock()
 	fmt.Println("tree: ", t)
 	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
+	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
 	t = t[1:]
 	for _,v := range t {
 		b, err := UnmarshallBinary(v)
+		fmt.Println("the block received: ", b)
 		if err != nil {
 			fmt.Println("unmarshalling failed")
 			return
 		}
+		valid, err := m.ValidNewBlock(b)
+		blockartlib.CheckErr(err)
+		if err != nil || !valid{
+			fmt.Printf("Invalid block: %v", err)
+			return
+		}
+		// TODO: check switch
 		m.Blockchain.AppendBlock(b, m.Settings)
 	}
 

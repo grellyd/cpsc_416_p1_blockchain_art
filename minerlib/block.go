@@ -81,6 +81,34 @@ func (b *Block) Hash() (hash string, err error) {
 	return compute.MD5Hash(bytes, b.Nonce), nil
 }
 
+func (b *Block) Valid(opDiff uint8, nopDiff uint8) (valid bool, err error) {
+	// check genesis block
+	if b.MinerPublicKey == nil && len(b.Operations) == 0 && b.Nonce == 0 {
+		return true, nil
+	}
+	hash, err := b.Hash()
+	if err != nil {
+		return false, fmt.Errorf("Unable validate block: %v", err)
+	}
+	difficulty := uint8(0)
+	if len(b.Operations) > 0 {
+		difficulty = opDiff
+		// check each op has a valid sig
+		for _, op := range b.Operations {
+			if op.ShapeHash != op.CalculateSig() {
+				return false, nil
+			}
+		}
+	} else {
+		difficulty = nopDiff
+	}
+	// check nonce adds up
+	if !compute.Valid(hash, difficulty) {
+		return false, nil
+	}
+	return true, nil
+}
+
 // ==================
 // Marshalling
 // ==================
