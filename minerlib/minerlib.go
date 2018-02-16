@@ -470,7 +470,7 @@ func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
 					fmt.Println("error happened: ", err)
 					continue
 				}
-				*result = append(*result, marshalledBlock)
+				*result = append(*result, marshalledBlock[0])
 				b:= m.MarshallTree(result, node)
 				*result = append(*result, *b...)
 			}
@@ -545,7 +545,9 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
 	t = t[1:]
 	for _,v := range t {
-		b, err := UnmarshallBinary(v)
+		var temp [][]byte
+		temp[0] = v
+		b, err := UnmarshallBinary(temp)
 		fmt.Println("the block received: ", b)
 		if err != nil {
 			fmt.Println("unmarshalling failed")

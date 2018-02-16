@@ -122,7 +122,7 @@ Therefore, the marshall function will error when given any nil pointers
 */
 
 // Marshalls the entire object
-func (b *Block) MarshallBinary() ([]byte, error) {
+func (b *Block) MarshallBinary() (marshalled [][]byte, err error) {
 	// Guard against nil pubkeys
 	if b.MinerPublicKey == nil {
 		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
@@ -130,26 +130,37 @@ func (b *Block) MarshallBinary() ([]byte, error) {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 
+	// Handle entire block
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
-	err := enc.Encode(*b)
+	err = enc.Encode(*b)
 	if err != nil {
-		return nil, fmt.Errorf("Error while marshalling block: %v", err)
+		return nil, fmt.Errorf("Error while encoding block in MarshallBinary: %v", err)
 	}
-	return buff.Bytes(), nil
+	marshalled[0] = buff.Bytes()
+
+	// Handle block's key separately
+	marshalled[1] = elliptic.Marshal(b.MinerPublicKey.Curve, b.MinerPublicKey.X, b.MinerPublicKey.Y)
+	return marshalled, nil
 }
 
 // Unmarshalls bytes into a Block
-func UnmarshallBinary(data []byte) (b *Block, err error) {
+func UnmarshallBinary(data [][]byte) (b *Block, err error) {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 
-	dec := gob.NewDecoder(bytes.NewReader(data))
+	// Handle block
+	dec := gob.NewDecoder(bytes.NewReader(data[0]))
 	blkPtr := &Block{}
 	err = dec.Decode(blkPtr)
 	if err != nil {
 		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
 	}
+
+	blkPtr.MinerPublicKey.Curve = elliptic.P384()
+	blkPtr.MinerPublicKey.X, blkPtr.MinerPublicKey.Y = elliptic.Unmarshal(blkPtr.MinerPublicKey.Curve, data[1])
+	// Handle key separately
+
 	return blkPtr, nil
 }
 
