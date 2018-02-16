@@ -63,7 +63,7 @@ func main() {
 	fmt.Println("Settings ", m.Settings)
 
 	// Setup Heartbeats
-	go doEvery(time.Duration(m.Settings.HeartBeat-3)*time.Millisecond, serverConn.SendHeartbeat)
+	go doEvery(time.Duration(m.Settings.HeartBeat-1000)*time.Millisecond, serverConn.SendHeartbeat)
 
 	// TODO: Check in with neighbors
 	// TODO: Ask Neighbors for blockchain that already exists
@@ -72,7 +72,7 @@ func main() {
 	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	CheckError(err)
 	// go m.StartMining()
-	// go m.TestEarlyExit()
+	//go m.TestEarlyExit()
 
 	// Ask for Neighbors
 	fmt.Println("Asking for neighbours")
@@ -320,8 +320,8 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 	// Return the length of our blockchain, so the new neighbor can decide
 	// if they want our tree.
 
-	fmt.Printf("ConnectNewNeighbor: Returning a reply depth of %d\n", *reply)
 	*reply = m.Blockchain.BC.LastNode.Current.Depth
+	fmt.Printf("ConnectNewNeighbor: Returning a reply depth of %d\n", *reply)
 
 	return nil
 }

@@ -91,13 +91,12 @@ func (m *Miner) StartMining() (err error) {
 }
 
 func (m *Miner) TestEarlyExit() {
-	time.Sleep(6000 * time.Millisecond)
+	time.Sleep(10000 * time.Millisecond)
 	fmt.Printf("[miner] Killing...\n")
 	err := m.StopMining()
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
-	err = m.StartMining()
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
@@ -337,10 +336,11 @@ func (m *Miner) IsMinerInList() (err error) {
 
 func (m *Miner) MarshallTree (result *[][]byte) {
 	tree := m.Blockchain.BCT
-	genBlock := tree.GenesisNode.BlockResiding
-	marshalledGenBlock, _ := genBlock.MarshallBinary()
-	*result = append(*result, marshalledGenBlock)
-	for len(tree.GenesisNode.Children) != 0 {
+	//genBlock := tree.GenesisNode.BlockResiding
+	//marshalledGenBlock, _ := genBlock.MarshallBinary()
+	//*result = append(*result, marshalledGenBlock)
+	//for len(tree.GenesisNode.Children) != 0 {
+	for range tree.GenesisNode.Children {
 		children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
 		blockartlib.CheckErr(err)
 		for _, v := range children {
@@ -348,6 +348,7 @@ func (m *Miner) MarshallTree (result *[][]byte) {
 			block := node.BlockResiding
 			marshalledBlock, err := block.MarshallBinary()
 			if err != nil {
+				fmt.Println("error happened: ", err)
 				continue
 			}
 			*result = append(*result, marshalledBlock)
@@ -404,7 +405,8 @@ func deleteNeighbour (m *Miner, index int) error {
 
 func reconstructTree(m *Miner, tree *[][]byte) {
 	t := *tree
-	genBlock, _ := UnmarshallBinary(t[0])
+	genBlock := m.CreateGenesisBlock()
+	fmt.Println("tree: ", t)
 	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
 	t = t[1:]
 	for _,v := range t {
