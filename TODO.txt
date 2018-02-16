@@ -70,6 +70,9 @@ Graham Todos Feb 15th:
 - check for chain switch in disseminate receipt 
 - check art apps are/are not connected when making a connect/request
 
+TODO
+- modify storage of artnode miner instance to have a channel to block on
+
 
 ----------
 Phase 3: Azure Deployment & Redundancy

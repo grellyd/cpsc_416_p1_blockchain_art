@@ -275,7 +275,7 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 	fmt.Println("In RPC getting svg string")
 	//m.Blockchain.BC
 	temp := m.Blockchain.BC.GenesisNode
-	var b *Block
+	var b *minerlib.Block
 	for {
 		if temp.Current == nil {
 			break

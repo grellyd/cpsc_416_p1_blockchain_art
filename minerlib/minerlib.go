@@ -364,10 +364,20 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 }
 
 func (m *Miner) AddDisseminatedBlock(b *Block) {
-	// TODO
-	_, err := m.ValidNewBlock(b)
-	if err == nil {
+	valid, err := m.ValidNewBlock(b)
+	if err != nil {
+		fmt.Printf("Error in AddDisseminatedBlock: %v", err)
+		return
+	}
+	if valid {
 		// Add to blockchain
+		treeSwitch := m.Blockchain.AppendBlock(b, m.Settings)
+		if treeSwitch {
+			// blocks until complete
+			m.StopMining()
+			// mines on the new longest chain
+			m.StartMining()
+		}
 		m.OnNewBlock(*b)
 	}
 }
