@@ -97,7 +97,7 @@ type Canvas interface {
 	// Returns all svg strings from the canvas starting at blockHash.
 	// Can return the following errors:
 	// - DisconnectedError
-	GetAllSvgStrings(blockHash string) (svgStrings []string)
+	GetAllSvgStrings(blockHash string) (svgStrings []string, err error)
 
 	// Returns the amount of ink currently available.
 	// Can return the following errors:
