@@ -151,17 +151,16 @@ func UnmarshallBinary(data [][]byte) (b *Block, err error) {
 
 	// Handle block
 	dec := gob.NewDecoder(bytes.NewReader(data[0]))
-	blkPtr := &Block{}
-	err = dec.Decode(blkPtr)
+	err = dec.Decode(b)
 	if err != nil {
 		return nil, fmt.Errorf("Error while unmarshalling block: %v", err)
 	}
 
-	blkPtr.MinerPublicKey.Curve = elliptic.P384()
-	blkPtr.MinerPublicKey.X, blkPtr.MinerPublicKey.Y = elliptic.Unmarshal(blkPtr.MinerPublicKey.Curve, data[1])
 	// Handle key separately
+	b.MinerPublicKey.Curve = elliptic.P384()
+	b.MinerPublicKey.X, b.MinerPublicKey.Y = elliptic.Unmarshal(b.MinerPublicKey.Curve, data[1])
 
-	return blkPtr, nil
+	return b, nil
 }
 
 func (b *Block) bodyBytes() (data []byte, err error) {
