@@ -31,7 +31,7 @@ type Miner struct {
 	ServerNodeAddr  *net.TCPAddr
 	ServerHrtBtAddr *net.TCPAddr
 	ArtNodes        []*ArtNodeConnection
-	Neighbors       []*MinerConnection
+	Neighbours       []*MinerConnection
 	PublKey         *ecdsa.PublicKey
 	PrivKey         *ecdsa.PrivateKey
 	Blockchain      *BCStorage
@@ -56,7 +56,7 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		ServerNodeAddr:  nil,
 		ServerHrtBtAddr: serverAddr,
 		ArtNodes:        []*ArtNodeConnection{},
-		Neighbors:       []*MinerConnection{},
+		Neighbours:       []*MinerConnection{},
 		PublKey:         keys.Public,
 		PrivKey:         keys.Private,
 		Blockchain:      nil,
@@ -268,27 +268,27 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 
 /////// functions to interact with other miners
 
-func (m *Miner) OpenNeighborConnections() (err error) {
+func (m *Miner) OpenNeighbourConnections() (err error) {
 	/* Opens RPC connections to neighbouring Miners and fills in the
 	   RPCClient field in the corresponding MinerConnection struct */
-	for i, neighbor := range m.Neighbors {
-		if neighbor.Alive {
+	for i, neighbour := range m.Neighbours {
+		if neighbour.Alive {
 			continue
 		}
-		fmt.Println("Before open RPC to neighbour: ", neighbor.Addr.String())
-		neighbor.RPCClient, err = rpc.Dial("tcp", neighbor.Addr.String())
+		fmt.Println("Before open RPC to neighbour: ", neighbour.Addr.String())
+		neighbour.RPCClient, err = rpc.Dial("tcp", neighbour.Addr.String())
 		if err != nil {
 			deleteNeighbour(m, i)
 			return nil
 		}
-		fmt.Printf("Opened RPC connection to neighbor with tcpAddr %s\n", neighbor.Addr.String())
+		fmt.Printf("Opened RPC connection to neighbour with tcpAddr %s\n", neighbour.Addr.String())
 	}
 
 	return nil
 }
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
-func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor net.TCPAddr, err error) {
+func (m *Miner) ConnectToNeighbourMiners(localAddr *net.TCPAddr) (bestNeighbour net.TCPAddr, err error) {
 	/* Makes the RPC call to register itself to neighbouring miners.
 	   Neighbours will respond with the length of their Blockchain;
 	   does NOT currently account for the fact that the given chain
@@ -304,10 +304,10 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 	depth := 0
 
 	fmt.Println("Our address before sending RPC call: ", localAddr.String())
-	for i, connection := range m.Neighbors {
+	for i, connection := range m.Neighbours {
 		/*fmt.Println("DISCONNECT!!!")
 		time.Sleep(4*time.Second)*/
-		err = connection.RPCClient.Call("MinerInstance.ConnectNewNeighbor", localAddr, &depth)
+		err = connection.RPCClient.Call("MinerInstance.ConnectNewNeighbour", localAddr, &depth)
 		if err != nil {
 			// TODO: Should we just ignore this miner then and move on to the next one?
 			erro := deleteNeighbour(m, i)
@@ -327,12 +327,12 @@ func (m *Miner) ConnectToNeighborMiners(localAddr *net.TCPAddr) (bestNeighbor ne
 }
 
 // TODO: Actually handle the case where the blockchain we choose is invalid
-func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err error) {
+func (m *Miner) RequestBCStorageFromNeighbour(neighbourAddr *net.TCPAddr) (err error) {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	treeArray := make([][]byte, 0)
-	for i, v := range m.Neighbors {
-		if v.Addr.String() == neighborAddr.String() {
+	for i, v := range m.Neighbours {
+		if v.Addr.String() == neighbourAddr.String() {
 			err := v.RPCClient.Call("MinerInstance.DisseminateTree", true, &treeArray)
 			if err != nil {
 				deleteNeighbour(m, i)
@@ -351,7 +351,7 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	// TODO: Not sure this is the right spot for this.
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
-	for _,v := range m.Neighbors {
+	for _,v := range m.Neighbours {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
 		var b bool
@@ -384,7 +384,7 @@ func (m *Miner) AddDisseminatedBlock(b *Block) {
 
 func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	// TODO: If any changes are made in disseminate block, repeat here
-	for _, v := range m.Neighbors {
+	for _, v := range m.Neighbours {
 		marshalledOp, err := op.Marshall()
 		blockartlib.CheckErr(err)
 		var b bool
@@ -407,10 +407,7 @@ func (m *Miner) OnNewBlock(b Block) {
 		// return to those artnodes
 	}
 	*/
-	for i := 0; i < len(m.OpValidateList); i++ {
-		m.OpValidateList[i] = m.OpValidateList[i+1]
-	}
-	m.OpValidateList[len(m.OpValidateList) - 1] = nil
+	m.OpValidateList = m.OpValidateList[1:]
 }
 
 /////// helpers
@@ -460,13 +457,13 @@ func (m *Miner) MarshallTree (result *[][]byte, node *BCTreeNode) *[][]byte{
 func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
 	if len(*lom) == 0 {
 		return nil
-	} else if len(m.Neighbors) == 0 {
+	} else if len(m.Neighbours) == 0 {
 		for _, val := range *lom {
 			addMinerToList(m, val)
 		}
-	} else if len(m.Neighbors) > 0 {
+	} else if len(m.Neighbours) > 0 {
 		for _, val := range *lom {
-			if len(m.Neighbors) == 256 {
+			if len(m.Neighbours) == 256 {
 				return nil
 			}
 			if !isMinerInList(m, val) {
@@ -489,18 +486,18 @@ func (m *Miner) HasArtNode(artNodePubKey string) bool {
 }
 
 func addMinerToList(m *Miner, addr net.Addr) error {
-	var newNeighbor = MinerConnection{}
+	var newNeighbour = MinerConnection{}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr.String())
 	if err != nil {
 		return err
 	}
-	newNeighbor.Addr = *tcpAddr
-	m.Neighbors = append(m.Neighbors, &newNeighbor)
+	newNeighbour.Addr = *tcpAddr
+	m.Neighbours = append(m.Neighbours, &newNeighbour)
 	return nil
 }
 
 func isMinerInList(m *Miner, addr net.Addr) bool {
-	for _, v := range m.Neighbors {
+	for _, v := range m.Neighbours {
 		if v.Addr.String() == addr.String() {
 			return true
 		}
@@ -509,8 +506,8 @@ func isMinerInList(m *Miner, addr net.Addr) bool {
 }
 
 func deleteNeighbour (m *Miner, index int) error {
-	buf := m.Neighbors[:index]
-	m.Neighbors = append(buf, m.Neighbors[index+1:]...)
+	buf := m.Neighbours[:index]
+	m.Neighbours = append(buf, m.Neighbours[index+1:]...)
 	return nil
 }
 

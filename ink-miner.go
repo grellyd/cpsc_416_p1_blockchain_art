@@ -72,8 +72,8 @@ func main() {
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-1000)*time.Millisecond, serverConn.SendHeartbeat)
 
-	// TODO: Check in with neighbors
-	// TODO: Ask Neighbors for blockchain that already exists
+	// TODO: Check in with neighbours
+	// TODO: Ask Neighbours for blockchain that already exists
 	genesisBlock := m.CreateGenesisBlock()
 
 	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
@@ -81,7 +81,7 @@ func main() {
 	go m.StartMining()
 	go m.TestEarlyExit()
 
-	// Ask for Neighbors
+	// Ask for Neighbours
 	fmt.Println("Asking for neighbours")
 	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
 	fmt.Println("Got neighbours!")
@@ -90,18 +90,18 @@ func main() {
 
 	err = m.AddMinersToList(&miners)
 	CheckError(err)
-	fmt.Printf("miners1: %v \n", &m.Neighbors)
+	fmt.Printf("miners1: %v \n", &m.Neighbours)
 
-	if len(m.Neighbors) !=0 {
-		err = m.OpenNeighborConnections()
+	if len(m.Neighbours) !=0 {
+		err = m.OpenNeighbourConnections()
 		CheckError(err)
-		fmt.Println("Opened RPC connections to neighbor miners")
+		fmt.Println("Opened RPC connections to neighbour miners")
 
-		neighborToReceiveBCFrom, err := m.ConnectToNeighborMiners(m.ServerNodeAddr)
+		neighbourToReceiveBCFrom, err := m.ConnectToNeighbourMiners(m.ServerNodeAddr)
 		CheckError(err)
-		fmt.Printf("Connected to neighbor miners; will ask for BlockChain from neighbour with address %s\n", neighborToReceiveBCFrom.String())
+		fmt.Printf("Connected to neighbour miners; will ask for BlockChain from neighbour with address %s\n", neighbourToReceiveBCFrom.String())
 
-		err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
+		err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom)
 		CheckError(err)
 		fmt.Println("Requested BCStorage from neighbour")
 	}
@@ -110,7 +110,7 @@ func main() {
 	minerReceiverInst := new(MinerInstance)
 	rpc.Register(minerReceiverInst)
 
-	fmt.Printf("befor goRoutine: %v aaaand length %v, \n", &m.Neighbors, len(m.Neighbors))
+	fmt.Printf("befor goRoutine: %v aaaand length %v, \n", &m.Neighbours, len(m.Neighbours))
 	go doEvery(5*time.Second, UpdateNeighbours)
 
 	serviceRequests(localListener)
@@ -192,34 +192,34 @@ func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
 
 func UpdateNeighbours(t time.Time) (err error) {
 	lom := make([]net.Addr, 0)
-	fmt.Printf("start updateN, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbors))
+	fmt.Printf("start updateN, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbours))
 
-	if len(m.Neighbors) < int(m.Settings.MinNumMinerConnections) {
+	if len(m.Neighbours) < int(m.Settings.MinNumMinerConnections) {
 		fmt.Println("starting request again")
 		err = serverConn.RequestMiners(&lom, m.Settings.MinNumMinerConnections)
-		fmt.Printf("starting request again, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbors))
+		fmt.Printf("starting request again, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbours))
 		if len(lom) !=0 {m.AddMinersToList(&lom)} else {
 			return nil
 		}
 	}
-	if len(m.Neighbors) == 0 {
+	if len(m.Neighbours) == 0 {
 		return nil
 	}
 	if allAlive(&m) {
 		return nil
 	}
-	fmt.Printf("Neigh addr: %v \n", &m.Neighbors)
-	e := m.OpenNeighborConnections()
+	fmt.Printf("Neigh addr: %v \n", &m.Neighbours)
+	e := m.OpenNeighbourConnections()
 	CheckError(e)
 	fmt.Println("Server node address: ", m.ServerNodeAddr.String())
-	neighborToReceiveBCFrom, err := m.ConnectToNeighborMiners(m.ServerNodeAddr)
+	neighbourToReceiveBCFrom, err := m.ConnectToNeighbourMiners(m.ServerNodeAddr)
 	CheckError(err)
-	fmt.Printf("Connected to neighbor miners in Update; will ask for BlockChain from neighbour with address %s\n", neighborToReceiveBCFrom.String())
+	fmt.Printf("Connected to neighbour miners in Update; will ask for BlockChain from neighbour with address %s\n", neighbourToReceiveBCFrom.String())
 
-	if neighborToReceiveBCFrom.Port == 0 {
+	if neighbourToReceiveBCFrom.Port == 0 {
 		return nil
 	}
-	err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
+	err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom)
 	CheckError(err)
 	fmt.Println("Requested BCStorage from neighbour in Update")
 
@@ -230,7 +230,7 @@ func UpdateNeighbours(t time.Time) (err error) {
 }
 
 func allAlive(m *minerlib.Miner) bool {
-	for _,v := range m.Neighbors {
+	for _,v := range m.Neighbours {
 		if !v.Alive {return false}
 	}
 	return true
@@ -327,26 +327,26 @@ func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]strin
 // RPC Connections with other Miners
 type MinerInstance int
 
-func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *int) error {
-	// Add neighbor to list of neighbors
-	fmt.Printf("Got request to register a new neighbor with TCP address %s\n", neighborAddr.String())
-	/*var newNeighbor = minerlib.MinerConnection{}
-	tcpAddr, err := net.ResolveTCPAddr("tcp", neighborAddr.String())
+func (si *MinerInstance) ConnectNewNeighbour(neighbourAddr *net.TCPAddr, reply *int) error {
+	// Add neighbour to list of neighbours
+	fmt.Printf("Got request to register a new neighbour with TCP address %s\n", neighbourAddr.String())
+	/*var newNeighbour = minerlib.MinerConnection{}
+	tcpAddr, err := net.ResolveTCPAddr("tcp", neighbourAddr.String())
 	if err != nil {
 		return err
 	}*/
-	//newNeighbor.Addr = *tcpAddr
-	//m.Neighbors = append(m.Neighbors, &newNeighbor)
+	//newNeighbour.Addr = *tcpAddr
+	//m.Neighbours = append(m.Neighbours, &newNeighbour)
 	lom := make([]net.Addr, 0)
-	lom = append(lom, neighborAddr)
+	lom = append(lom, neighbourAddr)
 	e := m.AddMinersToList(&lom)
 	CheckError(e)
 
-	// Return the length of our blockchain, so the new neighbor can decide
+	// Return the length of our blockchain, so the new neighbour can decide
 	// if they want our tree.
 
 	*reply = m.Blockchain.BC.LastNode.Current.Depth
-	fmt.Printf("ConnectNewNeighbor: Returning a reply depth of %d\n", *reply)
+	fmt.Printf("ConnectNewNeighbour: Returning a reply depth of %d\n", *reply)
 
 	return nil
 }
