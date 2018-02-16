@@ -18,6 +18,7 @@ var m minerlib.Miner // singleton for miner
 var miners []net.Addr
 
 var serverConnector *rpc.Client
+var serverConn minerlib.ServerInstance
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
 	
@@ -53,9 +54,11 @@ func main() {
 
 	// My Info to Send
 	localMinerInfo := MinerInfo{localListener.Addr(), m.PublKey}
+	m.ServerNodeAddr, _ = net.ResolveTCPAddr("tcp", localMinerInfo.Address.String())
+	fmt.Println("Serv addr: ", m.ServerNodeAddr.String())
 	
 	// Connect to server
-	serverConn, err := connectServer(serverAddr, localMinerInfo, m.Settings)
+	serverConn, err = connectServer(serverAddr, localMinerInfo, m.Settings)
 	CheckError(err)
 	fmt.Println("Settings ", m.Settings)
 
@@ -82,21 +85,26 @@ func main() {
 	CheckError(err)
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
 
-	err = m.OpenNeighborConnections()
-	CheckError(err)
-	fmt.Println("Opened RPC connections to neighbor miners")
+	if len(m.Neighbors) !=0 {
+		err = m.OpenNeighborConnections()
+		CheckError(err)
+		fmt.Println("Opened RPC connections to neighbor miners")
 
-	neighborToReceiveBCFrom, err := m.ConnectToNeighborMiners(localAddr)
-	CheckError(err)
-	fmt.Printf("Connected to neighbor miners; will ask for BlockChain from neighbour with address %s\n", neighborToReceiveBCFrom.String())
+		neighborToReceiveBCFrom, err := m.ConnectToNeighborMiners(m.ServerNodeAddr)
+		CheckError(err)
+		fmt.Printf("Connected to neighbor miners; will ask for BlockChain from neighbour with address %s\n", neighborToReceiveBCFrom.String())
 
-	err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
-	CheckError(err)
-	fmt.Println("Requested BCStorage from neighbour")
+		err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
+		CheckError(err)
+		fmt.Println("Requested BCStorage from neighbour")
+	}
 
 	// Set up receiver for other Miners
 	minerReceiverInst := new(MinerInstance)
 	rpc.Register(minerReceiverInst)
+
+	fmt.Printf("befor goRoutine: %v aaaand length %v, \n", &m.Neighbors, len(m.Neighbors))
+	go doEvery(5*time.Second, UpdateNeighbours)
 
 	serviceRequests(localListener)
 }
@@ -175,6 +183,52 @@ func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
 
 }
 
+func UpdateNeighbours(t time.Time) (err error) {
+	lom := make([]net.Addr, 0)
+	fmt.Printf("start updateN, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbors))
+
+	if len(m.Neighbors) < int(m.Settings.MinNumMinerConnections) {
+		fmt.Println("starting request again")
+		err = serverConn.RequestMiners(&lom, m.Settings.MinNumMinerConnections)
+		fmt.Printf("starting request again, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbors))
+		if len(lom) !=0 {m.AddMinersToList(&lom)} else {
+			return nil
+		}
+	}
+	if len(m.Neighbors) == 0 {
+		return nil
+	}
+	if allAlive(&m) {
+		return nil
+	}
+	fmt.Printf("Neigh addr: %v \n", &m.Neighbors)
+	e := m.OpenNeighborConnections()
+	CheckError(e)
+	fmt.Println("Server node address: ", m.ServerNodeAddr.String())
+	neighborToReceiveBCFrom, err := m.ConnectToNeighborMiners(m.ServerNodeAddr)
+	CheckError(err)
+	fmt.Printf("Connected to neighbor miners in Update; will ask for BlockChain from neighbour with address %s\n", neighborToReceiveBCFrom.String())
+
+	if neighborToReceiveBCFrom.Port == 0 {
+		return nil
+	}
+	err = m.RequestBCStorageFromNeighbor(&neighborToReceiveBCFrom)
+	CheckError(err)
+	fmt.Println("Requested BCStorage from neighbour in Update")
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func allAlive(m *minerlib.Miner) bool {
+	for _,v := range m.Neighbors {
+		if !v.Alive {return false}
+	}
+	return true
+}
+
 // =========================
 // Connection Instances
 // =========================
@@ -247,18 +301,22 @@ type MinerInstance int
 func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *int) error {
 	// Add neighbor to list of neighbors
 	fmt.Printf("Got request to register a new neighbor with TCP address %s\n", neighborAddr.String())
-	var newNeighbor = minerlib.MinerConnection{}
+	/*var newNeighbor = minerlib.MinerConnection{}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", neighborAddr.String())
 	if err != nil {
 		return err
-	}
-	newNeighbor.Addr = *tcpAddr
-	m.Neighbors = append(m.Neighbors, &newNeighbor)
+	}*/
+	//newNeighbor.Addr = *tcpAddr
+	//m.Neighbors = append(m.Neighbors, &newNeighbor)
+	lom := make([]net.Addr, 0)
+	lom = append(lom, neighborAddr)
+	e := m.AddMinersToList(&lom)
+	CheckError(e)
 
 	// Return the length of our blockchain, so the new neighbor can decide
 	// if they want our tree.
 
-    fmt.Printf("ConnectNewNeighbor: Returning a reply depth of %d\n", *reply)
+	fmt.Printf("ConnectNewNeighbor: Returning a reply depth of %d\n", *reply)
 	*reply = m.Blockchain.BC.LastNode.Current.Depth
 
 	return nil

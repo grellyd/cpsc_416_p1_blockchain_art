@@ -56,4 +56,5 @@ type ArtNodeConnection struct {
 type MinerConnection struct {
 	Addr      net.TCPAddr
 	RPCClient *rpc.Client
+	Alive     bool
 }
