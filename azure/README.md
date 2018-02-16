@@ -27,6 +27,6 @@ So long as you've had your public SSH key added onto the machine, you should be 
 
 `start_server.sh` - used to start the server
 
-`start_miner.sh` - used to start a miner. Usage is `start_miner.sh <NAME_OF_MACHINE>` For example, `./start_miner.sh Miner1Art2`
+`start_miner.sh` - used to start a miner. Usage is `start_miner.sh <NAME_OF_MACHINE>` For example, `./start_miner.sh Miner1Art2`. If you are running the server locally, add a second argument: `./start_miner.sh Miner1Art2 local`.
 
 
