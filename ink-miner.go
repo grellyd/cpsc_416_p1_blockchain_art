@@ -35,8 +35,6 @@ func main() {
 		return
 	}
 	localIP :=  minerlib.GetOutboundIP()
-	fmt.Printf("OutboundIP: %s\n\n", outboundIP);
-	var localIP = fmt.Sprintf("%s:8000, outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
