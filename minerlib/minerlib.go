@@ -157,13 +157,7 @@ func (m *Miner) MineBlocks() (err error) {
 					fmt.Printf("dissemination created error: %v", err)
 					return err
 				}
-			}
-			_ = m.Blockchain.AppendBlock(b, m.Settings)
-			// TODO[Graham]: Diss
-			m.OnNewBlock(*b)
-			if err != nil {
-				fmt.Printf("MineBlocks created Error: %v", err)
-				return err
+				m.OnNewBlock(*b)
 			}
 		}
 	}
@@ -396,8 +390,34 @@ func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	return err
 }
 
+func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err error) {
+	artNodeConn, err := m.FindArtNodeConnection(op.ArtNodePubKey)
+	if err != nil {
+		return "", fmt.Errorf("unable to get shape hash: %v", err)
+	}
+	if artNodeConn == nil {
+		return "", fmt.Errorf("unable to locate the art node")
+	}
+	// blocks until a value comes into ShapeHashResponse
+	return <- artNodeConn.ShapeHashResponse, nil
+}
+
 func (m *Miner) OnNewBlock(b Block) {
 	for _, op := range b.Operations {
+		// iterate through slice 0
+		for _, doneOp := range m.OpValidateList[0] {
+			artNodeConn, err := m.FindArtNodeConnection(doneOp.ArtNodePubKey)
+			if err != nil {
+				fmt.Printf("ERROR in OnNewBlock: %v", err)
+				return
+			}
+			if artNodeConn == nil {
+				continue
+			}
+			// TODO: Check if returning the right portion of op
+			// fill channel for associated art node
+			artNodeConn.ShapeHashResponse <- doneOp.ShapeHash
+		}
 		if m.HasArtNode(op.ArtNodePubKey) {
 			m.OpValidateList[op.ValidateBlockNum] = append(m.OpValidateList[op.ValidateBlockNum], op)
 		}
@@ -405,7 +425,15 @@ func (m *Miner) OnNewBlock(b Block) {
 	if len(m.OpValidateList) >= 1 {
 		m.OpValidateList = m.OpValidateList[1:]
 	}
+}
 
+func (m *Miner) FindArtNodeConnection(artNodePublicKey string) (anc *ArtNodeConnection, err error) {
+	for _, an := range m.ArtNodes {
+		if an.ArtNodePubKey == artNodePublicKey {
+			return an, nil
+		}
+	}
+	return nil, nil
 }
 
 /////// helpers

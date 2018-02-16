@@ -79,7 +79,7 @@ func main() {
 	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
 	CheckError(err)
 	go m.StartMining()
-	go m.TestEarlyExit()
+	//go m.TestEarlyExit()
 
 	// Ask for Neighbours
 	fmt.Println("Asking for neighbours")
@@ -300,14 +300,15 @@ func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error
 }
 
 func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *string) error {
+	// TODO use the an connection with the channel to wait
 	err := m.AddOp(&op)
 	if err != nil {
 		return fmt.Errorf("unable to submit operation: %v", err)
 	}
-	// setup return of completed shape after validation depth
-	shapeHashTemp := "this is totally the shape hash"
-	shapeHash = &shapeHashTemp
-	return nil
+	// blocks until done at validation depth
+	hash, err := m.GetShapeHash(&op)
+	shapeHash = &hash
+	return err
 }
 
 func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]string) error {

@@ -52,6 +52,7 @@ type ArtNodeConnection struct {
 	// RPC Client to Call
 	RPCClient *rpc.Client
 	ArtNodePubKey string
+	ShapeHashResponse chan string
 }
 
 type MinerConnection struct {
