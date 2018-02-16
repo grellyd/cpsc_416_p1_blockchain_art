@@ -407,10 +407,7 @@ func (m *Miner) OnNewBlock(b Block) {
 		// return to those artnodes
 	}
 	*/
-	for i := 0; i < len(m.OpValidateList); i++ {
-		m.OpValidateList[i] = m.OpValidateList[i+1]
-	}
-	m.OpValidateList[len(m.OpValidateList) - 1] = nil
+	m.OpValidateList = m.OpValidateList[1:]
 }
 
 /////// helpers
