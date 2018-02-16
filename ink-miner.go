@@ -262,6 +262,12 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 	return nil
 }
 
+func (si *ArtNodeInstance) GetSVGString(stub *bool, reply *string) error {
+	fmt.Println("In RPC getting svg string")
+	*reply = "testsvgstring"
+	return nil
+}
+
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
 	fmt.Println("In RPC getting children hashes")
 	bla, err := m.Blockchain.GetChildrenNodes(*hash)
