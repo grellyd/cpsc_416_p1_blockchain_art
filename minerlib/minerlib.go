@@ -153,6 +153,11 @@ func (m *Miner) MineBlocks() (err error) {
 				return nil
 			default:
 				_ = m.Blockchain.AppendBlock(b, m.Settings)
+				err := m.DisseminateBlock(b)
+				if err != nil {
+					fmt.Printf("dissemination created error: %v", err)
+					return err
+				}
 			}
 			if err != nil {
 				fmt.Printf("MineBlocks created Error: %v", err)
