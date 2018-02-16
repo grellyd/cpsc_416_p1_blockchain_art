@@ -12,13 +12,6 @@ import (
 	"crypto/elliptic"
 )
 
-// signal channels
-var doneMining chan struct{}
-var earlyExitSignal chan struct{}
-var exited chan struct{}
-
-// waitgroups
-var minersGroup sync.WaitGroup
 
 const (
 	OP_THRESHOLD     = 4
@@ -26,6 +19,9 @@ const (
 	MAX_EMPTY_BLOCKS = 3
 	NUM_MINING_TASKS = 1
 )
+
+// waitgroups
+var minersGroup sync.WaitGroup
 
 // maps hashes to blocks for the invalid blocks
 type Forest map[string]*Block
@@ -42,6 +38,12 @@ type Miner struct {
 	Settings        *blockartlib.MinerNetSettings
 	LocalCanvas     CanvasData
 	BlockForest     map[string]*Block
+	
+	// signal channels
+	doneMining chan struct{}
+	earlyExitSignal chan struct{}
+	exited chan struct{}
+
 	// pipeline channel
 	operationQueue chan *blockartlib.Operation
 }
@@ -82,8 +84,8 @@ func (m *Miner) CreateGenesisBlock() (g *Block) {
 func (m *Miner) StartMining() (err error) {
 	fmt.Printf("[miner] Starting Mining Process\n")
 	// setup channels
-	doneMining = make(chan struct{})
-	earlyExitSignal = make(chan struct{})
+	m.doneMining = make(chan struct{})
+	m.earlyExitSignal = make(chan struct{})
 	for i := 0; i < NUM_MINING_TASKS; i++ {
 		go m.MineBlocks()
 		minersGroup.Add(1)
@@ -91,28 +93,16 @@ func (m *Miner) StartMining() (err error) {
 	return nil
 }
 
-func (m *Miner) TestEarlyExit() {
-	time.Sleep(20000 * time.Millisecond)
-	fmt.Printf("[miner] Killing...\n")
-	err := m.StopMining()
-	if err != nil {
-		fmt.Printf("%v\n", err)
-	}
-	if err != nil {
-		fmt.Printf("%v\n", err)
-	}
-}
-
 func (m *Miner) MineBlocks() (err error) {
 	fmt.Printf("[miner] Starting to Mine Blocks\n")
 	for {
 		select {
-		case <-doneMining:
+		case <-m.doneMining:
 			// done
 			minersGroup.Done()
 			fmt.Printf("[miner] Done Mining Blocks\n")
 			return nil
-		case <-earlyExitSignal:
+		case <-m.earlyExitSignal:
 			minersGroup.Done()
 			fmt.Printf("[miner] Early Exit\n")
 			return nil
@@ -147,7 +137,14 @@ func (m *Miner) MineBlocks() (err error) {
 			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
 
 			select {
-			case <-earlyExitSignal:
+			case <-m.earlyExitSignal:
+				// readd the operations for the future
+				for _, op := range b.Operations {
+					// avoid a block. Toss op if full
+					if len(m.operationQueue) < MAX_WAITING_OPS {
+						m.operationQueue <- op
+					}
+				}
 				minersGroup.Done()
 				fmt.Printf("[miner] Early Exit\n")
 				return nil
@@ -164,6 +161,29 @@ func (m *Miner) MineBlocks() (err error) {
 				return err
 			}
 		}
+	}
+}
+
+// this stops the process of mining blocks
+// Commands the lower level threads to stop.
+// Waitgroup finishes when these exit
+func (m *Miner) StopMining() (err error) {
+	fmt.Printf("[miner] Stopping Mining by command\n")
+	close(m.earlyExitSignal)
+	minersGroup.Wait()
+	fmt.Printf("[miner] Stopped\n")
+	return nil
+}
+
+func (m *Miner) TestEarlyExit() {
+	time.Sleep(20000 * time.Millisecond)
+	fmt.Printf("[miner] Killing...\n")
+	err := m.StopMining()
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
+	if err != nil {
+		fmt.Printf("%v\n", err)
 	}
 }
 
@@ -239,17 +259,6 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 		}
 		return false, nil
 	}
-}
-
-// this stops the process of mining blocks
-// Commands the lower level threads to stop.
-// Waitgroup finishes when these exit
-func (m *Miner) StopMining() (err error) {
-	fmt.Printf("[miner] Stopping Mining by command\n")
-	close(earlyExitSignal)
-	minersGroup.Wait()
-	fmt.Printf("[miner] Stopped\n")
-	return nil
 }
 
 /////// functions to interact with other miners
@@ -328,7 +337,6 @@ func (m *Miner) RequestBCStorageFromNeighbor(neighborAddr *net.TCPAddr) (err err
 	if len(treeArray) != 0 {
 		reconstructTree(m, &treeArray)
 	}
-
 	return nil
 }
 
@@ -460,8 +468,6 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 			fmt.Printf("Invalid block: %v", err)
 			return
 		}
-		// TODO: check switch
 		m.Blockchain.AppendBlock(b, m.Settings)
 	}
-
 }

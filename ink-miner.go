@@ -333,6 +333,7 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 	return nil
 }
 
+// TODO: check switch
 func (mi *MinerInstance) DisseminateBlockToNeighbour (blockMarshalled *[]byte, reply *bool) error {
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)

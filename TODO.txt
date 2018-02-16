@@ -60,13 +60,14 @@ Graham := Append Miner to Settings
 
 Graham Todos Feb 15th:
 - find problem in art-app connection -> Done
-- check if op is valid before adding to miner
+- check if op is valid before adding to miner ->  Done
     - op sig adds up
     - works on canvas
     - not already done (subset of works on canvas)
-- use early exit when switching chains
 - generate operation numbers
-- Use disseminate 
+- Use disseminate in mine -> done 
+- use early exit when switching chains 
+- check for chain switch in disseminate receipt 
 - check art apps are/are not connected when making a connect/request
 
 
