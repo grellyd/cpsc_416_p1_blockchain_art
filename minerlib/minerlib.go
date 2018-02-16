@@ -156,13 +156,7 @@ func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
 		difficulty = m.Settings.PoWDifficultyOpBlock
 		// check each op has a valid sig
 		for _, op := range b.Operations {
-			// TODO
-			expectedSig := ""
-			err = nil
-			if err != nil {
-				return false, fmt.Errorf("Unable validate block: %v", err)
-			}
-			if op.ShapeHash != expectedSig {
+			if op.ShapeHash != op.CalculateSig() {
 				return false, nil
 			}
 		}
@@ -204,26 +198,6 @@ func (m *Miner) StopMining() (err error) {
 	close(earlyExitSignal)
 	minersGroup.Wait()
 	fmt.Printf("[miner] Stopped\n")
-	return nil
-}
-
-/////// functions to perform operations on the blockchain
-
-func (m *Miner) AddBlockToBC() (err error) {
-	return nil
-}
-
-func (m *Miner) RemoveBlockFromBC() (err error) {
-	return nil
-}
-
-// func (m *Miner) FetchParent() (b *Block
-
-/////// functions to interact with server
-
-// retrieves settings from server
-
-func (m *Miner) RetrieveSettings() (err error) {
 	return nil
 }
 

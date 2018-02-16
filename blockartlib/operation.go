@@ -32,13 +32,17 @@ type Operation struct {
 
 // Let the OpSig be the MD5 Hash of the operation type, operation number, and the ArtNode's Public Key
 func (o *Operation) GenerateSig() error {
+	o.ShapeHash = o.CalculateSig()
+	return nil
+}
+
+func (o *Operation) CalculateSig() (string) {
 	data := []byte{}
 	h := md5.New()
 	data = append(data, uint32AsByteArr(uint32(o.Type))...)
 	data = append(data, uint32AsByteArr(o.OperationNumber)...)
 	h.Write(append(data, []byte(o.ArtNodePubKey)...))
-	o.ShapeHash = hex.EncodeToString(h.Sum(nil))
-	return nil
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func (o *Operation) GetNumber() error {

@@ -85,7 +85,6 @@ func (an ArtNode) GetInk() (inkRemaining uint32, err error) {
 func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining uint32, err error) {
 	op := Operation{
 		Type: DELETE,
-		// TODO set operation number
 		OperationNumber: 0,
 		Shape: 0,
 		Fill: "",
