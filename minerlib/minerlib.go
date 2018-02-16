@@ -41,6 +41,7 @@ type Miner struct {
 	Settings        *blockartlib.MinerNetSettings
 	LocalCanvas     CanvasData
 	BlockForest     map[string]*Block
+	OpValidateList	[][]*Operation
 	// pipeline channel
 	operationQueue chan *blockartlib.Operation
 }
@@ -59,6 +60,7 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		Settings:        &blockartlib.MinerNetSettings{},
 		LocalCanvas:     CanvasData{},
 		BlockForest:     map[string]*Block{},
+		OpValidateList: 	 [][]*Operation{},
 		operationQueue: make(chan *blockartlib.Operation, MAX_WAITING_OPS),
 	}
 	return m
@@ -344,6 +346,23 @@ func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	return err
 }
 
+func (m *Miner) OnNewBlock(b Block) {
+	for _, op := range b.Operations {
+		if m.HasArtNode(op.ArtNodePubKey) {
+			m.OpValidateList[op.ValidateBlockNum] = append(m.OpValidateList[op.ValidateBlockNum], op)
+		}
+	}
+	/*
+	for _, validated := range m.OpValidateList[0] {
+		// return to those artnodes
+	}
+	*/
+	for i := 0; i < len(m.OpValidateList); i++ {
+		m.OpValidateList[i] = m.OpValidateList[i+1]
+	}
+	m.OpValidateList[len(m.OpValidateList) - 1] = nil
+}
+
 /////// helpers
 
 func (m *Miner) AddInk() (err error) {
@@ -399,6 +418,17 @@ func (m *Miner) AddMinersToList(lom *[]net.Addr) (err error) {
 	return nil
 }
 
+func (m *Miner) HasArtNode(artNodePubKey string) bool {
+	hasArtNode := false
+	for _, conn := range m.ArtNodes {
+		if conn.ArtNodePubKey == artNodePubKey {
+			hasArtNode = true
+			break
+		}
+	}
+	return hasArtNode
+}
+
 func addMinerToList(m *Miner, addr net.Addr) error {
 	var newNeighbor = MinerConnection{}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr.String())
@@ -438,5 +468,4 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 		}
 		m.Blockchain.AppendBlock(b, m.Settings)
 	}
-
 }

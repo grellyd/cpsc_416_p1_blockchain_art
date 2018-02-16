@@ -236,8 +236,6 @@ func allAlive(m *minerlib.Miner) bool {
 	return true
 }
 
-
-
 // =========================
 // Connection Instances
 // =========================
