@@ -297,6 +297,7 @@ func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) er
 	//treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
 
 	// iterate over blockchain, get all svg strings
+	reply = append(reply, "<path d=\"M5,2L6,2L6,3L5,3L5,2\" stroke=\"red\" fill =\"transparent\"/>")
 	return err
 }
 
