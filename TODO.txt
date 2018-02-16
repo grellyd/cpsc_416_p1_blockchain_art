@@ -30,7 +30,7 @@ Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about st
 Alex := Tree comparisons for the purposes of choosing the longest chain.
 Alex := Given a valid block, check if new longest chain.
     func IsNewLongestChain(b *Block) bool
-Alex := Fix requesting neighbors from the server
+Alex := Fix requesting neighbours from the server
 
 Larissa := Miner intial join chain revceive
 Larissa := Share operations to other miners

@@ -36,7 +36,7 @@ func TestBlockChain (t *testing.T) {
 		ServerNodeAddr: nil,
 		ServerHrtBtAddr: nil,
 		ArtNodes: nil,
-		Neighbors: nil,
+		Neighbours: nil,
 		PublKey: publicKey,
 		PrivKey: privateKey,
 		Blockchain: &minerlib.BCStorage{},
