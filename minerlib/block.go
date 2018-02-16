@@ -158,6 +158,9 @@ func UnmarshallBinary(data [][]byte) (b *Block, err error) {
 
 	// Handle key separately
 	b.MinerPublicKey.Curve = elliptic.P384()
+	if data[1] == nil {
+		return b, fmt.Errorf("data[1] is nil. Can't unmarshal")
+	}
 	b.MinerPublicKey.X, b.MinerPublicKey.Y = elliptic.Unmarshal(b.MinerPublicKey.Curve, data[1])
 
 	return b, nil
