@@ -92,7 +92,7 @@ func (m *Miner) StartMining() (err error) {
 }
 
 func (m *Miner) TestEarlyExit() {
-	time.Sleep(10000 * time.Millisecond)
+	time.Sleep(20000 * time.Millisecond)
 	fmt.Printf("[miner] Killing...\n")
 	err := m.StopMining()
 	if err != nil {
@@ -142,7 +142,6 @@ func (m *Miner) MineBlocks() (err error) {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
 			}
-			return nil
 		}
 	}
 }

@@ -33,8 +33,12 @@ func main() {
 		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
-	outboundIP :=  networking.GetOutboundIP()
+	/*
+	Commented out to run locally. See Azure branch
 	localIP := fmt.Sprintf("%s:8000", outboundIP)
+	*/
+	outboundIP :=  networking.GetOutboundIP()
+	localIP := fmt.Sprintf("%s:0", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
