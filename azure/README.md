@@ -12,10 +12,21 @@ Miner1Art3 - 40.65.113.111
 Miner3Art1 - 40.65.117.234
 Miner3Art2 - 40.65.102.54
 
+Server runs on port 12345,
+Miners run on port 8000,
+and Art nodes run on a randomly generated port.
+
 VMs shut off at 1am PST daily.
 
 So long as you've had your public SSH key added onto the machine, you should be able to ssh into a machine using the command `ssh -i ~/.ssh/id_rsa supfoo@<IP-ADDRESS>`.
 
-# Setup scripts
+# Scripts
+*NOTE*: Scripts need to be run from _INSIDE_ the azure folder!
 
 `azureinstall.sh` - bash script given to us for setting up a Go environment
+
+`start_server.sh` - used to start the server
+
+`start_miner.sh` - used to start a miner. Usage is `start_miner.sh <NAME_OF_MACHINE>` For example, `./start_miner.sh Miner1Art2`
+
+
