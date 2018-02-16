@@ -14,6 +14,9 @@ import (
 	"time"
 )
 
+type Block = minerlib.Block
+type Operation = minerlib.Operation
+
 var m minerlib.Miner // singleton for miner
 var miners []net.Addr
 
@@ -21,7 +24,7 @@ var serverConnector *rpc.Client
 var serverConn minerlib.ServerInstance
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
-	
+
 func main() {
 	fmt.Println("start")
 	args := os.Args[1:]
@@ -38,10 +41,10 @@ func main() {
 	CheckError(err)
 	localAddr, err := net.ResolveTCPAddr("tcp", localIP)
 	CheckError(err)
-	
+
 	// Create Miner
 	m = minerlib.NewMiner(serverAddr, keys)
-	
+
 	//setup an ArtNode Reciever
 	artNodeInst := new(ArtNodeInstance)
 	// register art node instance locally
@@ -56,7 +59,7 @@ func main() {
 	localMinerInfo := MinerInfo{localListener.Addr(), m.PublKey}
 	m.ServerNodeAddr, _ = net.ResolveTCPAddr("tcp", localMinerInfo.Address.String())
 	fmt.Println("Serv addr: ", m.ServerNodeAddr.String())
-	
+
 	// Connect to server
 	serverConn, err = connectServer(serverAddr, localMinerInfo, m.Settings)
 	CheckError(err)
@@ -85,7 +88,7 @@ func main() {
 	CheckError(err)
 	fmt.Printf("miners1: %v \n", &m.Neighbors)
 
-	if len(m.Neighbors) !=0 {
+	if len(m.Neighbors) != 0 {
 		err = m.OpenNeighborConnections()
 		CheckError(err)
 		fmt.Println("Opened RPC connections to neighbor miners")
@@ -121,7 +124,7 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	//2nd retrieve settings ==> 2 in 1
 	err = serverRPCClient.Call("RServer.Register", minerInfo, settings)
 	CheckError(err)
-	// Create the serverConnection. 
+	// Create the serverConnection.
 	// TODO: refactor to ServerInstance
 	tcpFromAddr, err := net.ResolveTCPAddr("tcp", minerInfo.Address.String())
 	CheckError(err)
@@ -191,7 +194,9 @@ func UpdateNeighbours(t time.Time) (err error) {
 		fmt.Println("starting request again")
 		err = serverConn.RequestMiners(&lom, m.Settings.MinNumMinerConnections)
 		fmt.Printf("starting request again, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbors))
-		if len(lom) !=0 {m.AddMinersToList(&lom)} else {
+		if len(lom) != 0 {
+			m.AddMinersToList(&lom)
+		} else {
 			return nil
 		}
 	}
@@ -223,8 +228,10 @@ func UpdateNeighbours(t time.Time) (err error) {
 }
 
 func allAlive(m *minerlib.Miner) bool {
-	for _,v := range m.Neighbors {
-		if !v.Alive {return false}
+	for _, v := range m.Neighbors {
+		if !v.Alive {
+			return false
+		}
 	}
 	return true
 }
@@ -246,7 +253,7 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 	if !keys.MatchingPair(privateKey, publicKey) {
 		fmt.Println("Invalid key pair.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
-	}else {
+	} else {
 		*reply = true
 		OpQueue = append(OpQueue, an)
 	}
@@ -266,6 +273,25 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 	return nil
 }
 
+func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
+	fmt.Println("In RPC getting svg string")
+	temp := m.Blockchain.BC.GenesisNode
+	var b *Block
+	for {
+		if temp.Current == nil {
+			break
+		}
+		b = temp.Current.BlockResiding
+		for _, op := range b.Operations {
+			if op.ShapeHash == shapeHash {
+				*reply = minerlib.OpToSvg(*op, m.Settings.CanvasSettings)
+				return nil
+			}
+		}
+	}
+	return blockartlib.InvalidShapeHashError(shapeHash)
+}
+
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
 	fmt.Println("In RPC getting children hashes")
 	bla, err := m.Blockchain.GetChildrenNodes(*hash)
@@ -282,10 +308,11 @@ func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *
 	// setup return of completed shape after validation depth
 	shapeHashTemp := "this is totally the shape hash"
 	shapeHash = &shapeHashTemp
+	// TODO: disseminate here
 	return nil
 }
 
-func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]string) error {
+func (si *ArtNodeInstance) GetShapesFromBlock(blockHash *string, reply *[]string) error {
 	fmt.Println("In RPC getting shape from block")
 	treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
 	if treeNode == nil {
@@ -293,7 +320,7 @@ func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]strin
 	}
 	block := treeNode.BlockResiding
 	ops := block.Operations
-	for _,v := range ops {
+	for _, v := range ops {
 		*reply = append(*reply, v.ShapeHash)
 	}
 	return nil
@@ -326,10 +353,17 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 	return nil
 }
 
-func (mi *MinerInstance) DisseminateBlockToNeighbour (blockMarshalled *[]byte, reply *bool) error {
+func (mi *MinerInstance) ReceiveBlockFromNeighbour(blockMarshalled *[]byte, reply *bool) error {
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
 	*reply, err = m.ValidBlock(block)
+	return err
+}
+
+func (mi *MinerInstance) DisseminateOpToNeighbour(opMarshalled *[]byte, reply *bool) error {
+	_, err := blockartlib.OperationUnmarshall(*opMarshalled)
+	CheckError(err)
+	
 	return err
 }
 
@@ -343,4 +377,3 @@ type MinerInfo struct {
 	Address net.Addr
 	Key     *ecdsa.PublicKey
 }
-

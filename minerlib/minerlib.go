@@ -312,11 +312,15 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 		marshalledBlock, err := block.MarshallBinary()
 		blockartlib.CheckErr(err)
 		var b bool
-		err = v.RPCClient.Call("MinerInstance.DisseminateBlockToNeighbour", &marshalledBlock, &b)
+		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
 		if !b {
 			fmt.Println("Bad block") // TODO: think what to do in this case
 		}
 	}
+	return err
+}
+
+func (m *Miner) DisseminateOperation(op Operation) (err error) {
 	return err
 }
 
