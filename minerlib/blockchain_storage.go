@@ -85,6 +85,14 @@ func (bcs *BCStorage) LastNodeHash() (string, error) {
 	return hash, nil
 }
 
+func (bcs *BCStorage) FindBlockByHash(hash string) (b *Block, err error) {
+	treeNode := FindBCTreeNode(bcs.BCT.GenesisNode, hash)
+	if treeNode != nil {
+		return treeNode.BlockResiding, nil
+	}
+	return nil, nil
+}
+
 // function which return children of the block
 func (bcs *BCStorage) GetChildrenNodes(hashOfBlock string) ([]string, error) {
 	children := make([]string, 0)

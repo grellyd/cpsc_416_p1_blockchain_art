@@ -4,7 +4,6 @@ import (
 	"blockartlib"
 	"crypto/ecdsa"
 	"fmt"
-	"minerlib/compute"
 	"net"
 	"net/rpc"
 	"sync"
@@ -143,59 +142,66 @@ func (m *Miner) MineBlocks() (err error) {
 				fmt.Printf("MineBlocks created Error: %v", err)
 				return err
 			}
+			return nil
 		}
 	}
 }
 
 // validates incoming block from other miner
-func (m *Miner) ValidBlock(b *Block) (valid bool, err error) {
-	gob.Register(&Block{})
-	gob.Register(elliptic.P384())
-	hash, err := b.Hash()
+func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
+	blockValid, err := b.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 	if err != nil {
-		return false, fmt.Errorf("Unable validate block: %v", err)
+		return false, fmt.Errorf("Unable to validate block: %v", err)
 	}
-	difficulty := uint8(0)
-	if len(b.Operations) > 0 {
-		difficulty = m.Settings.PoWDifficultyOpBlock
-		// check each op has a valid sig
-		for _, op := range b.Operations {
-			// TODO
-			expectedSig := ""
-			err = nil
-			if err != nil {
-				return false, fmt.Errorf("Unable validate block: %v", err)
-			}
-			if op.ShapeHash != expectedSig {
-				return false, nil
-			}
-		}
-	} else {
-		difficulty = m.Settings.PoWDifficultyNoOpBlock
-	}
-	// check nonce adds up
-	if !compute.Valid(hash, difficulty) {
+	if !blockValid {
 		return false, nil
 	}
-
-	// check previous block is in tree
+	// check if block is in tree
 	present, err := m.Blockchain.BlockPresent(b)
 	if err != nil {
 		return false, fmt.Errorf("Unable validate block: %v", err)
 	}
 	if present {
-		return true, nil
+		return false, nil
 	} else {
-		// failing that, check its ancestors in the forest, and those pass ValidBlock
-		if m.BlockForest[b.ParentHash] != nil {
-			parentValid, err := m.ValidBlock(m.BlockForest[b.ParentHash])
+		// not present, is parent in tree
+		parentBlock, err := m.Blockchain.FindBlockByHash(b.ParentHash)
+		if err != nil {
+			return false, fmt.Errorf("Unable validate block: %v", err)
+		}
+		if parentBlock != nil {
+			// is found parent internally valid
+			parentValid, err := parentBlock.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 			if err != nil {
 				return false, fmt.Errorf("Unable validate block: %v", err)
 			}
 			if parentValid {
 				return true, nil
 			}
+		// failing that, check its ancestors in the forest, and those pass ValidBlock
+		} else{
+			forestParent :=  m.BlockForest[b.ParentHash] 
+			if forestParent != nil {
+				// internally consistent
+				parentValid, err := forestParent.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
+				if err != nil {
+					return false, fmt.Errorf("Unable validate block: %v", err)
+				}
+				if !parentValid {
+					return false, nil
+				}
+				// forestParent validNewBlock too?
+				forestParentValid, err := m.ValidNewBlock(m.BlockForest[b.ParentHash])
+				if err != nil {
+					return false, fmt.Errorf("Unable validate block: %v", err)
+				}
+				if forestParentValid {
+					// TODO: Add forest Parent
+					return true, nil
+				}
+			}
 		}
+		fmt.Printf("unable to find block or parent\n")
 		return false, nil
 	}
 }
@@ -434,7 +440,7 @@ func reconstructTree(m *Miner, tree *[][]byte) {
 			fmt.Println("unmarshalling failed")
 			return
 		}
-		valid, err := m.ValidBlock(b)
+		valid, err := m.ValidNewBlock(b)
 		blockartlib.CheckErr(err)
 		if err != nil || !valid{
 			fmt.Printf("Invalid block: %v", err)

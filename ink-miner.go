@@ -330,7 +330,7 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 func (mi *MinerInstance) DisseminateBlockToNeighbour (blockMarshalled *[]byte, reply *bool) error {
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
-	*reply, err = m.ValidBlock(block)
+	*reply, err = m.ValidNewBlock(block)
 	return err
 }
 
