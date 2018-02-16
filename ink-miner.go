@@ -308,6 +308,7 @@ func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *
 	// setup return of completed shape after validation depth
 	shapeHashTemp := "this is totally the shape hash"
 	shapeHash = &shapeHashTemp
+	// TODO: disseminate here
 	return nil
 }
 
@@ -352,10 +353,17 @@ func (si *MinerInstance) ConnectNewNeighbor(neighborAddr *net.TCPAddr, reply *in
 	return nil
 }
 
-func (mi *MinerInstance) DisseminateBlockToNeighbour(blockMarshalled *[]byte, reply *bool) error {
+func (mi *MinerInstance) ReceiveBlockFromNeighbour(blockMarshalled *[]byte, reply *bool) error {
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
 	*reply, err = m.ValidBlock(block)
+	return err
+}
+
+func (mi *MinerInstance) DisseminateOpToNeighbour(opMarshalled *[]byte, reply *bool) error {
+	op, err := blockartlib.OperationUnmarshall(*opMarshalled)
+	CheckError(err)
+	
 	return err
 }
 
