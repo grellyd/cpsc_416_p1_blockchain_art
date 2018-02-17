@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"crypto/ecdsa"
 	"time"
-	"networking"
 )
 
 // Represents a type of shape in the BlockArt system.
@@ -148,14 +147,13 @@ type Canvas interface {
 // - DisconnectedError
 func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, setting CanvasSettings, err error) {
 	fmt.Println("BLOCKARTLIB: Running OpenCanvas")
-    outboundIP := networking.GetOutboundIP()
 	var an = ArtNode {
 		0,
 		minerAddr,
 		&privKey,
 		&privKey.PublicKey,
 		false,
-		fmt.Sprintf("%s:0", outboundIP),
+		fmt.Sprintf("127.0.0.1:0"),
 		nil}
 	err = an.Connect(an.MinerAddr, an.PrivKey)
 	CheckErr(err)

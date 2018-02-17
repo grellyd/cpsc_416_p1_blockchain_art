@@ -36,15 +36,15 @@ func main() {
 	}
 	/*
 	Commented out to run locally. See Azure branch
-	localIP := fmt.Sprintf("%s:8000", outboundIP)
+	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
 	*/
 	outboundIP :=  networking.GetOutboundIP()
-	localIP := fmt.Sprintf("%s:0", outboundIP)
+	publicLocalIP := fmt.Sprintf("%s:0", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
 	CheckError(err)
-	localAddr, err := net.ResolveTCPAddr("tcp", localIP)
+	publicLocalAddr, err := net.ResolveTCPAddr("tcp", publicLocalIP)
 	CheckError(err)
 	
 	// Create Miner
@@ -55,13 +55,13 @@ func main() {
 	// register art node instance locally
 	rpc.Register(artNodeInst)
 
-	// Add a listener on myself
-	localListener, err := net.ListenTCP("tcp", localAddr)
+	// Add a listener for the server & other miners to hit
+	publicListener, err := net.ListenTCP("tcp", publicLocalAddr)
 	CheckError(err)
-	fmt.Println("Local addr: ", localListener.Addr().String())
+	fmt.Println("Listener addr: ", publicListener.Addr().String())
 
-	// My Info to Send
-	localMinerInfo := MinerInfo{localListener.Addr(), m.PublKey}
+	// Info to send to server
+	localMinerInfo := MinerInfo{publicListener.Addr(), m.PublKey}
 	m.ServerNodeAddr, _ = net.ResolveTCPAddr("tcp", localMinerInfo.Address.String())
 	fmt.Println("Serv addr: ", m.ServerNodeAddr.String())
 	
@@ -114,7 +114,13 @@ func main() {
 	fmt.Printf("befor goRoutine: %v aaaand length %v, \n", &m.Neighbours, len(m.Neighbours))
 	go doEvery(5*time.Second, UpdateNeighbours)
 
-	serviceRequests(localListener)
+
+	// Set up a private address for art nodes to connect to
+	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3000")
+	CheckError(err)
+ 	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
+
+	serviceRequests(privateListener)
 }
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
@@ -141,9 +147,10 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	return serverConnection, nil
 }
 
-func serviceRequests(localListener *net.TCPListener) {
+func serviceRequests(privateListener *net.TCPListener) {
 	for {
-		conn, err := localListener.Accept()
+		fmt.Println("Listening for art nodes on ", privateListener.Addr().String())
+		conn, err := privateListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
