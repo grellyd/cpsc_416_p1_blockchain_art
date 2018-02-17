@@ -124,8 +124,9 @@ func main() {
 	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3002")
 	CheckError(err)
  	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
-	serviceRequests(publicListener)
-	go serviceRequests1(privateListener)
+
+	go servicePublicRequests(publicListener)
+	servicePrivateRequests(privateListener)
 }
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
@@ -152,31 +153,27 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	return serverConnection, nil
 }
 
-func serviceRequests(privateListener *net.TCPListener) {
-    fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
+func servicePublicRequests(publicListener *net.TCPListener) {
+	fmt.Printf("[miner]: Now servicing requests from Server on %s\n\n", publicListener.Addr().String())
 	for {
-		conn, err := privateListener.Accept()
+		conn, err := publicListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
 		go rpc.ServeConn(conn)
-		// fmt.Println("INK-MINER: serviceRequests RPC connection served")
 
 		time.Sleep(10 * time.Millisecond)
-
-		// DrawOperations to validate
-		// For valid add to miner op channel
 	}
 }
 
-func serviceRequests1(privateListener *net.TCPListener) {
+func servicePrivateRequests(privateListener *net.TCPListener) {
 	fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
 	for {
 		conn, err := privateListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
-		go rpc.ServeConn(conn)
+		rpc.ServeConn(conn)
 
 		time.Sleep(10 * time.Millisecond)
 

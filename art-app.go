@@ -80,6 +80,10 @@ func main() {
 	shapes = append(shapes, shapeHash)
 	blocks = append(blocks, blockHash)
 
+    if ink5 <= ink4 {
+		checkError(fmt.Errorf("Err! ink4 not > ink 5"))
+	}
+
 	fmt.Println("ART-APP: Drawing square that intersects with circle 50, 50 r 10.")
 
 	fmt.Println("Closing the canvas")

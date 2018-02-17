@@ -171,7 +171,6 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 	minerInst := new(MinerInstance)
 	rpc.Register(minerInst)
 
-	fmt.Printf("ARTNODEUTIL: Resolving ArtNode local/outbound IP: %s\n", an.LocalIP)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 	CheckErr(err)
 
@@ -200,7 +199,7 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 		false,
 		listener.Addr().String(),
 	}
-	fmt.Println("ARTNODEUTIL: trying to connec to Miner via RPC: ArtNodeInstance.ConnectNode")
+	fmt.Println("ARTNODEUTIL: trying to connect to Miner via RPC: ArtNodeInstance.ConnectNode")
 	err = an.MinerConnection.Call("ArtNodeInstance.ConnectNode", an1, &reply)
 	CheckErr(err)
 	fmt.Println("ARTNODEUTIL connected via rpc without error; reply is: ", reply)
