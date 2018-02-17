@@ -18,7 +18,7 @@ type BCTreeNode struct {
 func NewBCTreeNode(block *Block, parent *BCTreeNode, ownerInkLvl uint32, settings *blockartlib.MinerNetSettings) *BCTreeNode {
 	currHash, err := block.Hash()
 	if err != nil {
-		fmt.Printf("NewNode Error while hashing given block: %v", err)
+		fmt.Printf("[miner]#Creating a new BlockTrain Tree Node errored  while hashing given block: %v\n", err)
 	}
 	var m = make(map[string]uint32)
 	// If not genesis node

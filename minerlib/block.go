@@ -148,8 +148,8 @@ func (b *Block) MarshallBinary() (marshalled [][]byte, err error) {
 
 // Unmarshalls bytes into a Block
 func UnmarshallBinary(data [][]byte) (b *Block, err error) {
-	fmt.Println("In unmarshalling binary")
-	fmt.Println("Data: ", data)
+	//fmt.Println("In unmarshalling binary")
+	//fmt.Println("Data: ", data)
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	b = new(Block)

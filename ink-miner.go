@@ -26,7 +26,6 @@ var TreeQueue []string
 	
 func main() {
 	gob.Register(elliptic.P384())
-	fmt.Println("start")
 	args := os.Args[1:]
 
 	// Missing command line args.
@@ -34,7 +33,10 @@ func main() {
 		fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
+
+	fmt.Println("======= [miner] START ======\n")
 	/*
+
 	Commented out to run locally. See Azure branch
 	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
 	*/
@@ -58,20 +60,46 @@ func main() {
 	// Add a listener for the server & other miners to hit
 	publicListener, err := net.ListenTCP("tcp", publicLocalAddr)
 	CheckError(err)
-	fmt.Println("Listener addr: ", publicListener.Addr().String())
 
 	// Info to send to server
 	localMinerInfo := MinerInfo{publicListener.Addr(), m.PublKey}
 	m.ServerNodeAddr, _ = net.ResolveTCPAddr("tcp", localMinerInfo.Address.String())
-	fmt.Println("Serv addr: ", m.ServerNodeAddr.String())
 	
 	// Connect to server
 	serverConn, err = connectServer(serverAddr, localMinerInfo, m.Settings)
 	CheckError(err)
-	fmt.Println("Settings ", m.Settings)
+	fmt.Println("[miner]: Connected to server; received settings: ")
+	fmt.Println(m.Settings, "\n")
 
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-1000)*time.Millisecond, serverConn.SendHeartbeat)
+
+	// Ask for Neighbours
+	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
+	CheckError(err)
+
+	err = m.AddMinersToList(&miners)
+	CheckError(err)
+
+	if len(m.Neighbours) !=0 {
+		err = m.OpenNeighbourConnections()
+		CheckError(err)
+
+		neighbourToReceiveBCFrom, err := m.ConnectToNeighbourMiners(m.ServerNodeAddr)
+		CheckError(err)
+
+		err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom, &TreeQueue)
+		CheckError(err)
+
+        fmt.Printf("[miner]: Joined network with %d other miners. Received blockchain from neighbour with IP address %s.\n\n", len(miners), neighbourToReceiveBCFrom.String())
+	} else {
+		fmt.Println("[miner]: Joined network as first miner!")
+	}
+
+	// Set up receiver for other Miners
+	minerReceiverInst := new(MinerInstance)
+	rpc.Register(minerReceiverInst)
+	go doEvery(5*time.Second, UpdateNeighbours)
 
 	// TODO: Check in with neighbours
 	// TODO: Ask Neighbours for blockchain that already exists
@@ -81,39 +109,6 @@ func main() {
 	CheckError(err)
 	go m.StartMining()
 	//go m.TestEarlyExit()
-
-	// Ask for Neighbours
-	fmt.Println("Asking for neighbours")
-	err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
-	fmt.Println("Got neighbours!")
-	CheckError(err)
-	fmt.Println("miners1: ", miners)
-
-	err = m.AddMinersToList(&miners)
-	CheckError(err)
-	fmt.Printf("miners1: %v \n", &m.Neighbours)
-
-	if len(m.Neighbours) !=0 {
-		err = m.OpenNeighbourConnections()
-		CheckError(err)
-		fmt.Println("Opened RPC connections to neighbour miners")
-
-		neighbourToReceiveBCFrom, err := m.ConnectToNeighbourMiners(m.ServerNodeAddr)
-		CheckError(err)
-		fmt.Printf("Connected to neighbour miners; will ask for BlockChain from neighbour with address %s\n", neighbourToReceiveBCFrom.String())
-
-		err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom, &TreeQueue)
-		CheckError(err)
-		fmt.Println("Requested BCStorage from neighbour")
-	}
-
-	// Set up receiver for other Miners
-	minerReceiverInst := new(MinerInstance)
-	rpc.Register(minerReceiverInst)
-
-	fmt.Printf("befor goRoutine: %v aaaand length %v, \n", &m.Neighbours, len(m.Neighbours))
-	go doEvery(5*time.Second, UpdateNeighbours)
-
 
 	// Set up a private address for art nodes to connect to
 	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3000")
@@ -148,14 +143,13 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 }
 
 func serviceRequests(privateListener *net.TCPListener) {
+    fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
 	for {
-		fmt.Println("Listening for art nodes on ", privateListener.Addr().String())
 		conn, err := privateListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
 		go rpc.ServeConn(conn)
-		fmt.Println("INK-MINER: serviceRequests RPC connection served")
 
 		time.Sleep(10 * time.Millisecond)
 
@@ -190,12 +184,8 @@ func getKeyPair(privStr string, pubStr string) (*blockartlib.KeyPair, error) {
 
 func UpdateNeighbours(t time.Time) (err error) {
 	lom := make([]net.Addr, 0)
-	fmt.Printf("start updateN, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbours))
-
 	if len(m.Neighbours) < int(m.Settings.MinNumMinerConnections) {
-		fmt.Println("starting request again")
 		err = serverConn.RequestMiners(&lom, m.Settings.MinNumMinerConnections)
-		fmt.Printf("starting request again, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbours))
 		if len(lom) !=0 {m.AddMinersToList(&lom)} else {
 			return nil
 		}
@@ -206,20 +196,16 @@ func UpdateNeighbours(t time.Time) (err error) {
 	if allAlive(&m) {
 		return nil
 	}
-	fmt.Printf("Neigh addr: %v \n", &m.Neighbours)
 	e := m.OpenNeighbourConnections()
 	CheckError(e)
-	fmt.Println("Server node address: ", m.ServerNodeAddr.String())
 	neighbourToReceiveBCFrom, err := m.ConnectToNeighbourMiners(m.ServerNodeAddr)
 	CheckError(err)
-	fmt.Printf("Connected to neighbour miners in Update; will ask for BlockChain from neighbour with address %s\n", neighbourToReceiveBCFrom.String())
 
 	if neighbourToReceiveBCFrom.Port == 0 {
 		return nil
 	}
 	err = m.RequestBCStorageFromNeighbour(&neighbourToReceiveBCFrom, &TreeQueue)
 	CheckError(err)
-	fmt.Println("Requested BCStorage from neighbour in Update")
 
 	if err != nil {
 		return err
@@ -250,14 +236,10 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 		fmt.Println("MINER: Received Invalid key pair.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
 	}else {
-		fmt.Println("MINER: Creating new ArtNodeConnection's TCP address")
 		addr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 		CheckError(err)
-		fmt.Println("MINER: ARtNodeConnection.Addr is ", addr.String())
-		fmt.Println("MINER: Creating new ArtNodeConneciton's RPC client")
 		rpcclient, err := rpc.Dial("tcp", an.LocalIP)
 		CheckError(err)
-		fmt.Println("MINER: Creating new ArtNodeConnection")
 		connection := minerlib.ArtNodeConnection {
 			*addr,
 			rpcclient,
@@ -265,26 +247,24 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 			nil,
 		}
         m.ArtNodes = append(m.ArtNodes, &connection) 
+		fmt.Println("INK-MINER: Received Connect from ArtNode and created a new connection to ", an.LocalIP)
 		*reply = true
 	}
 	return nil
 }
 
 func (si *ArtNodeInstance) GetGenesisBlockHash(stub *bool, reply *string) error {
-	fmt.Println("In RPC getting hash of genesis block")
 	// TODO: check if connected
 	*reply = m.Settings.GenesisBlockHash
 	return nil
 }
 
 func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
-	fmt.Println("In RPC getting ink from miner")
 	*reply = m.InkLevel
 	return nil
 }
 
 func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
-	fmt.Println("INK-MINER: Received GetSVGString RPC call")
 	//m.Blockchain.BC
 	temp := m.Blockchain.BC.GenesisNode
 	var b *minerlib.Block
@@ -305,7 +285,6 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 }
 
 func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) error {
-	fmt.Println("INK-MINER: Received GetALLSVGStrings RPC call")
 	bcBlocks := m.Blockchain.FindBlocksInBC(blockHash)
 	for _, b := range bcBlocks {
 		for _, op := range b.Operations {
@@ -318,7 +297,6 @@ func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) er
 }
 
 func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error {
-	fmt.Println("In RPC getting children hashes")
 	bla, err := m.Blockchain.GetChildrenNodes(*hash)
 	*reply = bla
 	CheckError(err)
@@ -327,21 +305,19 @@ func (si *ArtNodeInstance) GetBlockChildren(hash *string, reply *[]string) error
 
 func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *string) error {
 	// TODO use the an connection with the channel to wait
-	fmt.Println("INK-MINER: Running SubmitOperation")
-	fmt.Println("INK-MINER: Calling miner.AddOp on the operation")
+	fmt.Println("INK-MINER: Received request from ArtNote to submit an operation.")
 	err := m.AddOp(&op)
 	if err != nil {
 		return fmt.Errorf("unable to submit operation: %v", err)
 	}
 	// blocks until done at validation depth
-	fmt.Println("INK-MINER: Calling miner.GetShapeHash from within SubmitOperation")
 	hash, err := m.GetShapeHash(&op)
 	shapeHash = &hash
+	fmt.Println("Operation submitted; returning ShapeHash string %s", shapeHash)
 	return err
 }
 
 func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]string) error {
-	fmt.Println("In RPC getting shape from block")
 	treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
 	if treeNode == nil {
 		return blockartlib.InvalidBlockHashError("invalid hash")
@@ -359,7 +335,7 @@ type MinerInstance int
 
 func (si *MinerInstance) ConnectNewNeighbour(neighbourAddr *net.TCPAddr, reply *int) error {
 	// Add neighbour to list of neighbours
-	fmt.Printf("Got request to register a new neighbour with TCP address %s\n", neighbourAddr.String())
+	fmt.Printf("INK-MINER: Got request to register a new neighbour with TCP address %s\n", neighbourAddr.String())
 	/*var newNeighbour = minerlib.MinerConnection{}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", neighbourAddr.String())
 	if err != nil {
@@ -376,8 +352,6 @@ func (si *MinerInstance) ConnectNewNeighbour(neighbourAddr *net.TCPAddr, reply *
 	// if they want our tree.
 
 	*reply = m.Blockchain.BC.LastNode.Current.Depth
-	fmt.Printf("ConnectNewNeighbour: Returning a reply depth of %d\n", *reply)
-
 	return nil
 }
 

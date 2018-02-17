@@ -29,41 +29,44 @@ func NewBlockchainStorage(genBlock *Block, settings *blockartlib.MinerNetSetting
 // REQUIRES: valid block (block that has parent on the tree among the leaves and valid in operations)
 // EFFECTS: returns true if blockchain has been switched, false if blockchain is the same
 func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSettings) bool {
+	fmt.Println("[miner] Appending a new block to the tree: ", block, "\n")
+
 	// finds the child to which to append
 	// checks against blockchain if the block should go there
 	//leaves := bcs.BCT.Leaves
 	parentNode := FindBCTreeNode(bcs.BCT.GenesisNode, block.ParentHash)
 	if parentNode == nil {
-		err := fmt.Errorf("No such parent node exists!")
+		err := fmt.Errorf("[miner]#AppendBlock: No such parent node exists!\n")
 		fmt.Printf("%v\n", err)
 		return false
 	}
-	fmt.Println("Parent hash ", parentNode.CurrentHash)
+	//fmt.Println("Parent hash ", parentNode.CurrentHash)
 	d := parentNode.Depth + 1
-	fmt.Printf("k: %v\n", block.MinerPublicKey)
+	//fmt.Printf("k: %v\n", block.MinerPublicKey)
 	k := keyToString(block.MinerPublicKey)
-	fmt.Printf("k: %v\n", k)
+	//fmt.Printf("k: %v\n", k)
 
 	var inkOnNode uint32 = parentNode.OwnerInkLvl[k]
 	bcTreeNode := NewBCTreeNode(block, parentNode, inkOnNode, settings)
 	bcTreeNode.Depth = d
 	parentNode.Children = append(parentNode.Children, bcTreeNode)
 	// TODO: add here update the block length
-	fmt.Println("BCTree after append: ", bcs.BCT.GenesisNode)
+	
+	fmt.Println("[miner] BlockChain Tree after appending block: ", bcs.BCT.GenesisNode, "\n")
 
 	if bcs.BC.LastNode.Current.CurrentHash == block.ParentHash {
 		bccNode := NewBlockchainNode(bcTreeNode)
 		//bcs.BC.LastNode.Next = bcTreeNode
 		bcs.BC.LastNode.Next = bccNode
 		bcs.BC.LastNode = bccNode
-		fmt.Println("BC after append: ", bcs.BC)
+		// fmt.Println("BC after append: ", bcs.BC)
 		PrintBC(bcs)
 		return false
 	} else {
 		if bcTreeNode.Depth > bcs.BC.LastNode.Current.Depth {
 			nodesToInclude := walkUpToRoot(bcs.BCT, bcTreeNode)
 			rebuildBlockchain(bcs.BC, nodesToInclude)
-			fmt.Println("BC after append: ", bcs.BC)
+			//fmt.Println("BC after append: ", bcs.BC)
 			PrintBC(bcs)
 			return true
 		}
@@ -176,6 +179,7 @@ func appendBlockToBC(bc *Blockchain, bccNod *BlockchainNode) {
 }*/
 
 func PrintBC(bcs *BCStorage) {
+	fmt.Println("[miner] ---Current BlockChain---")
 	genNode := bcs.BC.GenesisNode
 
 	for genNode !=nil {
@@ -183,4 +187,5 @@ func PrintBC(bcs *BCStorage) {
 		genNode = genNode.Next
 
 	}
+	fmt.Println("--------------------------\n\n")
 }
