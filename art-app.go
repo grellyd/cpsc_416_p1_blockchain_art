@@ -66,19 +66,18 @@ func main() {
 
 	// assert ink3 > ink2
 	if ink3 <= ink2 {
-		checkError(fmt.Errorf("Err! ink3 not > ink4"))
+		checkError(fmt.Errorf("err! ink3 not > ink4"))
 	}
 
 	// Draw square in transparent circle.
 	fmt.Println("ART-APP: Will draw transparent circle then filled square inside.")
-	shapeHash, blockHash, ink4, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 50, 50 r 10", "transparent", colour)
+	shapeHash, blockHash, _, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 50, 50 r 10", "transparent", colour)
 	if checkError(err) != nil {
 		fmt.Println(err)
 	} else {
 		shapes = append(shapes, shapeHash)
 		blocks = append(blocks, blockHash)
 	}
-
 
 	shapeHash, blockHash, ink5, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "M50,50 h 1 v -1 h -1 v 1", "transparent", colour)
 	if checkError(err) != nil {
@@ -97,6 +96,10 @@ func main() {
 	} else {
 		shapes = append(shapes, shapeHash)
 		blocks = append(blocks, blockHash)
+	}
+
+    if ink6 <= ink5 {
+		checkError(fmt.Errorf("err! ink5 not > ink6"))
 	}
 
 	fmt.Println("Closing the canvas")
