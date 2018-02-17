@@ -149,7 +149,8 @@ func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, sett
 		&privKey.PublicKey,
 		false,
 		fmt.Sprintf("127.0.0.1:0"),
-		nil}
+		nil,
+	}
 	err = an.Connect(an.MinerAddr, an.PrivKey)
 	CheckErr(err)
 

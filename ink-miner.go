@@ -344,7 +344,7 @@ func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *
 	// blocks until done at validation depth
 	hash, err := m.GetShapeHash(&op)
 	fmt.Printf("INK-MINER: Done miner.GetShapeHash from within SubmitOperation with '%v'\n", hash)
-	shapeHash = &hash
+	*shapeHash = hash
 	fmt.Printf("INK-MINER: shapeHash: '%v'\n", *shapeHash)
 	return err
 }
