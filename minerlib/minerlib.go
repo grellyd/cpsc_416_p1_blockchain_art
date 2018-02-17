@@ -456,6 +456,13 @@ func (m *Miner) OnNewBlock(b Block) {
 			// TODO: Check if returning the right portion of op
 			// fill channel for associated art node
 			artNodeConn.ShapeHashResponse <- doneOp.ShapeHash
+			// TODO: maybe check error?
+			ink, _ := InkNeeded(*op, m.Settings.CanvasSettings)
+			if op.Type == blockartlib.DRAW {
+				m.InkLevel -= ink
+			} else if op.Type == blockartlib.DELETE {
+				m.InkLevel += ink
+			}
 		}
 		if m.HasArtNode(op.ArtNodePubKey) {
 			m.OpValidateList[op.ValidateBlockNum] = append(m.OpValidateList[op.ValidateBlockNum], op)
