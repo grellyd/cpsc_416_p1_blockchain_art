@@ -37,7 +37,7 @@ func main() {
 
 	// Draw squares along bottom
 	for i := 0; i < 5000; i++ {
-		fmt.Printf("ART-APP2: Drawing square at x = %v.\n", i)
+		fmt.Printf("ART-APP: Drawing square at x = %v.\n", i)
 		svg := fmt.Sprintf("M %v , 1 h 1 v 1 h -1 v -1", i, i)
 		shapeHash, blockHash, _, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, svg, "filled", colour)
 		if checkError(err) != nil {

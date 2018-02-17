@@ -18,7 +18,8 @@ import (
 )
 
 func main() {
-	time.Sleep(30000000000) // Sleeps for 30 seconds. Unit is nanoseconds
+	duration, _ := time.ParseDuration("10s")
+	time.Sleep(duration) // Sleeps for 30 seconds.
 	validateNum := 0 // TODO: Change this to a bigger number for submission
 	shapes := []string{}
 	blocks := []string{}
@@ -70,7 +71,7 @@ func main() {
 
 	// assert ink3 > ink2
 	if ink3 <= ink2 {
-		checkError(fmt.Errorf("Err! ink3 not > ink4"))
+		checkError(fmt.Errorf("Err! ink3 not > ink2"))
 	}
 
 	fmt.Println("ART-APP1: Drawing square that intersects with ART-APP's polygon")
