@@ -167,6 +167,8 @@ func (m *Miner) MineBlocks() (err error) {
 				return nil
 			default:
 				_ = m.Blockchain.AppendBlock(b, m.Settings)
+				m.AddInk(b)
+				fmt.Printf("[miner] Ink on Miner %v \n", m.InkLevel)
 				err := m.DisseminateBlock(b)
 				if err != nil {
 					fmt.Printf("dissemination created error: %v", err)
@@ -417,6 +419,7 @@ func (m *Miner) AddDisseminatedBlock(b *Block) {
 			m.StartMining()
 		}
 		m.OnNewBlock(*b)
+
 	}
 }
 
@@ -529,7 +532,12 @@ func (m *Miner) AddInk(block * Block) (err error) {
 	return nil
 }
 
-func (m *Miner) DrawInk() (err error) {
+func (m *Miner) DrawInk(block * Block) (err error) {
+	if len(block.Operations) == 0 {
+		m.InkLevel -= m.Settings.InkPerNoOpBlock
+	} else {
+		m.InkLevel -= m.Settings.InkPerOpBlock
+	}
 	return nil
 }
 

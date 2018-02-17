@@ -124,8 +124,10 @@ func main() {
 	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3002")
 	CheckError(err)
  	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
-	serviceRequests(publicListener)
+
 	go serviceRequests1(privateListener)
+ 	serviceRequests(publicListener)
+
 }
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
