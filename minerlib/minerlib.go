@@ -202,7 +202,10 @@ func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 		return false, nil
 	}
 	// check drawable (implicitly already drawn)
+	fmt.Printf("[miners#ValidateOperation] op: '%v'\n", op)
+	fmt.Printf("[miners#ValidateOperation] op.ShapeSVGString: '%v'\n", op.ShapeSVGString)
 	validOps, invalidOps, err := DrawOperations([]blockartlib.Operation{*op}, m.Settings.CanvasSettings)
+	fmt.Printf("[miners#ValidateOperation] DrawOperations err: '%v'\n", err)
 	if err != nil {
 		return false, fmt.Errorf("unable to validate operation %v: %v", op, err)
 	}

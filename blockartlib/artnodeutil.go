@@ -50,6 +50,7 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 	}
 	op.GetNumber()
 	op.GenerateSig()
+	fmt.Printf("[artnodeutil] op: %v\n", op)
 	fmt.Println("ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation")
 	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &shapeHash)
 	if err != nil {
