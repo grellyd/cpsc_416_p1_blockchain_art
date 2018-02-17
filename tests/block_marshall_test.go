@@ -1,4 +1,5 @@
 package tests
+
 /*
 import (
 	"blockartlib"
@@ -101,7 +102,7 @@ func TestMarshallUnMarshall(t *testing.T) {
 		if err != nil {
 			t.Errorf("Bad Exit: \"TestMarshallUnmarshall(%v)\" produced err: %v", test, err)
 		}
-		if newBlock == nil || data == nil { 
+		if newBlock == nil || data == nil {
 			t.Errorf("Bad Exit: No results or data!")
 		}
 		if newBlock.ParentHash != test.block.ParentHash {

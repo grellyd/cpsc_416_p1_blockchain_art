@@ -1,17 +1,19 @@
 package tests
+
 import (
 	"fmt"
+	"minerlib/compute"
 	"strings"
 	"testing"
-	"minerlib/compute"
 )
+
 // Inconsistent, as the naturing of random hash finding is.
 // Worst: times out.
 // Best: Data 1-5 + DataConcurrent 1-7 in 215s with c@8
 
 func TestData(t *testing.T) {
 	var tests = []struct {
-		data    []byte
+		data       []byte
 		difficulty uint8
 	}{
 		{
@@ -67,7 +69,7 @@ func TestData(t *testing.T) {
 
 func TestDataConcurrent(t *testing.T) {
 	var tests = []struct {
-		data    []byte
+		data       []byte
 		difficulty uint8
 	}{
 		{

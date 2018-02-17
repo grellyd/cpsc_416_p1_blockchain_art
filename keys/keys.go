@@ -1,12 +1,12 @@
 package keys
 
 import (
-	"fmt"
 	"crypto/ecdsa"
-	"crypto/x509"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/x509"
 	"encoding/hex"
+	"fmt"
 	"reflect"
 )
 
@@ -26,7 +26,7 @@ func Encode(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) (string, s
 	return EncodePrivateKey(privateKey), EncodePublicKey(publicKey)
 }
 
-func EncodePrivateKey(privateKey *ecdsa.PrivateKey) (string) {
+func EncodePrivateKey(privateKey *ecdsa.PrivateKey) string {
 	x509Encoded, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
 		fmt.Printf("Error while Encoding Private Key: %v\n", err)
@@ -34,7 +34,7 @@ func EncodePrivateKey(privateKey *ecdsa.PrivateKey) (string) {
 	return hex.EncodeToString(x509Encoded)
 }
 
-func EncodePublicKey(publicKey *ecdsa.PublicKey) (string) {
+func EncodePublicKey(publicKey *ecdsa.PublicKey) string {
 	x509EncodedPub, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		fmt.Printf("Error while Encoding Public Key: %v\n", err)
@@ -46,7 +46,7 @@ func Decode(pemEncoded string, pemEncodedPub string) (*ecdsa.PrivateKey, *ecdsa.
 	return DecodePrivateKey(pemEncoded), DecodePublicKey(pemEncodedPub)
 }
 
-func DecodePrivateKey(pemEncoded string) (*ecdsa.PrivateKey) {
+func DecodePrivateKey(pemEncoded string) *ecdsa.PrivateKey {
 	hexDecodedBytes, err := hex.DecodeString(pemEncoded)
 	if err != nil {
 		fmt.Printf("Error while Dehexing Private Key: %v\n", err)
@@ -58,7 +58,7 @@ func DecodePrivateKey(pemEncoded string) (*ecdsa.PrivateKey) {
 	return privateKey
 }
 
-func DecodePublicKey(pemEncodedPub string) (*ecdsa.PublicKey) {
+func DecodePublicKey(pemEncodedPub string) *ecdsa.PublicKey {
 	hexDecodedBytes, err := hex.DecodeString(pemEncodedPub)
 	if err != nil {
 		fmt.Printf("Error while Dehexing Public Key: %v\n", err)

@@ -12,8 +12,8 @@ package main
 import (
 	"blockartlib"
 	"fmt"
-	"os"
 	"keys"
+	"os"
 )
 
 func main() {
@@ -51,7 +51,7 @@ func main() {
 	// Add another line.
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 5 ,0", "transparent", "blue")
 	fmt.Printf("ART-APP: shapeHash: '%v'\n", shapeHash)
-    fmt.Println("ART-APP: Calling AddShape to add a filled circle. Intersects with polygon. Gets drawn.")
+	fmt.Println("ART-APP: Calling AddShape to add a filled circle. Intersects with polygon. Gets drawn.")
 	shapeHash, blockHash, ink2, err = canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 10,6 r 1", "filled", colour)
 	if checkError(err) != nil {
 		fmt.Println(err)
@@ -96,14 +96,14 @@ func main() {
 
 	fmt.Println("ART-APP: Drawing line that intersects with circle 50, 50 r 10.")
 	shapeHash, blockHash, ink6, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M50,50 h 60", "transparent", colour)
-	if _, ok := err.(*blockartlib.ShapeOverlapError); ok{
+	if _, ok := err.(*blockartlib.ShapeOverlapError); ok {
 		fmt.Printf("Got ShapeOverlapError as expected. Err: %v\n", err)
 	} else {
 		shapes = append(shapes, shapeHash)
 		blocks = append(blocks, blockHash)
 	}
 
-    if ink6 <= ink5 {
+	if ink6 <= ink5 {
 		checkError(fmt.Errorf("err! ink5 not > ink6"))
 	}
 

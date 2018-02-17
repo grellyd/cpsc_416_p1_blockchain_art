@@ -125,7 +125,7 @@ func InkNeeded(op Operation, settings CanvasSettings) (inkUnits uint32, err erro
 func RemoveDrawnShape(op Operation, drawnShapes []Shape) ([]Shape, error) {
 	for i, _ := range drawnShapes {
 		if drawnShapes[i].Hash == op.ShapeHash {
-			drawnShapes[i] = drawnShapes[len(drawnShapes)-1] 
+			drawnShapes[i] = drawnShapes[len(drawnShapes)-1]
 			drawnShapes = drawnShapes[:len(drawnShapes)-1]
 			return drawnShapes, nil
 		}
@@ -420,7 +420,7 @@ func IsCircleIntersectingCircle(c1, c2 Shape) bool {
 // Returns true is c1 is contained in c2
 func IsCircleContainedInCircle(c1, c2 Shape) bool {
 	centerSegment := LineSegment{c1.Center, c2.Center}
-	if centerSegment.Length() + c1.Radius < c2.Radius {
+	if centerSegment.Length()+c1.Radius < c2.Radius {
 		return true
 	}
 	return false

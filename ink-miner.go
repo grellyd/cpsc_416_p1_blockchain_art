@@ -7,10 +7,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"keys"
-	"networking"
 	"minerlib"
 	"net"
 	"net/rpc"
+	"networking"
 	"os"
 	"time"
 )
@@ -23,7 +23,7 @@ var serverConn minerlib.ServerInstance
 var artNodeConnector *rpc.Client
 var OpQueue []*blockartlib.ArtNodeInstruction
 var TreeQueue []string
-	
+
 func main() {
 	gob.Register(elliptic.P384())
 	// fmt.Println("start")
@@ -37,7 +37,7 @@ func main() {
 
 	fmt.Printf("======= [miner] START ======\n\n")
 
-	outboundIP :=  networking.GetOutboundIP()
+	outboundIP := networking.GetOutboundIP()
 	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
@@ -45,10 +45,10 @@ func main() {
 	CheckError(err)
 	publicLocalAddr, err := net.ResolveTCPAddr("tcp", publicLocalIP)
 	CheckError(err)
-	
+
 	// Create Miner
 	m = minerlib.NewMiner(serverAddr, keys)
-	
+
 	//setup an ArtNode Reciever
 	artNodeInst := new(ArtNodeInstance)
 	// register art node instance locally
@@ -62,7 +62,7 @@ func main() {
 	localMinerInfo := MinerInfo{publicListener.Addr(), m.PublKey}
 	m.ServerNodeAddr, _ = net.ResolveTCPAddr("tcp", localMinerInfo.Address.String())
 	// fmt.Println("Serv addr: ", m.ServerNodeAddr.String())
-	
+
 	// Connect to server
 	serverConn, err = connectServer(serverAddr, localMinerInfo, m.Settings)
 	CheckError(err)
@@ -82,7 +82,7 @@ func main() {
 	CheckError(err)
 	// fmt.Printf("miners1: %v \n", &m.Neighbours)
 
-	if len(m.Neighbours) !=0 {
+	if len(m.Neighbours) != 0 {
 		err = m.OpenNeighbourConnections()
 		CheckError(err)
 		// fmt.Println("Opened RPC connections to neighbour miners")
@@ -119,7 +119,7 @@ func main() {
 	// Set up a private address for art nodes to connect to
 	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3001")
 	CheckError(err)
- 	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
+	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
 
 	go servicePublicRequests(publicListener)
 	servicePrivateRequests(privateListener)
@@ -137,7 +137,7 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	//2nd retrieve settings ==> 2 in 1
 	err = serverRPCClient.Call("RServer.Register", minerInfo, settings)
 	CheckError(err)
-	// Create the serverConnection. 
+	// Create the serverConnection.
 	// TODO: refactor to ServerInstance
 	tcpFromAddr, err := net.ResolveTCPAddr("tcp", minerInfo.Address.String())
 	CheckError(err)
@@ -210,7 +210,9 @@ func UpdateNeighbours(t time.Time) (err error) {
 		// fmt.Println("starting request again")
 		err = serverConn.RequestMiners(&lom, m.Settings.MinNumMinerConnections)
 		// fmt.Printf("starting request again, lom %v lenLom %v, minersN %v \n ", &lom, len(lom), len(m.Neighbours))
-		if len(lom) !=0 {m.AddMinersToList(&lom)} else {
+		if len(lom) != 0 {
+			m.AddMinersToList(&lom)
+		} else {
 			return nil
 		}
 	}
@@ -242,8 +244,10 @@ func UpdateNeighbours(t time.Time) (err error) {
 }
 
 func allAlive(m *minerlib.Miner) bool {
-	for _,v := range m.Neighbours {
-		if !v.Alive {return false}
+	for _, v := range m.Neighbours {
+		if !v.Alive {
+			return false
+		}
 	}
 	return true
 }
@@ -263,21 +267,21 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 	if !keys.MatchingPair(privateKey, publicKey) {
 		fmt.Println("MINER: Received Invalid key pair.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
-	}else {
+	} else {
 		addr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 		CheckError(err)
-		 fmt.Println("MINER: ARtNodeConnection.Addr is ", addr.String())
-		 fmt.Println("MINER: Creating new ArtNodeConneciton's RPC client")
+		fmt.Println("MINER: ARtNodeConnection.Addr is ", addr.String())
+		fmt.Println("MINER: Creating new ArtNodeConneciton's RPC client")
 		rpcclient, err := rpc.Dial("tcp", an.LocalIP)
 		CheckError(err)
-		 fmt.Println("MINER: Creating new ArtNodeConnection")
-		connection := minerlib.ArtNodeConnection {
-			Addr: *addr,
-			RPCClient: rpcclient,
-			ArtNodePubKey: an.PubKey,
+		fmt.Println("MINER: Creating new ArtNodeConnection")
+		connection := minerlib.ArtNodeConnection{
+			Addr:              *addr,
+			RPCClient:         rpcclient,
+			ArtNodePubKey:     an.PubKey,
 			ShapeHashResponse: make(chan string),
 		}
-        m.ArtNodes = append(m.ArtNodes, &connection) 
+		m.ArtNodes = append(m.ArtNodes, &connection)
 		fmt.Println("INK-MINER: Received Connect from ArtNode and created a new connection to ", an.LocalIP)
 		*reply = true
 	}
@@ -354,7 +358,7 @@ func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *
 	return err
 }
 
-func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]string) error {
+func (si *ArtNodeInstance) GetShapesFromBlock(blockHash *string, reply *[]string) error {
 	// fmt.Println("In RPC getting shape from block")
 	treeNode := minerlib.FindBCTreeNode(m.Blockchain.BCT.GenesisNode, *blockHash)
 	if treeNode == nil {
@@ -362,7 +366,7 @@ func (si *ArtNodeInstance) GetShapesFromBlock (blockHash *string, reply *[]strin
 	}
 	block := treeNode.BlockResiding
 	ops := block.Operations
-	for _,v := range ops {
+	for _, v := range ops {
 		*reply = append(*reply, v.ShapeHash)
 	}
 	return nil
@@ -396,7 +400,7 @@ func (si *MinerInstance) ConnectNewNeighbour(neighbourAddr *net.TCPAddr, reply *
 }
 
 // TODO: check switch
-func (mi *MinerInstance) ReceiveBlockFromNeighbour (blockMarshalled *[][]byte, reply *bool) error {
+func (mi *MinerInstance) ReceiveBlockFromNeighbour(blockMarshalled *[][]byte, reply *bool) error {
 	block, err := minerlib.UnmarshallBinary(*blockMarshalled)
 	CheckError(err)
 	m.AddDisseminatedBlock(block)
@@ -410,14 +414,14 @@ func (mi *MinerInstance) ReceiveOpFromNeighbour(opMarshalled *[]byte, reply *boo
 	return err
 }
 
-func (mi *MinerInstance) DisseminateTree (variable *bool, reply *[]string) error {
+func (mi *MinerInstance) DisseminateTree(variable *bool, reply *[]string) error {
 	*reply = m.MarshallTree(reply, nil)
 	return nil
 }
 
-func (mi *MinerInstance) GiveBlock (blockHash *string, reply *[][]byte) error {
+func (mi *MinerInstance) GiveBlock(blockHash *string, reply *[][]byte) error {
 	block, err := m.Blockchain.FindBlockByHash(*blockHash)
-	if err !=nil {
+	if err != nil {
 		// fmt.Println("Error in GiveBlock RPC: ", err)
 	}
 	*reply, err = block.MarshallBinary()
@@ -429,4 +433,3 @@ type MinerInfo struct {
 	Address net.Addr
 	Key     *ecdsa.PublicKey
 }
-

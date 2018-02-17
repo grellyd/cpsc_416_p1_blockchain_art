@@ -5,6 +5,7 @@ import (
 	"minerlib"
 	"testing"
 )
+
 func TestOpToString(t *testing.T) {
 	circleOp := Operation{blockartlib.DRAW, 2, blockartlib.CIRCLE, "transparent", "red", "c 10,6 r 1", "artnode0", 34, "circle", 129}
 	settings := blockartlib.CanvasSettings{1000, 1000}

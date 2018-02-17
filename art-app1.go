@@ -10,17 +10,17 @@ go run art-app.go
 package main
 
 import (
-	"time"
 	"blockartlib"
 	"fmt"
-	"os"
 	"keys"
+	"os"
+	"time"
 )
 
 func main() {
 	duration, _ := time.ParseDuration("10s")
 	time.Sleep(duration) // Sleeps for 30 seconds.
-	validateNum := 0 // TODO: Change this to a bigger number for submission
+	validateNum := 0     // TODO: Change this to a bigger number for submission
 	shapes := []string{}
 	blocks := []string{}
 	minerAddr := os.Args[1]
@@ -50,7 +50,7 @@ func main() {
 	blocks = append(blocks, blockHash)
 
 	// Add another line.
-    fmt.Println("ART-APP1: Calling AddShape to add a transparent triangle. Expect fail")
+	fmt.Println("ART-APP1: Calling AddShape to add a transparent triangle. Expect fail")
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M6,1L6,6L1,4L6,1", "filled", colour)
 	if checkError(err) != nil {
 		fmt.Println(err)
@@ -67,7 +67,7 @@ func main() {
 	ink3, err := canvas.DeleteShape(uint8(validateNum), shapeHash)
 	if checkError(err) != nil {
 		fmt.Println(err)
-	} 
+	}
 
 	// assert ink3 > ink2
 	if ink3 <= ink2 {
@@ -76,7 +76,7 @@ func main() {
 
 	fmt.Println("ART-APP1: Drawing square that intersects with ART-APP's polygon")
 	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M4,3 h 1 v 1 h -1 v -1", "filled", colour)
-	if _, ok := err.(*blockartlib.ShapeOverlapError); ok{
+	if _, ok := err.(*blockartlib.ShapeOverlapError); ok {
 		fmt.Printf("Got ShapeOverlapError as expected. Err: %v\n", err)
 	} else {
 		shapes = append(shapes, shapeHash)
@@ -85,13 +85,13 @@ func main() {
 
 	fmt.Println("ART-APP1: Drawing shape with out of bounds svg string") // M -4,-3 invalid
 	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 h 1 v 1 h -1 v -1", "filled", colour)
-	if _, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
+	if _, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok {
 		fmt.Printf("Got InvalidShapeSvgStringError as expected. Err: %v\n", err)
 	}
 
 	fmt.Println("ART-APP1: Drawing shape with invalid svg string") // Q not supported
 	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 Q 1 v 1 h -1 v -1", "filled", colour)
-	if _, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
+	if _, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok {
 		fmt.Printf("Got InvalidShapeSvgStringError as expected. Err: %v\n", err)
 	}
 

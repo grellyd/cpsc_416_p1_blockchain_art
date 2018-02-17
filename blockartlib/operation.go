@@ -1,12 +1,12 @@
 package blockartlib
 
 import (
-	"encoding/gob"
-	"fmt"
 	"bytes"
 	"crypto/md5"
-	"encoding/hex"
 	"encoding/binary"
+	"encoding/gob"
+	"encoding/hex"
+	"fmt"
 )
 
 type OperationType uint32
@@ -18,16 +18,16 @@ const (
 )
 
 type Operation struct {
-	Type OperationType
-	OperationNumber uint32
-	Shape ShapeType
-	Fill string // Can be "transparent" or "filled"
-	Stroke string
-	ShapeSVGString string
-	ArtNodePubKey string
+	Type             OperationType
+	OperationNumber  uint32
+	Shape            ShapeType
+	Fill             string // Can be "transparent" or "filled"
+	Stroke           string
+	ShapeSVGString   string
+	ArtNodePubKey    string
 	ValidateBlockNum uint8
-	ShapeHash string
-	Nonce uint32
+	ShapeHash        string
+	Nonce            uint32
 }
 
 // Let the OpSig be the MD5 Hash of the operation type, operation number, and the ArtNode's Public Key
@@ -36,7 +36,7 @@ func (o *Operation) GenerateSig() error {
 	return nil
 }
 
-func (o *Operation) CalculateSig() (string) {
+func (o *Operation) CalculateSig() string {
 	data := []byte{}
 	h := md5.New()
 	data = append(data, uint32AsByteArr(uint32(o.Type))...)
@@ -45,7 +45,7 @@ func (o *Operation) CalculateSig() (string) {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (o *Operation)Marshall() (data []byte, err error) {
+func (o *Operation) Marshall() (data []byte, err error) {
 	gob.Register(&Operation{})
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
@@ -71,6 +71,6 @@ func OperationUnmarshall(data []byte) (o *Operation, err error) {
 // TODO: extract out to marshall_utils
 func uint32AsByteArr(val uint32) []byte {
 	a := make([]byte, 4)
-    binary.LittleEndian.PutUint32(a, val)
+	binary.LittleEndian.PutUint32(a, val)
 	return a
 }

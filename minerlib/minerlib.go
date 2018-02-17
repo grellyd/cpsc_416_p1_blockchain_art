@@ -3,16 +3,15 @@ package minerlib
 import (
 	"blockartlib"
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"encoding/gob"
 	"fmt"
+	"keys"
 	"net"
 	"net/rpc"
 	"sync"
 	"time"
-	"encoding/gob"
-	"crypto/elliptic"
-	"keys"
 )
-
 
 const (
 	OP_THRESHOLD     = 1 // TODO: Change this back when we have flags
@@ -32,20 +31,20 @@ type Miner struct {
 	ServerNodeAddr  *net.TCPAddr
 	ServerHrtBtAddr *net.TCPAddr
 	ArtNodes        []*ArtNodeConnection
-	Neighbours       []*MinerConnection
+	Neighbours      []*MinerConnection
 	PublKey         *ecdsa.PublicKey
 	PrivKey         *ecdsa.PrivateKey
 	Blockchain      *BCStorage
 	Settings        *blockartlib.MinerNetSettings
 	LocalCanvas     CanvasData
 	BlockForest     map[string]*Block
-	
-	// signal channels
-	doneMining chan struct{}
-	earlyExitSignal chan struct{}
-	exited chan struct{}
 
-	OpValidateList	[][]*Operation
+	// signal channels
+	doneMining      chan struct{}
+	earlyExitSignal chan struct{}
+	exited          chan struct{}
+
+	OpValidateList [][]*Operation
 	// pipeline channel
 	operationQueue chan *blockartlib.Operation
 }
@@ -57,15 +56,15 @@ func NewMiner(serverAddr *net.TCPAddr, keys *blockartlib.KeyPair) (miner Miner) 
 		ServerNodeAddr:  nil,
 		ServerHrtBtAddr: serverAddr,
 		ArtNodes:        []*ArtNodeConnection{},
-		Neighbours:       []*MinerConnection{},
+		Neighbours:      []*MinerConnection{},
 		PublKey:         keys.Public,
 		PrivKey:         keys.Private,
 		Blockchain:      nil,
 		Settings:        &blockartlib.MinerNetSettings{},
 		LocalCanvas:     CanvasData{},
 		BlockForest:     map[string]*Block{},
-		OpValidateList: 	 [][]*Operation{},
-		operationQueue: make(chan *blockartlib.Operation, MAX_WAITING_OPS),
+		OpValidateList:  [][]*Operation{},
+		operationQueue:  make(chan *blockartlib.Operation, MAX_WAITING_OPS),
 	}
 	return m
 }
@@ -120,7 +119,7 @@ func (m *Miner) MineBlocks() (err error) {
 			fmt.Printf("[miner] OperationQueue: %v\n", m.operationQueue)
 			fmt.Printf("[miner] len(OperationQueue): %v\n", len(m.operationQueue))
 			fmt.Printf("[miner] len(m.operationQueue) >= OP_THRESHOLD: %v\n", len(m.operationQueue) >= OP_THRESHOLD)
-			
+
 			// if there are enough ops waiting
 			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
@@ -131,7 +130,7 @@ func (m *Miner) MineBlocks() (err error) {
 						break
 					}
 					fmt.Printf("[miner] Pre Dequeue len OperationQueue: %v\n", len(m.operationQueue))
-					op := <- m.operationQueue
+					op := <-m.operationQueue
 					fmt.Printf("[miner] Post Dequeue len OperationQueue: %v\n", len(m.operationQueue))
 					validatedOp, err := m.ValidateOperation(op)
 					fmt.Printf("[miner] validatedOp: %v\n", validatedOp)
@@ -167,7 +166,7 @@ func (m *Miner) MineBlocks() (err error) {
 				fmt.Printf("[miner] Early Exit\n")
 				return nil
 			default:
-				mPubKey := keys.EncodePublicKey( m.PublKey)
+				mPubKey := keys.EncodePublicKey(m.PublKey)
 				inkToDraw, switched := m.Blockchain.AppendBlock(b, m.Settings, mPubKey)
 				if inkToDraw == 0 {
 					m.AddInk(b)
@@ -214,7 +213,7 @@ func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 			fmt.Printf("[miner#ValidateOperation] op '%v' fails sig check\n", op)
 			return false, nil
 		}
-	} 
+	}
 	existingOps, err := m.Blockchain.Operations()
 	if err != nil {
 		return false, fmt.Errorf("unable to get all existing operations: %v", err)
@@ -267,9 +266,9 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 			if parentValid {
 				return true, nil
 			}
-		// failing that, check its ancestors in the forest, and those pass ValidBlock
-		} else{
-			forestParent :=  m.BlockForest[b.ParentHash] 
+			// failing that, check its ancestors in the forest, and those pass ValidBlock
+		} else {
+			forestParent := m.BlockForest[b.ParentHash]
 			if forestParent != nil {
 				// internally consistentgi
 				parentValid, err := forestParent.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
@@ -345,7 +344,7 @@ func (m *Miner) ConnectToNeighbourMiners(localAddr *net.TCPAddr) (bestNeighbour 
 		}
 
 		//if (depth >= largestDepth) {
-		if (depth > largestDepth) {
+		if depth > largestDepth {
 			largestDepth = depth
 			bestMinerAddr = connection.Addr
 		}
@@ -397,7 +396,7 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	// TODO: Not sure this is the right spot for this.
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
-	for i,v := range m.Neighbours {
+	for i, v := range m.Neighbours {
 		marshalledBlock, err := block.MarshallBinary()
 		fmt.Println("Marshalled block in disseminateBlock: ", marshalledBlock)
 		blockartlib.CheckErr(err)
@@ -466,7 +465,7 @@ func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err e
 	// blocks until a value comes into ShapeHashResponse
 	fmt.Printf("[miner#GetShapeHash] channel: %v\n", artNodeConn.ShapeHashResponse)
 	fmt.Printf("[miner#GetShapeHash] channel addr: %v\n", &artNodeConn.ShapeHashResponse)
-	res := <- artNodeConn.ShapeHashResponse
+	res := <-artNodeConn.ShapeHashResponse
 	fmt.Printf("[miner#GetShapeHash] Resulting Hash: '%v'\n", res)
 	return res, nil
 }
@@ -486,7 +485,7 @@ func (m *Miner) OnNewBlock(b Block) {
 			depthInList := uint8(len(m.OpValidateList) + 1)
 			// ensure lower lists and dest list exist
 			if depthInList < op.ValidateBlockNum {
-				for i := uint8(0);  i < op.ValidateBlockNum - depthInList; i++  {
+				for i := uint8(0); i < op.ValidateBlockNum-depthInList; i++ {
 					m.OpValidateList = append(m.OpValidateList, []*Operation{})
 					fmt.Printf("[miner#OnNewBlock] m.OpValidateList: %v\n", m.OpValidateList)
 				}
@@ -540,10 +539,9 @@ func (m *Miner) FindArtNodeConnection(artNodePublicKey string) (anc *ArtNodeConn
 	return nil, nil
 }
 
-
 /////// helpers
 
-func (m *Miner) AddInk(block * Block) (err error) {
+func (m *Miner) AddInk(block *Block) (err error) {
 	if len(block.Operations) == 0 {
 		m.InkLevel += m.Settings.InkPerNoOpBlock
 	} else {
@@ -552,7 +550,7 @@ func (m *Miner) AddInk(block * Block) (err error) {
 	return nil
 }
 
-func (m *Miner) DrawInk(block * Block) (err error) {
+func (m *Miner) DrawInk(block *Block) (err error) {
 	if len(block.Operations) == 0 {
 		m.InkLevel -= m.Settings.InkPerNoOpBlock
 	} else {
@@ -595,7 +593,7 @@ func (m *Miner) IsMinerInList() (err error) {
 	return result
 }*/
 
-func (m *Miner) MarshallTree (result *[]string, node *BCTreeNode) []string{
+func (m *Miner) MarshallTree(result *[]string, node *BCTreeNode) []string {
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
 	tree := m.Blockchain.BCT
@@ -604,7 +602,7 @@ func (m *Miner) MarshallTree (result *[]string, node *BCTreeNode) []string{
 			children, err := m.Blockchain.GetChildrenNodes(tree.GenesisNode.CurrentHash)
 			blockartlib.CheckErr(err)
 			for _, v := range children {
-				node := FindBCTreeNode(tree.GenesisNode,v)
+				node := FindBCTreeNode(tree.GenesisNode, v)
 				block := node.BlockResiding
 				blockHash, err := block.Hash()
 				if err != nil {
@@ -612,7 +610,7 @@ func (m *Miner) MarshallTree (result *[]string, node *BCTreeNode) []string{
 					return *result
 				}
 				*result = append(*result, blockHash)
-				b:= m.MarshallTree(result, node)
+				b := m.MarshallTree(result, node)
 				*result = append(*result, b...)
 			}
 		}
@@ -672,7 +670,7 @@ func isMinerInList(m *Miner, addr net.Addr) bool {
 	return false
 }
 
-func deleteNeighbour (m *Miner, index int) error {
+func deleteNeighbour(m *Miner, index int) error {
 	buf := m.Neighbours[:index]
 	m.Neighbours = append(buf, m.Neighbours[index+1:]...)
 	return nil
@@ -714,14 +712,14 @@ func reconstructTree(m *Miner, senderAddr *net.TCPAddr, queue *[]string) {
 	q = q[1:]
 	blockArr := make([][]byte, 0)
 	var caller *rpc.Client
-	for _,v := range m.Neighbours {
+	for _, v := range m.Neighbours {
 		if v.Addr.String() == senderAddr.String() {
 			caller = v.RPCClient
 			break
 		}
 	}
 
-	for _,v := range q {
+	for _, v := range q {
 		err := caller.Call("MinerInstance.GiveBlock", &v, &blockArr)
 		//fmt.Println("the block received: ", blockArr)
 		b, err := UnmarshallBinary(blockArr)
@@ -731,7 +729,7 @@ func reconstructTree(m *Miner, senderAddr *net.TCPAddr, queue *[]string) {
 		}
 		valid, err := m.ValidNewBlock(b)
 		blockartlib.CheckErr(err)
-		if err != nil || !valid{
+		if err != nil || !valid {
 			fmt.Printf("Invalid block: %v", err)
 			return
 		}

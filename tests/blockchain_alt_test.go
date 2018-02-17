@@ -1,24 +1,25 @@
 package tests
+
 import (
-	"fmt"
-	"testing"
-	"minerlib"
 	"blockartlib"
+	"fmt"
 	"keys"
+	"minerlib"
+	"testing"
 )
 
-func TestBlockChain (t *testing.T) {
+func TestBlockChain(t *testing.T) {
 	fmt.Println("Start test")
 
 	privateKey, publicKey, _ := keys.Generate()
 
 	var set = blockartlib.MinerNetSettings{
-		GenesisBlockHash: "83218ac34c1834c26781fe4bde918ee4",
+		GenesisBlockHash:       "83218ac34c1834c26781fe4bde918ee4",
 		MinNumMinerConnections: 2,
-		InkPerOpBlock: 100,
-		InkPerNoOpBlock: 50,
-		HeartBeat: 3000,
-		PoWDifficultyOpBlock: 5,
+		InkPerOpBlock:          100,
+		InkPerNoOpBlock:        50,
+		HeartBeat:              3000,
+		PoWDifficultyOpBlock:   5,
 		PoWDifficultyNoOpBlock: 5,
 		CanvasSettings: blockartlib.CanvasSettings{
 			CanvasXMax: 0,
@@ -32,16 +33,16 @@ func TestBlockChain (t *testing.T) {
 	fmt.Println("canvas")
 
 	var miner = minerlib.Miner{
-		InkLevel: 0,
-		ServerNodeAddr: nil,
+		InkLevel:        0,
+		ServerNodeAddr:  nil,
 		ServerHrtBtAddr: nil,
-		ArtNodes: nil,
-		Neighbours: nil,
-		PublKey: publicKey,
-		PrivKey: privateKey,
-		Blockchain: &minerlib.BCStorage{},
-		Settings: &set,
-		LocalCanvas: canv,
+		ArtNodes:        nil,
+		Neighbours:      nil,
+		PublKey:         publicKey,
+		PrivKey:         privateKey,
+		Blockchain:      &minerlib.BCStorage{},
+		Settings:        &set,
+		LocalCanvas:     canv,
 	}
 	fmt.Println("miner")
 	genBlock := miner.CreateGenesisBlock()
@@ -55,45 +56,45 @@ func TestBlockChain (t *testing.T) {
 	fmt.Println("miner: ", miner)
 
 	var block1 = minerlib.Block{
-		ParentHash: "83218ac34c1834c26781fe4bde918ee4",
-		Operations: nil,
+		ParentHash:     "83218ac34c1834c26781fe4bde918ee4",
+		Operations:     nil,
 		MinerPublicKey: publicKey,
-		Nonce: 32,
+		Nonce:          32,
 	}
 
 	var block2 = minerlib.Block{
-		ParentHash: "83218ac34c1834c26781fe4bde900000",
-		Operations: nil,
+		ParentHash:     "83218ac34c1834c26781fe4bde900000",
+		Operations:     nil,
 		MinerPublicKey: publicKey,
-		Nonce: 33,
+		Nonce:          33,
 	}
 
 	var block3 = minerlib.Block{
-		ParentHash: "83218ac34c1834c26781fe4bde900001",
-		Operations: nil,
+		ParentHash:     "83218ac34c1834c26781fe4bde900001",
+		Operations:     nil,
 		MinerPublicKey: publicKey,
-		Nonce: 33,
+		Nonce:          33,
 	}
 
 	var block4 = minerlib.Block{
-		ParentHash: "83218ac34c1834c26781fe4bde900000",
-		Operations: nil,
+		ParentHash:     "83218ac34c1834c26781fe4bde900000",
+		Operations:     nil,
 		MinerPublicKey: publicKey,
-		Nonce: 36,
+		Nonce:          36,
 	}
 
 	var block5 = minerlib.Block{
-		ParentHash: "83218ac34c1834c26781fe4bde900004",
-		Operations: nil,
+		ParentHash:     "83218ac34c1834c26781fe4bde900004",
+		Operations:     nil,
 		MinerPublicKey: publicKey,
-		Nonce: 37,
+		Nonce:          37,
 	}
 
 	var block6 = minerlib.Block{
-		ParentHash: "83218ac34c1834c26781fe4bde900005",
-		Operations: nil,
+		ParentHash:     "83218ac34c1834c26781fe4bde900005",
+		Operations:     nil,
 		MinerPublicKey: publicKey,
-		Nonce: 38,
+		Nonce:          38,
 	}
 
 	// TESTS must create a single BC B1-B2-B3
@@ -156,15 +157,15 @@ func TestBlockChain (t *testing.T) {
 	fmt.Println("Children ", children, "Error ", er)
 
 	/*
-	bc.AddToForest("83218ac34c1834c26781fe4bde900005", &block5)
-	bc.AddToForest("83218ac34c1834c26781fe4bde900006", &block6)
+		bc.AddToForest("83218ac34c1834c26781fe4bde900005", &block5)
+		bc.AddToForest("83218ac34c1834c26781fe4bde900006", &block6)
 
-	b = bc.IsInForest("83218ac34c1834c26781fe4bde900005")
-	fmt.Println("Is in forest (true) ", b)
+		b = bc.IsInForest("83218ac34c1834c26781fe4bde900005")
+		fmt.Println("Is in forest (true) ", b)
 
-	bc.RemoveFromForest("83218ac34c1834c26781fe4bde900005")
+		bc.RemoveFromForest("83218ac34c1834c26781fe4bde900005")
 
-	b = bc.IsInForest("83218ac34c1834c26781fe4bde900005")
-	fmt.Println("Is in forest (false) ", b)
+		b = bc.IsInForest("83218ac34c1834c26781fe4bde900005")
+		fmt.Println("Is in forest (false) ", b)
 	*/
 }

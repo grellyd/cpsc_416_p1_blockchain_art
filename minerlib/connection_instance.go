@@ -50,8 +50,8 @@ type ArtNodeConnection struct {
 	// Addr to Dial
 	Addr net.TCPAddr
 	// RPC Client to Call
-	RPCClient *rpc.Client
-	ArtNodePubKey string
+	RPCClient         *rpc.Client
+	ArtNodePubKey     string
 	ShapeHashResponse chan string
 }
 

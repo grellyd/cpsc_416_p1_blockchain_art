@@ -22,5 +22,3 @@ func OpToSvg(op Operation, settings CanvasSettings) (svg string) {
 	}
 	return svg
 }
-
-

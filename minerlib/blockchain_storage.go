@@ -112,11 +112,11 @@ func (bcs *BCStorage) GetChildrenNodes(hashOfBlock string) ([]string, error) {
 	return children, nil
 }
 
-func (bcs *BCStorage) FindBlocksInBC (hashOfBlock string) []*Block {
+func (bcs *BCStorage) FindBlocksInBC(hashOfBlock string) []*Block {
 	genNode := bcs.BC.GenesisNode
 	//treeBl := genNode.Current
 	blockArr := new([]*Block)
-	for genNode !=nil {
+	for genNode != nil {
 		if hashOfBlock == genNode.Current.CurrentHash {
 			*blockArr = append(*blockArr, genNode.Current.BlockResiding)
 			genNode = genNode.Next
@@ -138,17 +138,16 @@ func (bcs *BCStorage) Operations() (existingOps []Operation, err error) {
 	return existingOps, nil
 }
 
-
 // HELPER FUNCTIONS
 func keyToString(key *ecdsa.PublicKey) string {
 	return keys.EncodePublicKey(key)
 }
 
-func rebuildBlockchain(bcs *BCStorage, newNodes []*BCTreeNode, ourMinerHash string, settings *blockartlib.MinerNetSettings) uint32{
+func rebuildBlockchain(bcs *BCStorage, newNodes []*BCTreeNode, ourMinerHash string, settings *blockartlib.MinerNetSettings) uint32 {
 	bc := bcs.BC
 	var deleteInk uint32 = 0
 	toRemove := walkUpToRoot(bcs.BCT, bc.LastNode.Current)
-	for _,v := range toRemove {
+	for _, v := range toRemove {
 		pk := keys.EncodePublicKey(v.BlockResiding.MinerPublicKey)
 		if pk == ourMinerHash {
 			if v.BlockResiding.ParentHash == bcs.BC.GenesisNode.Current.BlockResiding.ParentHash {
@@ -194,8 +193,6 @@ func appendBlockToBC(bc *Blockchain, bccNod *BlockchainNode) {
 	return
 }
 
-
-
 /*func printTree (bct *BCTree, bctNode *BCTreeNode) {
 	if bct.GenesisNode.CurrentHash == bctNode.CurrentHash
 	// fmt.Println("----- Printing tree ------")
@@ -218,7 +215,7 @@ func PrintBC(bcs *BCStorage) {
 	fmt.Println("[miner] ---Current BlockChain---")
 	genNode := bcs.BC.GenesisNode
 
-	for genNode !=nil {
+	for genNode != nil {
 		// fmt.Println(genNode.Current.CurrentHash)
 		genNode = genNode.Next
 

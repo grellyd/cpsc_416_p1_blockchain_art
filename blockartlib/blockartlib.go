@@ -8,8 +8,8 @@ library (blockartlib) to be used in project 1 of UBC CS 416 2017W2.
 package blockartlib
 
 import (
-	"fmt"
 	"crypto/ecdsa"
+	"fmt"
 	"time"
 )
 
@@ -35,16 +35,16 @@ type CanvasSettings struct {
 
 type KeyPair struct {
 	Private *ecdsa.PrivateKey
-	Public *ecdsa.PublicKey
+	Public  *ecdsa.PublicKey
 }
 
 type ArtNodeInstruction struct {
-	MinerID		int //keep reference to the connected miner
-	MinerAddr 	string
-	PrivKey 	string
-	PubKey 		string
-	MinerAlive 	bool
-	LocalIP		string
+	MinerID    int //keep reference to the connected miner
+	MinerAddr  string
+	PrivKey    string
+	PubKey     string
+	MinerAlive bool
+	LocalIP    string
 }
 
 type MinerInstructions struct {
@@ -76,8 +76,6 @@ type MinerNetSettings struct {
 	// Canvas settings
 	CanvasSettings CanvasSettings
 }
-
-
 
 // Represents a canvas in the system.
 type Canvas interface {
@@ -142,7 +140,7 @@ type Canvas interface {
 // - DisconnectedError
 func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, setting CanvasSettings, err error) {
 	fmt.Println("BLOCKARTLIB: Running OpenCanvas")
-	var an = ArtNode {
+	var an = ArtNode{
 		0,
 		minerAddr,
 		&privKey,
@@ -154,12 +152,10 @@ func OpenCanvas(minerAddr string, privKey ecdsa.PrivateKey) (canvas Canvas, sett
 	err = an.Connect(an.MinerAddr, an.PrivKey)
 	CheckErr(err)
 
-	fmt.Println("BLOCKARTLIB: Created new ArtNode for canvas.\nMiner addr ", an.MinerAddr, "\nLocalIP: ", an.LocalIP, "\nMiner Connection ", an.MinerConnection, "\nAlive: ", an.MinerAlive, "Error ", err )
-	time.Sleep(5*time.Second)
+	fmt.Println("BLOCKARTLIB: Created new ArtNode for canvas.\nMiner addr ", an.MinerAddr, "\nLocalIP: ", an.LocalIP, "\nMiner Connection ", an.MinerConnection, "\nAlive: ", an.MinerAlive, "Error ", err)
+	time.Sleep(5 * time.Second)
 	if err == nil {
 		return an, CanvasSettings{}, nil
 	}
 	return nil, CanvasSettings{}, DisconnectedError("")
 }
-
-

@@ -1,9 +1,9 @@
 package tests
 
 import (
-	"strconv"
 	"blockartlib"
 	"minerlib"
+	"strconv"
 	"testing"
 )
 
@@ -289,7 +289,6 @@ func Test(t *testing.T) {
 	convexPolygonOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "convex_polygon", 129}
 	ink, _ := minerlib.InkNeeded(convexPolygonOp, settings)
 	ExpectEquals(t, strconv.FormatInt(int64(ink), 10), "")
-
 
 	t2 := Triangle2()
 	tr := t2.ShapeToSVGPath()

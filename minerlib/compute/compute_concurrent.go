@@ -6,7 +6,7 @@ import (
 
 type nonceHashPair struct {
 	nonce uint32
-	hash string
+	hash  string
 }
 
 // signal channels
@@ -31,13 +31,13 @@ func DataConcurrent(data []byte, difficulty uint8) (result uint32, err error) {
 	doneTesting = make(chan struct{})
 	doneHashing = make(chan struct{})
 	finished = make(chan struct{})
-	newNonces = make(chan uint32, numConcurrent * 100)
-	hashes = make(chan nonceHashPair, numConcurrent * 100)
+	newNonces = make(chan uint32, numConcurrent*100)
+	hashes = make(chan nonceHashPair, numConcurrent*100)
 	final = make(chan uint32, 1)
 
 	UsedNonces = sync.Map{}
 	// spawn
-	for i:= 0; i < numConcurrent; i++ {
+	for i := 0; i < numConcurrent; i++ {
 		go GenerateValues()
 		generators.Add(1)
 		go HashValues(data)
@@ -46,7 +46,7 @@ func DataConcurrent(data []byte, difficulty uint8) (result uint32, err error) {
 		testers.Add(1)
 	}
 	// wait
-	result = <- final
+	result = <-final
 	// fmt.Printf("MAIN: Got Result: %d\n", result)
 	// clean up
 	testers.Wait()
@@ -82,7 +82,7 @@ func HashValues(data []byte) {
 		if finishedTesting() {
 			break
 		}
-		nonce := <- newNonces
+		nonce := <-newNonces
 		hash := MD5Hash(data, nonce)
 		// fmt.Printf("Hashing %d into %s\n", nonce, hash)
 		hashes <- nonceHashPair{nonce: nonce, hash: hash}
@@ -95,7 +95,7 @@ func TestValues(difficulty uint8) {
 		if finalFinish() {
 			break
 		}
-		pair := <- hashes
+		pair := <-hashes
 		// fmt.Printf("Checking %v\n", pair)
 		if Valid(pair.hash, difficulty) {
 			// fmt.Printf("Found One!\n")
@@ -114,7 +114,7 @@ func TestValues(difficulty uint8) {
 // Helpers
 
 func concurrentNewNonce() (n uint32, err error) {
-	for  {
+	for {
 		n = randomNonce()
 		used, ok := UsedNonces.Load(n)
 		if !ok || used == nil {
@@ -126,7 +126,7 @@ func concurrentNewNonce() (n uint32, err error) {
 
 func finalFinish() bool {
 	select {
-	case <- finished:
+	case <-finished:
 		return true
 	default:
 		return false
@@ -135,7 +135,7 @@ func finalFinish() bool {
 
 func finishedTesting() bool {
 	select {
-	case <- doneTesting:
+	case <-doneTesting:
 		return true
 	default:
 		return false
@@ -144,7 +144,7 @@ func finishedTesting() bool {
 
 func finishedHashing() bool {
 	select {
-	case <- doneHashing:
+	case <-doneHashing:
 		return true
 	default:
 		return false

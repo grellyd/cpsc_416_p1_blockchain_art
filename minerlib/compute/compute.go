@@ -6,12 +6,12 @@ package compute
 
 import (
 	"crypto/md5"
-	"encoding/hex"
-	"time"
-	"math/rand"
-	"fmt"
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 var usedNonces map[uint32]bool
@@ -46,7 +46,7 @@ func MD5Hash(data []byte, nonce uint32) (hash string) {
 
 func Uint32AsByteArr(val uint32) []byte {
 	a := make([]byte, 4)
-    binary.LittleEndian.PutUint32(a, val)
+	binary.LittleEndian.PutUint32(a, val)
 	return a
 }
 

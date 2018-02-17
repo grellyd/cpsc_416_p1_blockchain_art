@@ -1,12 +1,12 @@
 package blockartlib
 
 import (
-	"os"
-	"keys"
-	"net/rpc"
-	"net"
-	"fmt"
 	"crypto/ecdsa"
+	"fmt"
+	"keys"
+	"net"
+	"net/rpc"
+	"os"
 )
 
 /*
@@ -18,12 +18,12 @@ In short, the work for the client is in here
 type MinerInstance int
 
 type ArtNode struct {
-	MinerID		int //keep reference to the connected miner
-	MinerAddr 	string
-	PrivKey 	*ecdsa.PrivateKey
-	PubKey 		*ecdsa.PublicKey
-	MinerAlive 	bool
-	LocalIP		string
+	MinerID         int //keep reference to the connected miner
+	MinerAddr       string
+	PrivKey         *ecdsa.PrivateKey
+	PubKey          *ecdsa.PublicKey
+	MinerAlive      bool
+	LocalIP         string
 	MinerConnection *rpc.Client
 }
 
@@ -34,15 +34,15 @@ var opNumber uint32 = 0
 func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgString string, fill string, stroke string) (shapeHash string, blockHash string, inkRemaining uint32, err error) {
 	fmt.Println("[artnode]: Adding a shape")
 	op := Operation{
-		Type: DRAW,
-		OperationNumber: opNumber,
-		Shape: shapeType,
-		Fill: fill,
-		Stroke: stroke,
-		ShapeSVGString: shapeSvgString,
-		ArtNodePubKey: keys.EncodePublicKey(an.PubKey),
+		Type:             DRAW,
+		OperationNumber:  opNumber,
+		Shape:            shapeType,
+		Fill:             fill,
+		Stroke:           stroke,
+		ShapeSVGString:   shapeSvgString,
+		ArtNodePubKey:    keys.EncodePublicKey(an.PubKey),
 		ValidateBlockNum: validateNum,
-		ShapeHash: "",
+		ShapeHash:        "",
 	}
 	opNumber = opNumber + 1
 	err = op.GenerateSig()
@@ -90,15 +90,15 @@ func (an ArtNode) GetInk() (inkRemaining uint32, err error) {
 
 func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining uint32, err error) {
 	op := Operation{
-		Type: DELETE,
-		OperationNumber: opNumber,
-		Shape: 0,
-		Fill: "",
-		Stroke: "",
-		ShapeSVGString: "",
-		ArtNodePubKey: keys.EncodePublicKey(an.PubKey),
+		Type:             DELETE,
+		OperationNumber:  opNumber,
+		Shape:            0,
+		Fill:             "",
+		Stroke:           "",
+		ShapeSVGString:   "",
+		ArtNodePubKey:    keys.EncodePublicKey(an.PubKey),
 		ValidateBlockNum: validateNum,
-		ShapeHash: shapeHash,
+		ShapeHash:        shapeHash,
 	}
 	opNumber = opNumber + 1
 
@@ -196,4 +196,3 @@ func CheckErr(err error) {
 		os.Exit(1)
 	}
 }
-
