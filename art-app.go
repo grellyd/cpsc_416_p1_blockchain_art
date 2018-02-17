@@ -24,6 +24,7 @@ func main() {
 	privateKey, _, err := keys.Generate()
 	fmt.Printf("%v\n", privateKey.PublicKey)
 
+	fmt.Printf("[art-app] shapes; %v\n", shapes)
 	// Open a canvas.
 	// TODO: use settings
 	fmt.Printf("ART-APP: Calling OpenCanvas to Miner with address %s\n", minerAddr)
@@ -37,17 +38,20 @@ func main() {
 	// Add a line.
 	fmt.Println("ART-APP: Calling AddShape to add a red line")
 	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 0, 5", "transparent", "red")
+	fmt.Printf("ART-APP: shapeHash: '%v'\n", shapeHash)
 	if checkError(err) != nil {
 		fmt.Printf("ART-APP: There was an error with calling AddShape: \n")
 		fmt.Println(err)
 		return
 	}
 	shapes = append(shapes, shapeHash)
+	fmt.Printf("[art-app] shapes; %v\n", shapes)
 	blocks = append(blocks, blockHash)
 
 	// Add another line.
     fmt.Println("ART-APP: Calling AddShape to add another line")
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 5 ,0", "transparent", "blue")
+	fmt.Printf("ART-APP: shapeHash: '%v'\n", shapeHash)
 	if checkError(err) != nil {
 		return
 	}
@@ -55,6 +59,8 @@ func main() {
 		checkError(fmt.Errorf("Err! ink2 not > ink1"))
 	}
 	shapes = append(shapes, shapeHash)
+	fmt.Printf("[art-app] shapes: %v\n", shapes)
+	fmt.Printf("[art-app] shapes[0]: %v\n", shapes[0])
 	blocks = append(blocks, blockHash)
 
 	// Delete the first line.

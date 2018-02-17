@@ -58,7 +58,6 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 	}
 	fmt.Printf("[artnodeutil] op: %v\n", op)
 	fmt.Println("ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation")
-	fmt.Printf("[artnodeutil] shapeHash: '%v'\n", shapeHash)
 	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &shapeHash)
 	if err != nil {
 		return "", "", 0, fmt.Errorf("ARTNODEUTIL.AddShape: unable to submit operation: %v", err)
@@ -109,13 +108,9 @@ func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining
 		ShapeHash: shapeHash,
 	}
 	opNumber = opNumber + 1
-	err = op.GenerateSig()
-	if err != nil {
-		return 0, fmt.Errorf("unable to generate operation sig: %v", err)
-	}
 
-	blockHash := ""
-	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &blockHash)
+	fmt.Printf("[artnodeutil#DeleteShape] ShapeHash: '%v'\n", op.ShapeHash)
+	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &shapeHash)
 	if err != nil {
 		return 0, fmt.Errorf("unable to submit operation: %v", err)
 	}

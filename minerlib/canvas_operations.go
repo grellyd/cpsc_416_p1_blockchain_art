@@ -48,13 +48,13 @@ validOps. They are attempted in a greedy fashion from the start.
 validOps and invalidOps are maps. Key = shapehash, value = Operation
 Handles NOP blocks. They all get added to validOps.
 */
-func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]Operation, err error) {
-	validOps = make(map[string]Operation)
-	invalidOps = make(map[string]Operation)
+func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, invalidOps map[string]*Operation, err error) {
+	validOps = make(map[string]*Operation)
+	invalidOps = make(map[string]*Operation)
 	var drawnShapes []Shape
 	for _, op := range ops {
 		if op.Type == blockartlib.NOP {
-			validOps[op.ShapeHash] = op
+			validOps[op.ShapeHash] = &op
 			continue
 		}
 		if op.Type == blockartlib.DELETE {
@@ -62,7 +62,7 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			if err != nil {
 				return validOps, invalidOps, err
 			}
-			validOps[op.ShapeHash] = op
+			validOps[op.ShapeHash] = &op
 			continue
 		}
 		shape, err := OperationToShape(op, canvasSettings)
@@ -79,9 +79,9 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 			}
 		}
 		if overlapsSomething {
-			invalidOps[op.ShapeHash] = op
+			invalidOps[op.ShapeHash] = &op
 		} else {
-			validOps[op.ShapeHash] = op
+			validOps[op.ShapeHash] = &op
 			drawnShapes = append(drawnShapes, shape)
 		}
 	}

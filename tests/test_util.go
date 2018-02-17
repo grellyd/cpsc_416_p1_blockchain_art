@@ -13,7 +13,7 @@ type Operation = blockartlib.Operation
 type Point = minerlib.Point
 type Shape = minerlib.Shape
 
-func ConcatOps(ops map[string]Operation) string {
+func ConcatOps(ops map[string]*Operation) string {
 	opSigs := ""
 	for _, op := range ops {
 		opSigs += op.ShapeHash + " by " + op.ArtNodePubKey + ", "

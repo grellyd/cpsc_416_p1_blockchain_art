@@ -205,19 +205,26 @@ func (m *Miner) TestEarlyExit() {
 
 func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 	// check sigs
-	if op.ShapeHash != op.CalculateSig() {
-		fmt.Printf("[miner#ValidateOperation] op '%v' fails sig check\n", op)
-		return false, nil
+	if op.Type == blockartlib.DRAW {
+		if op.ShapeHash != op.CalculateSig() {
+			fmt.Printf("[miner#ValidateOperation] op '%v' fails sig check\n", op)
+			return false, nil
+		}
+	} 
+	existingOps, err := m.Blockchain.Operations()
+	if err != nil {
+		return false, fmt.Errorf("unable to get all existing operations: %v", err)
 	}
+	fmt.Printf("[miners#ValidateOperation] existingOps: '%v'\n", existingOps)
 	// check drawable (implicitly already drawn)
 	fmt.Printf("[miners#ValidateOperation] op: '%v'\n", op)
 	fmt.Printf("[miners#ValidateOperation] op.ShapeSVGString: '%v'\n", op.ShapeSVGString)
-	validOps, invalidOps, err := DrawOperations([]blockartlib.Operation{*op}, m.Settings.CanvasSettings)
+	validOps, invalidOps, err := DrawOperations(append(existingOps, *op), m.Settings.CanvasSettings)
 	fmt.Printf("[miners#ValidateOperation] DrawOperations err: '%v'\n", err)
 	if err != nil {
 		return false, fmt.Errorf("[miner] unable to validate operation %v: %v", op, err)
 	}
-	if len(validOps) != 1 || len(invalidOps) != 0 || validOps[op.ShapeHash] != *op {
+	if validOps[op.ShapeHash] == nil {
 		fmt.Printf("[miner#ValidateOperation] op '%v' fails drawable check\n", op)
 		fmt.Printf("[miner#ValidateOperation] validOps: '%v', invalidOps: '%v'\n", validOps, invalidOps)
 		return false, nil
@@ -495,12 +502,15 @@ func (m *Miner) OnNewBlock(b Block) {
 		fmt.Printf("[miner#OnNewBlock] channel: %v\n", artNodeConn.ShapeHashResponse)
 		fmt.Printf("[miner#OnNewBlock] channel addr: %v\n", &artNodeConn.ShapeHashResponse)
 		artNodeConn.ShapeHashResponse <- doneOp.ShapeHash
-		// TODO: maybe check error?
-		ink, _ := InkNeeded(*doneOp, m.Settings.CanvasSettings)
 		if doneOp.Type == blockartlib.DRAW {
+			ink, err := InkNeeded(*doneOp, m.Settings.CanvasSettings)
+			if err != nil {
+				fmt.Printf("ERROR in OnNewBlock: %v", err)
+				return
+			}
 			m.InkLevel -= ink
 		} else if doneOp.Type == blockartlib.DELETE {
-			m.InkLevel += ink
+			m.InkLevel += 100
 		}
 	}
 	// remove slice zero

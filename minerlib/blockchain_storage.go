@@ -125,6 +125,19 @@ func (bcs *BCStorage) FindBlocksInBC (hashOfBlock string) []*Block {
 	return *blockArr
 }
 
+// walks the blockchain.go Blockchain and collects all operations
+func (bcs *BCStorage) Operations() (existingOps []Operation, err error) {
+	currentNode := bcs.BC.GenesisNode
+	for currentNode.Next != nil {
+		for _, op := range currentNode.Next.Current.BlockResiding.Operations {
+			existingOps = append(existingOps, *op)
+		}
+		currentNode = currentNode.Next
+	}
+	return existingOps, nil
+}
+
+
 // HELPER FUNCTIONS
 func keyToString(key *ecdsa.PublicKey) string {
 	return keys.EncodePublicKey(key)
