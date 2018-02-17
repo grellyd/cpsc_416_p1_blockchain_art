@@ -36,13 +36,9 @@ func main() {
 	}
 
 	fmt.Printf("======= [miner] START ======\n\n")
-	/*
 
-	Commented out to run locally. See Azure branch
-	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
-	*/
 	outboundIP :=  networking.GetOutboundIP()
-	publicLocalIP := fmt.Sprintf("%s:0", outboundIP)
+	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
