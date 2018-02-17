@@ -52,7 +52,7 @@ func main() {
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 5 ,0", "transparent", "blue")
 	fmt.Printf("ART-APP: shapeHash: '%v'\n", shapeHash)
     fmt.Println("ART-APP: Calling AddShape to add a filled circle. Intersects with polygon. Gets drawn.")
-	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 10,6 r 1", "filled", colour)
+	shapeHash, blockHash, ink2, err = canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 10,6 r 1", "filled", colour)
 	if checkError(err) != nil {
 		fmt.Println(err)
 	}
