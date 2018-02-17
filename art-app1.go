@@ -75,8 +75,8 @@ func main() {
 
 	fmt.Println("ART-APP1: Drawing square that intersects with ART-APP's polygon")
 	shapeHash, blockHash, ink4, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M4,3 h 1 v 1 h -1 v -1", "filled", colour)
-	if checkError(err) != nil {
-		fmt.Println(err)
+	if ae, ok := err.(*blockartlib.ShapeOverlapError); ok{
+		fmt.Printf("Got ShapeOverlapError as expected. Err: %v\n", err)
 	} else {
 		shapes = append(shapes, shapeHash)
 		blocks = append(blocks, blockHash)
@@ -84,14 +84,14 @@ func main() {
 
 	fmt.Println("ART-APP1: Drawing shape with out of bounds svg string") // M -4,-3 invalid
 	shapeHash, blockHash, ink4, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 h 1 v 1 h -1 v -1", "filled", colour)
-	if checkError(err) != nil {
-		fmt.Println(err)
-	} 
+	if ae, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
+		fmt.Printf("Got InvalidShapeSvgStringError as expected. Err: %v\n", err)
+	}
 
 	fmt.Println("ART-APP1: Drawing shape with invalid svg string") // Q not supported
 	shapeHash, blockHash, ink4, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 Q 1 v 1 h -1 v -1", "filled", colour)
-	if checkError(err) != nil {
-		fmt.Println(err)
+	if ae, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
+		fmt.Printf("Got InvalidShapeSvgStringError as expected. Err: %v\n", err)
 	}
 
 	fmt.Println("Closing the canvas")
