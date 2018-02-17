@@ -116,13 +116,22 @@ func (m *Miner) MineBlocks() (err error) {
 			b := NewBlock(parentHash, m.PublKey)
 			difficulty := uint8(0)
 			// if there exist enough ops waiting
+			fmt.Printf("[miner] OperationQueue: %v\n", m.operationQueue)
+			fmt.Printf("[miner] len(OperationQueue): %v\n", len(m.operationQueue))
+			fmt.Printf("[miner] len(m.operationQueue) >= OP_THRESHOLD: %v\n", len(m.operationQueue) >= OP_THRESHOLD)
+			
 			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
 				for len(b.Operations) <= OP_THRESHOLD {
+					fmt.Printf("[miner] Pre Dequeue len OperationQueue: %v\n", len(m.operationQueue))
 					op := <- m.operationQueue
+					fmt.Printf("[miner] Post Dequeue len OperationQueue: %v\n", len(m.operationQueue))
 					validatedOp, err := m.ValidateOperation(op)
+					fmt.Printf("[miner] validatedOp: %v\n", validatedOp)
 					if err != nil {
-						return fmt.Errorf("unable to validate mining op")
+						err = fmt.Errorf("unable to validate mining op: %v", err)
+						fmt.Printf("[miner] validateOp error: %v\n", err)
+						return err
 					}
 					if !validatedOp {
 						continue
@@ -189,14 +198,20 @@ func (m *Miner) TestEarlyExit() {
 func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 	// check sigs
 	if op.ShapeHash != op.CalculateSig() {
+		fmt.Printf("[miner#ValidateOperation] op '%v' fails sig check\n", op)
 		return false, nil
 	}
 	// check drawable (implicitly already drawn)
+	fmt.Printf("[miners#ValidateOperation] op: '%v'\n", op)
+	fmt.Printf("[miners#ValidateOperation] op.ShapeSVGString: '%v'\n", op.ShapeSVGString)
 	validOps, invalidOps, err := DrawOperations([]blockartlib.Operation{*op}, m.Settings.CanvasSettings)
+	fmt.Printf("[miners#ValidateOperation] DrawOperations err: '%v'\n", err)
 	if err != nil {
 		return false, fmt.Errorf("unable to validate operation %v: %v", op, err)
 	}
 	if len(validOps) != 1 || len(invalidOps) != 0 || validOps[op.ShapeHash] != *op {
+		fmt.Printf("[miner#ValidateOperation] op '%v' fails drawable check\n", op)
+		fmt.Printf("[miner#ValidateOperation] validOps: '%v', invalidOps: '%v'\n", validOps, invalidOps)
 		return false, nil
 	}
 	return true, nil
