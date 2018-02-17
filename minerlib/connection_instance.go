@@ -25,8 +25,8 @@ func (m *ServerInstance) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (er
 
 	//for uint8(len(*lom))<minNeighbours { // TODO: uncomment for production
 	//for uint8(len(*lom))<2 {
-	//fmt.Println("request lom")
-	fmt.Println("getting miners")
+	// fmt.Println("request lom")
+	// fmt.Println("getting miners")
 	err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
 	if err != nil {
 		fmt.Println("bla")
