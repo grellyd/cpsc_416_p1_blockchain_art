@@ -84,7 +84,7 @@ func (m *Miner) CreateGenesisBlock() (g *Block) {
 }
 
 func (m *Miner) StartMining() (err error) {
-	fmt.Printf("[miner] Starting Mining Process\n")
+	fmt.Printf("[miner] Starting the Mining Process\n")
 	// setup channels
 	m.doneMining = make(chan struct{})
 	m.earlyExitSignal = make(chan struct{})
@@ -142,10 +142,10 @@ func (m *Miner) MineBlocks() (err error) {
 				difficulty = m.Settings.PoWDifficultyNoOpBlock
 			}
 
-			fmt.Printf("[miner] Starting Mining: %v\n", b)
+			fmt.Printf("[miner] Starting to mine block: %v\n", b)
 			err = b.Mine(difficulty)
 			hash, err := b.Hash()
-			fmt.Printf("[miner] Done Mining: %v with %s\n", b, hash)
+			fmt.Printf("[miner] Done mining block: %v with %s\n", b, hash)
 
 			select {
 			case <-m.earlyExitSignal:
@@ -207,7 +207,7 @@ func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 	validOps, invalidOps, err := DrawOperations([]blockartlib.Operation{*op}, m.Settings.CanvasSettings)
 	fmt.Printf("[miners#ValidateOperation] DrawOperations err: '%v'\n", err)
 	if err != nil {
-		return false, fmt.Errorf("unable to validate operation %v: %v", op, err)
+		return false, fmt.Errorf("[miner] unable to validate operation %v: %v", op, err)
 	}
 	if len(validOps) != 1 || len(invalidOps) != 0 || validOps[op.ShapeHash] != *op {
 		fmt.Printf("[miner#ValidateOperation] op '%v' fails drawable check\n", op)
@@ -221,7 +221,7 @@ func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 	blockValid, err := b.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 	if err != nil {
-		return false, fmt.Errorf("Unable to validate block: %v", err)
+		return false, fmt.Errorf("[miner] Unable to validate block: %v", err)
 	}
 	if !blockValid {
 		return false, nil
@@ -229,7 +229,7 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 	// check if block is in tree
 	present, err := m.Blockchain.BlockPresent(b)
 	if err != nil {
-		return false, fmt.Errorf("Unable validate block: %v", err)
+		return false, fmt.Errorf("[miner] Unable to validate block: %v", err)
 	}
 	if present {
 		return false, nil
@@ -237,13 +237,13 @@ func (m *Miner) ValidNewBlock(b *Block) (valid bool, err error) {
 		// not present, is parent in tree
 		parentBlock, err := m.Blockchain.FindBlockByHash(b.ParentHash)
 		if err != nil {
-			return false, fmt.Errorf("Unable validate block: %v", err)
+			return false, fmt.Errorf("[miner] Unable validate block: %v", err)
 		}
 		if parentBlock != nil {
 			// is found parent internally valid
 			parentValid, err := parentBlock.Valid(m.Settings.PoWDifficultyOpBlock, m.Settings.PoWDifficultyNoOpBlock)
 			if err != nil {
-				return false, fmt.Errorf("Unable validate block: %v", err)
+				return false, fmt.Errorf("[miner] Unable validate block: %v", err)
 			}
 			if parentValid {
 				return true, nil
@@ -284,13 +284,11 @@ func (m *Miner) OpenNeighbourConnections() (err error) {
 		if neighbour.Alive {
 			continue
 		}
-		fmt.Println("Before open RPC to neighbour: ", neighbour.Addr.String())
 		neighbour.RPCClient, err = rpc.Dial("tcp", neighbour.Addr.String())
 		if err != nil {
 			deleteNeighbour(m, i)
 			return nil
 		}
-		fmt.Printf("Opened RPC connection to neighbour with tcpAddr %s\n", neighbour.Addr.String())
 	}
 
 	return nil
@@ -312,7 +310,6 @@ func (m *Miner) ConnectToNeighbourMiners(localAddr *net.TCPAddr) (bestNeighbour 
 	largestDepth := m.Blockchain.BC.LastNode.Current.Depth
 	depth := 0
 
-	fmt.Println("Our address before sending RPC call: ", localAddr.String())
 	for i, connection := range m.Neighbours {
 		/*fmt.Println("DISCONNECT!!!")
 		time.Sleep(4*time.Second)*/
@@ -425,8 +422,6 @@ func (m *Miner) DisseminateOperation(op Operation) (err error) {
 }
 
 func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err error) {
-	fmt.Println("MINERLIB: Running GetShapeHash.")
-	fmt.Println("MINERLIB: Trying to find ArtNodeConnection using the ArtNode's public key")
 	artNodeConn, err := m.FindArtNodeConnection(op.ArtNodePubKey)
 	if err != nil {
 		return "", fmt.Errorf("unable to get shape hash: %v", err)
@@ -434,7 +429,6 @@ func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err e
 	if artNodeConn == nil {
 		return "", fmt.Errorf("unable to locate the art node")
 	}
-	fmt.Println("MINERLIB: Found ArtNode connection; returning shape hash response")
 	// TODO: Uncomment this when channels work
 	// blocks until a value comes into ShapeHashResponse
 	// return <- artNodeConn.ShapeHashResponse, nil
@@ -474,7 +468,6 @@ func (m *Miner) OnNewBlock(b Block) {
 }
 
 func (m *Miner) FindArtNodeConnection(artNodePublicKey string) (anc *ArtNodeConnection, err error) {
-	fmt.Println("MINER: Running FindArtNodeConnection with public key", artNodePublicKey)
 	for i, an := range m.ArtNodes {
 		fmt.Printf("Index %d, key %s\n", i, an.ArtNodePubKey)
 		if an.ArtNodePubKey == artNodePublicKey {
@@ -638,11 +631,12 @@ func deleteNeighbour (m *Miner, index int) error {
 }*/
 
 func reconstructTree(m *Miner, senderAddr *net.TCPAddr, queue *[]string) {
+	fmt.Println("[miner]: Reconstructing tree")
 	q := *queue
 	genBlock := m.CreateGenesisBlock()
-	fmt.Println("queue: ", q)
+	// fmt.Println("queue: ", q)
 	m.Blockchain = NewBlockchainStorage(genBlock, m.Settings)
-	fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
+	// fmt.Println("New Blockchain: ", m.Blockchain.BCT.GenesisNode.CurrentHash)
 	q = q[1:]
 	blockArr := make([][]byte, 0)
 	var caller *rpc.Client
@@ -655,7 +649,7 @@ func reconstructTree(m *Miner, senderAddr *net.TCPAddr, queue *[]string) {
 
 	for _,v := range q {
 		err := caller.Call("MinerInstance.GiveBlock", &v, &blockArr)
-		fmt.Println("the block received: ", blockArr)
+		//fmt.Println("the block received: ", blockArr)
 		b, err := UnmarshallBinary(blockArr)
 		if err != nil {
 			fmt.Println("unmarshalling failed")

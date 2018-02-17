@@ -34,17 +34,20 @@ func main() {
 		// fmt.Println("usage: go run ink-miner.go [server ip:port] [pubKey] [privKey] ")
 		return
 	}
+
+	fmt.Println("======= [miner] START ======\n")
 	/*
+
 	Commented out to run locally. See Azure branch
-	localIP := fmt.Sprintf("%s:8000", outboundIP)
+	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
 	*/
 	outboundIP :=  networking.GetOutboundIP()
-	localIP := fmt.Sprintf("%s:0", outboundIP)
+	publicLocalIP := fmt.Sprintf("%s:0", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
 	CheckError(err)
-	localAddr, err := net.ResolveTCPAddr("tcp", localIP)
+	publicLocalAddr, err := net.ResolveTCPAddr("tcp", publicLocalIP)
 	CheckError(err)
 	
 	// Create Miner
@@ -55,13 +58,12 @@ func main() {
 	// register art node instance locally
 	rpc.Register(artNodeInst)
 
-	// Add a listener on myself
-	localListener, err := net.ListenTCP("tcp", localAddr)
+	// Add a listener for the server & other miners to hit
+	publicListener, err := net.ListenTCP("tcp", publicLocalAddr)
 	CheckError(err)
-	fmt.Println("Local addr: ", localListener.Addr().String())
 
-	// My Info to Send
-	localMinerInfo := MinerInfo{localListener.Addr(), m.PublKey}
+	// Info to send to server
+	localMinerInfo := MinerInfo{publicListener.Addr(), m.PublKey}
 	m.ServerNodeAddr, _ = net.ResolveTCPAddr("tcp", localMinerInfo.Address.String())
 	// fmt.Println("Serv addr: ", m.ServerNodeAddr.String())
 	
@@ -72,15 +74,6 @@ func main() {
 
 	// Setup Heartbeats
 	go doEvery(time.Duration(m.Settings.HeartBeat-1000)*time.Millisecond, serverConn.SendHeartbeat)
-
-	// TODO: Check in with neighbours
-	// TODO: Ask Neighbours for blockchain that already exists
-	genesisBlock := m.CreateGenesisBlock()
-
-	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
-	CheckError(err)
-	go m.StartMining()
-	//go m.TestEarlyExit()
 
 	// Ask for Neighbours
 	// fmt.Println("Asking for neighbours")
@@ -114,7 +107,21 @@ func main() {
 	// fmt.Printf("befor goRoutine: %v aaaand length %v, \n", &m.Neighbours, len(m.Neighbours))
 	go doEvery(5*time.Second, UpdateNeighbours)
 
-	serviceRequests(localListener)
+	// TODO: Check in with neighbours
+	// TODO: Ask Neighbours for blockchain that already exists
+	genesisBlock := m.CreateGenesisBlock()
+
+	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
+	CheckError(err)
+	go m.StartMining()
+	//go m.TestEarlyExit()
+
+	// Set up a private address for art nodes to connect to
+	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3000")
+	CheckError(err)
+ 	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
+
+	serviceRequests(privateListener)
 }
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
@@ -141,9 +148,10 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	return serverConnection, nil
 }
 
-func serviceRequests(localListener *net.TCPListener) {
+func serviceRequests(privateListener *net.TCPListener) {
+    fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
 	for {
-		conn, err := localListener.Accept()
+		conn, err := privateListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
@@ -243,7 +251,6 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 		fmt.Println("MINER: Received Invalid key pair.")
 		return blockartlib.DisconnectedError("Key pair isn't valid")
 	}else {
-		fmt.Println("MINER: Creating new ArtNodeConnection's TCP address")
 		addr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 		CheckError(err)
 		 fmt.Println("MINER: ARtNodeConnection.Addr is ", addr.String())
@@ -258,6 +265,7 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 			nil,
 		}
         m.ArtNodes = append(m.ArtNodes, &connection) 
+		fmt.Println("INK-MINER: Received Connect from ArtNode and created a new connection to ", an.LocalIP)
 		*reply = true
 	}
 	return nil
@@ -333,6 +341,7 @@ func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *
 	hash, err := m.GetShapeHash(&op)
 	fmt.Println("INK-MINER: Done miner.GetShapeHash from within SubmitOperation")
 	shapeHash = &hash
+	fmt.Println("Operation submitted; returning ShapeHash string %s", shapeHash)
 	return err
 }
 

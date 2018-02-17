@@ -29,7 +29,7 @@ func (m *ServerInstance) RequestMiners(lom *[]net.Addr, minNeighbours uint8) (er
 	// fmt.Println("getting miners")
 	err = m.RPCClient.Call("RServer.GetNodes", m.Public, &lom)
 	if err != nil {
-		fmt.Println("bla")
+		fmt.Println("[miner] ERROR: could not get neighbours from the server.")
 		return err
 	}
 	//}
