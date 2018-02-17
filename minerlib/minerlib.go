@@ -272,7 +272,6 @@ func (m *Miner) OpenNeighbourConnections() (err error) {
 		neighbour.RPCClient, err = rpc.Dial("tcp", neighbour.Addr.String())
 		if err != nil {
 			deleteNeighbour(m, i)
-			return nil
 		}
 	}
 
@@ -360,12 +359,16 @@ func (m *Miner) DisseminateBlock(block *Block) (err error) {
 	// TODO: Not sure this is the right spot for this.
 	gob.Register(&Block{})
 	gob.Register(elliptic.P384())
-	for _,v := range m.Neighbours {
+	for i,v := range m.Neighbours {
 		marshalledBlock, err := block.MarshallBinary()
 		fmt.Println("Marshalled block in disseminateBlock: ", marshalledBlock)
 		blockartlib.CheckErr(err)
 		var b bool
 		err = v.RPCClient.Call("MinerInstance.ReceiveBlockFromNeighbour", &marshalledBlock, &b)
+		if err != nil {
+			deleteNeighbour(m, i)
+			continue
+		}
 		if !b {
 			fmt.Println("Bad block") // TODO: think what to do in this case
 		}

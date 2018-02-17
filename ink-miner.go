@@ -103,10 +103,14 @@ func main() {
 
 	// TODO: Check in with neighbours
 	// TODO: Ask Neighbours for blockchain that already exists
-	genesisBlock := m.CreateGenesisBlock()
 
-	m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
-	CheckError(err)
+	// Neighbours already asked: and a new BC should be created if asked for neighbours
+	if m.Blockchain == nil {
+		genesisBlock := m.CreateGenesisBlock()
+		m.Blockchain = minerlib.NewBlockchainStorage(genesisBlock, m.Settings)
+		CheckError(err)
+	}
+
 	go m.StartMining()
 	//go m.TestEarlyExit()
 
