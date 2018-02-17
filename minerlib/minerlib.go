@@ -517,9 +517,15 @@ func (m *Miner) FindArtNodeConnection(artNodePublicKey string) (anc *ArtNodeConn
 	return nil, nil
 }
 
+
 /////// helpers
 
-func (m *Miner) AddInk() (err error) {
+func (m *Miner) AddInk(block * Block) (err error) {
+	if len(block.Operations) == 0 {
+		m.InkLevel += m.Settings.InkPerNoOpBlock
+	} else {
+		m.InkLevel += m.Settings.InkPerOpBlock
+	}
 	return nil
 }
 
