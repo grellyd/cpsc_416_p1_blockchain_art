@@ -40,19 +40,18 @@ func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSe
 		fmt.Printf("%v\n", err)
 		return false
 	}
-	//fmt.Println("Parent hash ", parentNode.CurrentHash)
+	// fmt.Println("Parent hash ", parentNode.CurrentHash)
 	d := parentNode.Depth + 1
-	//fmt.Printf("k: %v\n", block.MinerPublicKey)
+	// fmt.Printf("k: %v\n", block.MinerPublicKey)
 	k := keyToString(block.MinerPublicKey)
-	//fmt.Printf("k: %v\n", k)
+	// fmt.Printf("k: %v\n", k)
 
 	var inkOnNode uint32 = parentNode.OwnerInkLvl[k]
 	bcTreeNode := NewBCTreeNode(block, parentNode, inkOnNode, settings)
 	bcTreeNode.Depth = d
 	parentNode.Children = append(parentNode.Children, bcTreeNode)
 	// TODO: add here update the block length
-	
-	fmt.Println("[miner] BlockChain Tree after appending block: ", bcs.BCT.GenesisNode, "\n")
+	// fmt.Println("BCTree after append: ", bcs.BCT.GenesisNode)
 
 	if bcs.BC.LastNode.Current.CurrentHash == block.ParentHash {
 		bccNode := NewBlockchainNode(bcTreeNode)
@@ -66,7 +65,7 @@ func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSe
 		if bcTreeNode.Depth > bcs.BC.LastNode.Current.Depth {
 			nodesToInclude := walkUpToRoot(bcs.BCT, bcTreeNode)
 			rebuildBlockchain(bcs.BC, nodesToInclude)
-			//fmt.Println("BC after append: ", bcs.BC)
+			// fmt.Println("BC after append: ", bcs.BC)
 			PrintBC(bcs)
 			return true
 		}
@@ -162,7 +161,7 @@ func appendBlockToBC(bc *Blockchain, bccNod *BlockchainNode) {
 
 /*func printTree (bct *BCTree, bctNode *BCTreeNode) {
 	if bct.GenesisNode.CurrentHash == bctNode.CurrentHash
-	fmt.Println("----- Printing tree ------")
+	// fmt.Println("----- Printing tree ------")
 	if bct != nil {
 		if len(bct.GenesisNode.Children) == 0 {
 			return
@@ -183,7 +182,7 @@ func PrintBC(bcs *BCStorage) {
 	genNode := bcs.BC.GenesisNode
 
 	for genNode !=nil {
-		fmt.Println(genNode.Current.CurrentHash)
+		// fmt.Println(genNode.Current.CurrentHash)
 		genNode = genNode.Next
 
 	}
