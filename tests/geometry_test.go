@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"strconv"
 	"blockartlib"
 	"minerlib"
 	"testing"
@@ -37,14 +38,14 @@ func TestIsLinesIntersecting(t *testing.T) {
 func TestInkArea(t *testing.T) {
 	svg := "M 8,0 V 8 L 4,4 l -4,4 v -8 h 8"
 	// op := Operation{4, 2, "opsig", blockartlib.PATH, "nonempty", "red", svg, "pubkey", 34}
-	op := Operation {
-		Type: 4,
-		OperationNumber: 2,
-		Shape: blockartlib.PATH,
-		Fill: "nonempty",
-		Stroke: "red",
-		ShapeSVGString: svg,
-		ArtNodePubKey: "pubkey",
+	op := Operation{
+		Type:             4,
+		OperationNumber:  2,
+		Shape:            blockartlib.PATH,
+		Fill:             "nonempty",
+		Stroke:           "red",
+		ShapeSVGString:   svg,
+		ArtNodePubKey:    "pubkey",
 		ValidateBlockNum: 34,
 	}
 	settings := CanvasSettings{100, 100}
@@ -55,14 +56,14 @@ func TestInkArea(t *testing.T) {
 
 	// transparentOp := Operation{4, 2, "opsig", blockartlib.PATH, "transparent", "red", svg, "pubkey", 34
 	transparentOp := Operation{
-		Type: 4,
+		Type:             4,
 		OperationNumber:  2,
-		Shape:  blockartlib.PATH,
-		Fill:  "transparent",
-		Stroke:  "red",
-		ShapeSVGString:  svg,
-		ArtNodePubKey:  "pubkey",
-		ValidateBlockNum:  34,
+		Shape:            blockartlib.PATH,
+		Fill:             "transparent",
+		Stroke:           "red",
+		ShapeSVGString:   svg,
+		ArtNodePubKey:    "pubkey",
+		ValidateBlockNum: 34,
 	}
 	transparentInk, _ := minerlib.InkNeeded(transparentOp, settings)
 	if transparentInk != 36 {
@@ -280,6 +281,19 @@ func TestDrawAllShapesWithOwnership(t *testing.T) {
 	invalidString := ConcatOps(invalidOps)
 	ExpectContains(t, validString, []string{"convex_polygon by artnode0", "square_out by artnode1", "square_in by artnode0", "circle by artnode0"})
 	ExpectEquals(t, invalidString, "")
+}
+
+func Test(t *testing.T) {
+	settings := CanvasSettings{1024, 1024}
+	convexPolygon := ConvexPolygon()
+	convexPolygonOp := Operation{blockartlib.DRAW, 2, blockartlib.PATH, "filled", "red", convexPolygon.ShapeToSVGPath(), "artnode0", 34, "convex_polygon", 129}
+	ink, _ := minerlib.InkNeeded(convexPolygonOp, settings)
+	ExpectEquals(t, strconv.FormatInt(int64(ink), 10), "")
+
+
+	t2 := Triangle2()
+	tr := t2.ShapeToSVGPath()
+	ExpectEquals(t, tr, "")
 }
 
 func Square1() Shape {
