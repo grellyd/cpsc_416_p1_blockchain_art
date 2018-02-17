@@ -52,24 +52,17 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 	op.GenerateSig()
 	fmt.Printf("[artnodeutil] op: %v\n", op)
 	fmt.Println("ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation")
+	fmt.Printf("[artnodeutil] shapeHash: '%v'\n", shapeHash)
 	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &shapeHash)
 	if err != nil {
 		return "", "", 0, fmt.Errorf("ARTNODEUTIL.AddShape: unable to submit operation: %v", err)
 	}
+	fmt.Printf("[artnodeutil] shapeHash: '%v'\n", shapeHash)
 	inkRemaining, err = an.GetInk()
 	if err != nil {
 		return "", "", 0, fmt.Errorf("unable to get ink: %v", err)
 	}
 
-	// TODO: Uncomment this when channels are figured out and we're properly returning shapehashes
-	/*shapeHashes, err := an.GetShapes(blockHash)
-	if len(shapeHashes) == 0 {
-		return "", "", 0, fmt.Errorf("0 shapehashes returned")
-	}else if (err != nil) {
-		return "", "", 0, fmt.Errorf("error returned: %v", err)
-	}
-	// TODO validate there is only one and pick if needed
-	shapeHash = shapeHashes[0]*/
 	return shapeHash, blockHash, inkRemaining, nil
 }
 

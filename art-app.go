@@ -59,7 +59,7 @@ func main() {
 
 	// Delete the first line.
 	fmt.Println("ART-APP: Deleting the first line")
-	ink3, err := canvas.DeleteShape(uint8(validateNum), shapeHash)
+	ink3, err := canvas.DeleteShape(uint8(validateNum), shapes[0])
 	if checkError(err) != nil {
 		return
 	}

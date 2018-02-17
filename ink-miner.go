@@ -35,7 +35,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("======= [miner] START ======\n")
+	fmt.Printf("======= [miner] START ======\n\n")
 	/*
 
 	Commented out to run locally. See Azure branch
@@ -343,8 +343,9 @@ func (si *ArtNodeInstance) SubmitOperation(op blockartlib.Operation, shapeHash *
 	fmt.Printf("INK-MINER: GetShapeHash(%v)\n", op)
 	// blocks until done at validation depth
 	hash, err := m.GetShapeHash(&op)
-	fmt.Println("INK-MINER: Done miner.GetShapeHash from within SubmitOperation")
+	fmt.Printf("INK-MINER: Done miner.GetShapeHash from within SubmitOperation with '%v'\n", hash)
 	shapeHash = &hash
+	fmt.Printf("INK-MINER: shapeHash: '%v'\n", *shapeHash)
 	return err
 }
 
