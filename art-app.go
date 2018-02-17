@@ -36,7 +36,7 @@ func main() {
 
 	// Add a line.
 	fmt.Println("ART-APP: Calling AddShape to add a red line")
-	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 0 5", "transparent", "red")
+	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 0, 5", "transparent", "red")
 	if checkError(err) != nil {
 		fmt.Printf("ART-APP: There was an error with calling AddShape: \n")
 		fmt.Println(err)
@@ -47,7 +47,7 @@ func main() {
 
 	// Add another line.
     fmt.Println("ART-APP: Calling AddShape to add another line")
-	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0 0 L 5 0", "transparent", "blue")
+	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 5 ,0", "transparent", "blue")
 	if checkError(err) != nil {
 		return
 	}
