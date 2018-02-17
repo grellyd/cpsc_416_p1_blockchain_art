@@ -213,12 +213,12 @@ func (m *Miner) ValidateOperation(op *blockartlib.Operation) (bool, error) {
 	validOps, invalidOps, err := DrawOperations([]blockartlib.Operation{*op}, m.Settings.CanvasSettings)
 	fmt.Printf("[miners#ValidateOperation] DrawOperations err: '%v'\n", err)
 	if err != nil {
-		return false, fmt.Errorf("[miner] unable to validate operation %v: %v", op, err)
+		return false, err
 	}
 	if len(validOps) != 1 || len(invalidOps) != 0 || validOps[op.ShapeHash] != *op {
 		fmt.Printf("[miner#ValidateOperation] op '%v' fails drawable check\n", op)
 		fmt.Printf("[miner#ValidateOperation] validOps: '%v', invalidOps: '%v'\n", validOps, invalidOps)
-		return false, nil
+		return false, blockartlib.ShapeOverlapError(op.ShapeHash)
 	}
 	return true, nil
 }

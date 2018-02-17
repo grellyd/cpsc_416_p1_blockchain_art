@@ -89,12 +89,6 @@ func main() {
 
 	fmt.Println("ART-APP: Drawing line that intersects with circle 50, 50 r 10.")
 	shapeHash, blockHash, ink6, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M50,50 h 60", "transparent", colour)
-	/*
-	   if ae, ok := e.(*argError); ok {
-        fmt.Println(ae.arg)
-        fmt.Println(ae.prob)
-    }
-	*/
 	if _, ok := err.(*blockartlib.ShapeOverlapError); ok{
 		fmt.Printf("Got ShapeOverlapError as expected. Err: %v\n", err)
 	} else {
