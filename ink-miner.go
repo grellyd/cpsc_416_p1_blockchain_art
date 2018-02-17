@@ -121,7 +121,7 @@ func main() {
 	//go m.TestEarlyExit()
 
 	// Set up a private address for art nodes to connect to
-	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3002")
+	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3001")
 	CheckError(err)
  	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
 

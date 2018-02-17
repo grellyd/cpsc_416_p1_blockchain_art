@@ -10,6 +10,7 @@ import (
 	"time"
 	"encoding/gob"
 	"crypto/elliptic"
+	"keys"
 )
 
 
@@ -166,9 +167,12 @@ func (m *Miner) MineBlocks() (err error) {
 				fmt.Printf("[miner] Early Exit\n")
 				return nil
 			default:
-				_ = m.Blockchain.AppendBlock(b, m.Settings)
-				m.AddInk(b)
-				fmt.Printf("[miner] Ink on Miner %v \n", m.InkLevel)
+				mPubKey := keys.EncodePublicKey( m.PublKey)
+				inkToDraw, switched := m.Blockchain.AppendBlock(b, m.Settings, mPubKey)
+				if inkToDraw == 0 {
+					m.AddInk(b)
+				}
+				fmt.Printf("[miner] Ink on Miner %v %v \n", m.InkLevel, switched)
 				err := m.DisseminateBlock(b)
 				if err != nil {
 					fmt.Printf("dissemination created error: %v", err)
@@ -411,7 +415,8 @@ func (m *Miner) AddDisseminatedBlock(b *Block) {
 	}
 	if valid {
 		// Add to blockchain
-		treeSwitch := m.Blockchain.AppendBlock(b, m.Settings)
+		minerPubK := keys.EncodePublicKey(m.PublKey)
+		inkToDraw, treeSwitch := m.Blockchain.AppendBlock(b, m.Settings, minerPubK)
 		if treeSwitch {
 			// blocks until complete
 			m.StopMining()
@@ -419,6 +424,11 @@ func (m *Miner) AddDisseminatedBlock(b *Block) {
 			m.StartMining()
 		}
 		m.OnNewBlock(*b)
+		fmt.Println("[miner]  m.InkLevel before: ", m.InkLevel)
+		if inkToDraw != 0 {
+			m.InkLevel -= inkToDraw
+		}
+		fmt.Println("[miner]  m.InkLevel after: ", m.InkLevel)
 
 	}
 }
@@ -715,6 +725,9 @@ func reconstructTree(m *Miner, senderAddr *net.TCPAddr, queue *[]string) {
 			fmt.Printf("Invalid block: %v", err)
 			return
 		}
-		m.Blockchain.AppendBlock(b, m.Settings)
+		mPK := keys.EncodePublicKey(m.PublKey)
+		m.Blockchain.AppendBlock(b, m.Settings, mPK)
+		fmt.Println("[miner]: Ink")
+
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"os"
 	"keys"
 	"time"
+	"minerlib"
 )
 
 var PATH_TO_FILE string = "canvas.html"
