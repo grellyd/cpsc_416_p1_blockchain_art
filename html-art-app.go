@@ -55,7 +55,15 @@ func main() {
     // Wait before requesting SVG strings so other miners can do work
 	time.Sleep(durationToWait)
 
-	// TODO: Get SVG strings and store appropriately
+	// TODO: Get SVG strings from server and store appropriately
+	/*
+	fmt.Println("HTML-ART-APP: Getting Genesis block from Miner")
+	blockHash, err := blockartlib.GetGenesisBlock()
+	checkErr(err)
+	fmt.Pritnln("HTML-ART-APP: Getting all SVG strings from the Miner")
+	svgStrings, err := blockartlib.GetAllSvgStrings(blockhash)
+	checkErr(err)
+	*/
 	var svgStrings []string = []string{
 		"<path d=\"M5,2L6,2L6,3L5,3L5,2\" stroke=\"red\" fill=\"transparent\"/>",
 	}

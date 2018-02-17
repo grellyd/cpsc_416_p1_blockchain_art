@@ -29,12 +29,14 @@ func NewBlockchainStorage(genBlock *Block, settings *blockartlib.MinerNetSetting
 // REQUIRES: valid block (block that has parent on the tree among the leaves and valid in operations)
 // EFFECTS: returns true if blockchain has been switched, false if blockchain is the same
 func (bcs *BCStorage) AppendBlock(block *Block, settings *blockartlib.MinerNetSettings) bool {
+	fmt.Println("[miner] Appending a new block to the tree: ", block, "\n")
+
 	// finds the child to which to append
 	// checks against blockchain if the block should go there
 	//leaves := bcs.BCT.Leaves
 	parentNode := FindBCTreeNode(bcs.BCT.GenesisNode, block.ParentHash)
 	if parentNode == nil {
-		err := fmt.Errorf("No such parent node exists!")
+		err := fmt.Errorf("[miner]#AppendBlock: No such parent node exists!\n")
 		fmt.Printf("%v\n", err)
 		return false
 	}
@@ -176,6 +178,7 @@ func appendBlockToBC(bc *Blockchain, bccNod *BlockchainNode) {
 }*/
 
 func PrintBC(bcs *BCStorage) {
+	fmt.Println("[miner] ---Current BlockChain---")
 	genNode := bcs.BC.GenesisNode
 
 	for genNode !=nil {
@@ -183,4 +186,5 @@ func PrintBC(bcs *BCStorage) {
 		genNode = genNode.Next
 
 	}
+	fmt.Println("--------------------------\n\n")
 }
