@@ -36,13 +36,9 @@ func main() {
 	}
 
 	fmt.Printf("======= [miner] START ======\n\n")
-	/*
 
-	Commented out to run locally. See Azure branch
-	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
-	*/
 	outboundIP :=  networking.GetOutboundIP()
-	publicLocalIP := fmt.Sprintf("%s:0", outboundIP)
+	publicLocalIP := fmt.Sprintf("%s:8000", outboundIP)
 	keys, err := getKeyPair(args[2], args[1])
 	CheckError(err)
 	serverAddr, err := net.ResolveTCPAddr("tcp", args[0])
@@ -121,13 +117,12 @@ func main() {
 	//go m.TestEarlyExit()
 
 	// Set up a private address for art nodes to connect to
-	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3002")
+	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3001")
 	CheckError(err)
  	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
 
-	go serviceRequests1(privateListener)
- 	serviceRequests(publicListener)
-
+	go servicePublicRequests(publicListener)
+	servicePrivateRequests(privateListener)
 }
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
@@ -154,31 +149,27 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 	return serverConnection, nil
 }
 
-func serviceRequests(privateListener *net.TCPListener) {
-    fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
+func servicePublicRequests(publicListener *net.TCPListener) {
+	fmt.Printf("[miner]: Now servicing requests from Server on %s\n\n", publicListener.Addr().String())
 	for {
-		conn, err := privateListener.Accept()
+		conn, err := publicListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
 		go rpc.ServeConn(conn)
-		// fmt.Println("INK-MINER: serviceRequests RPC connection served")
 
 		time.Sleep(10 * time.Millisecond)
-
-		// DrawOperations to validate
-		// For valid add to miner op channel
 	}
 }
 
-func serviceRequests1(privateListener *net.TCPListener) {
+func servicePrivateRequests(privateListener *net.TCPListener) {
 	fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
 	for {
 		conn, err := privateListener.Accept()
 		CheckError(err)
 		defer conn.Close()
 
-		go rpc.ServeConn(conn)
+		rpc.ServeConn(conn)
 
 		time.Sleep(10 * time.Millisecond)
 
@@ -307,8 +298,6 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 }
 
 func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
-	fmt.Println("INK-MINER: Received GetSVGString RPC call")
-	// fmt.Println("In RPC getting svg string")
 	//m.Blockchain.BC
 	temp := m.Blockchain.BC.GenesisNode
 	var b *minerlib.Block
@@ -329,8 +318,6 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 }
 
 func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) error {
-	fmt.Println("INK-MINER: Received GetALLSVGStrings RPC call")
-	// fmt.Println("In RPC getting svg string")
 	bcBlocks := m.Blockchain.FindBlocksInBC(blockHash)
 	for _, b := range bcBlocks {
 		for _, op := range b.Operations {

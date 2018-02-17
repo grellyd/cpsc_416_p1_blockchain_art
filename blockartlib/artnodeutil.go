@@ -30,16 +30,9 @@ type ArtNode struct {
 // eww global but the Art Node is pass by value, not by reference; changes in a function don't persist
 var opNumber uint32 = 0
 
-// RPC calls
-func (mi *MinerInstance) ConnectMiner (mins *bool, reply *bool) error {
-	fmt.Println("In RPC connecting Miner")
-	*reply = true
-	return nil
-}
-
 // CArtNodeVAS INTERFACE FUNCTIONS
 func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgString string, fill string, stroke string) (shapeHash string, blockHash string, inkRemaining uint32, err error) {
-	fmt.Println("ARTNODEUTIL: Calling AddShape")
+	fmt.Println("[artnode]: Adding a shape")
 	op := Operation{
 		Type: DRAW,
 		OperationNumber: opNumber,
@@ -54,15 +47,15 @@ func (an ArtNode) AddShape(validateNum uint8, shapeType ShapeType, shapeSvgStrin
 	opNumber = opNumber + 1
 	err = op.GenerateSig()
 	if err != nil {
-		return "", "", 0, fmt.Errorf("unable to generate operation sig: %v", err)
+		return "", "", 0, fmt.Errorf("[artnode] unable to generate operation sig: %v", err)
 	}
-	fmt.Printf("[artnodeutil] op: %v\n", op)
-	fmt.Println("ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation")
+	fmt.Println("[artnode] Submitting operation to miner")
 	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &shapeHash)
 	if err != nil {
-		return "", "", 0, fmt.Errorf("ARTNODEUTIL.AddShape: unable to submit operation: %v", err)
+		return "", "", 0, fmt.Errorf("[artnode]#AddShape: unable to submit operation: %v", err)
 	}
-	fmt.Printf("[artnodeutil] shapeHash: '%v'\n", shapeHash)
+	fmt.Printf("[artnodeutil] Received shapeHash from miner: '%v'\n", shapeHash)
+
 	inkRemaining, err = an.GetInk()
 	if err != nil {
 		return "", "", 0, fmt.Errorf("unable to get ink: %v", err)
@@ -157,12 +150,11 @@ func (an ArtNode) CloseCanvas() (inkRemaining uint32, err error) {
 
 // MINER INTERACTION FUNCTIONS
 func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err error) {
-	fmt.Println("ARTNODEUTIL: Running Connect to connect to miner at address ", minerAddr)
+	fmt.Println("[artnode]: Connecting to miner at address ", minerAddr)
 	// Establish RPC connection to Miner
 	minerInst := new(MinerInstance)
 	rpc.Register(minerInst)
 
-	fmt.Printf("ARTNODEUTIL: Resolving ArtNode local/outbound IP: %s\n", an.LocalIP)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", an.LocalIP)
 	CheckErr(err)
 
@@ -191,10 +183,8 @@ func (an *ArtNode) Connect(minerAddr string, privKey *ecdsa.PrivateKey) (err err
 		false,
 		listener.Addr().String(),
 	}
-	fmt.Println("ARTNODEUTIL: trying to connec to Miner via RPC: ArtNodeInstance.ConnectNode")
 	err = an.MinerConnection.Call("ArtNodeInstance.ConnectNode", an1, &reply)
 	CheckErr(err)
-	fmt.Println("ARTNODEUTIL connected via rpc without error; reply is: ", reply)
 	an.MinerAlive = true
 	//time.Sleep(1*time.Second)
 	return nil

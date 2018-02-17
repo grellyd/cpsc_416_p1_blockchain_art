@@ -13,7 +13,7 @@ Miner3Art1 - 40.65.104.179
 Miner3Art2 - 40.65.108.120
 
 Server runs on port 12345,
-Miners run on port 3000,
+Miners run on port 3002,
 and Art nodes run on a randomly generated port.
 
 VMs shut off at 1am PST daily.

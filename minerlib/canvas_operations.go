@@ -60,6 +60,7 @@ func DrawOperations(ops []Operation, canvasSettings CanvasSettings) (validOps, i
 		if op.Type == blockartlib.DELETE {
 			drawnShapes, err = RemoveDrawnShape(op, drawnShapes)
 			if err != nil {
+				invalidOps[op.ShapeHash] = op
 				return validOps, invalidOps, err
 			}
 			validOps[op.ShapeHash] = &op
