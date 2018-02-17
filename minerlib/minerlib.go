@@ -120,9 +120,15 @@ func (m *Miner) MineBlocks() (err error) {
 			fmt.Printf("[miner] len(OperationQueue): %v\n", len(m.operationQueue))
 			fmt.Printf("[miner] len(m.operationQueue) >= OP_THRESHOLD: %v\n", len(m.operationQueue) >= OP_THRESHOLD)
 			
+			// if there are enough ops waiting
 			if len(m.operationQueue) >= OP_THRESHOLD {
 				difficulty = m.Settings.PoWDifficultyOpBlock
-				for len(b.Operations) <= OP_THRESHOLD {
+				// take off OP_THRESHOLD Blocks
+				for i := 0; i < OP_THRESHOLD; i++ {
+					fmt.Printf("[miner] len OperationQueue: %v\n", len(m.operationQueue))
+					if len(m.operationQueue) == 0 {
+						break
+					}
 					fmt.Printf("[miner] Pre Dequeue len OperationQueue: %v\n", len(m.operationQueue))
 					op := <- m.operationQueue
 					fmt.Printf("[miner] Post Dequeue len OperationQueue: %v\n", len(m.operationQueue))
@@ -434,50 +440,75 @@ func (m *Miner) GetShapeHash(op *blockartlib.Operation) (shapeHash string, err e
 	if artNodeConn == nil {
 		return "", fmt.Errorf("unable to locate the art node")
 	}
-	fmt.Println("MINERLIB: Found ArtNode connection; returning shape hash response")
-	// TODO: Uncomment this when channels work
+	fmt.Println("MINERLIB: Found ArtNode connection; waiting on shape hash response")
 	// blocks until a value comes into ShapeHashResponse
-	// return <- artNodeConn.ShapeHashResponse, nil
-	return "thisIsAHash", nil
+	fmt.Printf("[miner#GetShapeHash] channel: %v\n", artNodeConn.ShapeHashResponse)
+	fmt.Printf("[miner#GetShapeHash] channel addr: %v\n", &artNodeConn.ShapeHashResponse)
+	res := <- artNodeConn.ShapeHashResponse
+	fmt.Printf("[miner#GetShapeHash] Resulting Hash: '%v'\n", res)
+	return res, nil
 }
 
 func (m *Miner) OnNewBlock(b Block) {
+	fmt.Printf("[miner#OnNewBlock] b.Operations: %v\n", b.Operations)
+	fmt.Printf("[miner#OnNewBlock] m.OpValidateList: %v\n", m.OpValidateList)
+	// check if OpValidateList has been initialised
+	if !(len(m.OpValidateList) > 0) {
+		m.OpValidateList = append(m.OpValidateList, []*Operation{})
+		fmt.Printf("[miner#OnNewBlock] m.OpValidateList: %v\n", m.OpValidateList)
+	}
+	// Add new operations
 	for _, op := range b.Operations {
-		// iterate through slice 0
-		for _, doneOp := range m.OpValidateList[0] {
-			artNodeConn, err := m.FindArtNodeConnection(doneOp.ArtNodePubKey)
-			if err != nil {
-				fmt.Printf("ERROR in OnNewBlock: %v", err)
-				return
-			}
-			if artNodeConn == nil {
-				continue
-			}
-			// TODO: Check if returning the right portion of op
-			// fill channel for associated art node
-			artNodeConn.ShapeHashResponse <- doneOp.ShapeHash
-			// TODO: maybe check error?
-			ink, _ := InkNeeded(*op, m.Settings.CanvasSettings)
-			if op.Type == blockartlib.DRAW {
-				m.InkLevel -= ink
-			} else if op.Type == blockartlib.DELETE {
-				m.InkLevel += ink
-			}
-		}
+		// if there are new ops to add
 		if m.HasArtNode(op.ArtNodePubKey) {
+			depthInList := uint8(len(m.OpValidateList) + 1)
+			// ensure lower lists and dest list exist
+			if depthInList < op.ValidateBlockNum {
+				for i := uint8(0);  i < op.ValidateBlockNum - depthInList; i++  {
+					m.OpValidateList = append(m.OpValidateList, []*Operation{})
+					fmt.Printf("[miner#OnNewBlock] m.OpValidateList: %v\n", m.OpValidateList)
+				}
+			}
 			m.OpValidateList[op.ValidateBlockNum] = append(m.OpValidateList[op.ValidateBlockNum], op)
 		}
 	}
+	// iterate through slice 0 returning done ops
+	for _, doneOp := range m.OpValidateList[0] {
+		fmt.Printf("[miner#OnNewBlock] doneOp: %v\n", doneOp)
+		artNodeConn, err := m.FindArtNodeConnection(doneOp.ArtNodePubKey)
+		fmt.Printf("[miner#OnNewBlock] artNodeConn: %v\n", artNodeConn)
+		if err != nil {
+			fmt.Printf("ERROR in OnNewBlock: %v", err)
+			return
+		}
+		if artNodeConn == nil {
+			continue
+		}
+		fmt.Printf("[miner#OnNewBlock] doneOp.ShapeHash: %v\n", doneOp.ShapeHash)
+		// TODO: Check if returning the right portion of op
+		// fill channel for associated art node
+		fmt.Printf("[miner#OnNewBlock] channel: %v\n", artNodeConn.ShapeHashResponse)
+		fmt.Printf("[miner#OnNewBlock] channel addr: %v\n", &artNodeConn.ShapeHashResponse)
+		artNodeConn.ShapeHashResponse <- doneOp.ShapeHash
+		// TODO: maybe check error?
+		ink, _ := InkNeeded(*doneOp, m.Settings.CanvasSettings)
+		if doneOp.Type == blockartlib.DRAW {
+			m.InkLevel -= ink
+		} else if doneOp.Type == blockartlib.DELETE {
+			m.InkLevel += ink
+		}
+	}
+	// remove slice zero
 	if len(m.OpValidateList) >= 1 {
 		m.OpValidateList = m.OpValidateList[1:]
 	}
 }
 
 func (m *Miner) FindArtNodeConnection(artNodePublicKey string) (anc *ArtNodeConnection, err error) {
-	fmt.Println("MINER: Running FindArtNodeConnection with public key", artNodePublicKey)
-	for i, an := range m.ArtNodes {
-		fmt.Printf("Index %d, key %s\n", i, an.ArtNodePubKey)
+	// fmt.Println("MINER: Running FindArtNodeConnection with public key", artNodePublicKey)
+	for _, an := range m.ArtNodes {
 		if an.ArtNodePubKey == artNodePublicKey {
+			fmt.Printf("[miner#FindArtNodeConnection] Found ArtNode: '%v'\n", an)
 			return an, nil
 		}
 	}

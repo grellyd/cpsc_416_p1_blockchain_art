@@ -252,10 +252,10 @@ func (si *ArtNodeInstance) ConnectNode(an *blockartlib.ArtNodeInstruction, reply
 		CheckError(err)
 		 fmt.Println("MINER: Creating new ArtNodeConnection")
 		connection := minerlib.ArtNodeConnection {
-			*addr,
-			rpcclient,
-		    an.PubKey,
-			nil,
+			Addr: *addr,
+			RPCClient: rpcclient,
+			ArtNodePubKey: an.PubKey,
+			ShapeHashResponse: make(chan string),
 		}
         m.ArtNodes = append(m.ArtNodes, &connection) 
 		*reply = true
