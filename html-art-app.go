@@ -88,7 +88,7 @@ func generateHTMLFile(width string, height string, svgStrings []string) {
 	}
 
 	// Open the file for writing
-	file, err := os.OpenFile(PATH_TO_FILE, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+	file, err := os.OpenFile(PATH_TO_FILE, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	checkError(err)
 	defer file.Close()
 
@@ -97,11 +97,16 @@ func generateHTMLFile(width string, height string, svgStrings []string) {
 	_, err = file.WriteString("<!DOCTYPE html>\n<html>\n<body>\n")
 	checkError(err)
 	_, err = file.WriteString(fmt.Sprintf("<svg width=\"%s\" height=\"%s\">\n", width, height))
+    checkError(err)
 
 	// Write SVG Lines
+	for _, svgLine := range svgStrings {
+	    file.WriteString(fmt.Sprintf("%s\n", svgLine))	
+	}
 
 	// Write closing tags
 	_, err = file.WriteString("</svg>\n</body>\n</html>\n")
+	checkError(err)
 
 	fmt.Println("HTML-ART-APP: canvas.html generated")
 
