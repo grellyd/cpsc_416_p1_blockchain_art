@@ -291,7 +291,11 @@ func (m *Miner) ConnectToNeighbourMiners(localAddr *net.TCPAddr) (bestNeighbour 
 
 	// Connect to each neighbour miner and keep track of the one with the largest depth
 	var bestMinerAddr net.TCPAddr
-	largestDepth := m.Blockchain.BC.LastNode.Current.Depth
+	var largestDepth int
+	if m.Blockchain != nil {
+		largestDepth = m.Blockchain.BC.LastNode.Current.Depth
+	}
+
 	depth := 0
 
 	for i, connection := range m.Neighbours {

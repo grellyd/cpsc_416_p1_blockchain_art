@@ -115,11 +115,11 @@ func main() {
 	//go m.TestEarlyExit()
 
 	// Set up a private address for art nodes to connect to
-	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3000")
+	privateLocalIP, err := net.ResolveTCPAddr("tcp", "127.0.0.1:3002")
 	CheckError(err)
  	privateListener, err := net.ListenTCP("tcp", privateLocalIP)
-
-	serviceRequests(privateListener)
+	serviceRequests(publicListener)
+	go serviceRequests1(privateListener)
 }
 
 func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *blockartlib.MinerNetSettings) (serverConnection minerlib.ServerInstance, err error) {
@@ -148,6 +148,22 @@ func connectServer(serverAddr *net.TCPAddr, minerInfo MinerInfo, settings *block
 
 func serviceRequests(privateListener *net.TCPListener) {
     fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
+	for {
+		conn, err := privateListener.Accept()
+		CheckError(err)
+		defer conn.Close()
+
+		go rpc.ServeConn(conn)
+
+		time.Sleep(10 * time.Millisecond)
+
+		// DrawOperations to validate
+		// For valid add to miner op channel
+	}
+}
+
+func serviceRequests1(privateListener *net.TCPListener) {
+	fmt.Printf("[miner]: Now servicing requests from ArtNodes on %s\n\n", privateListener.Addr().String())
 	for {
 		conn, err := privateListener.Accept()
 		CheckError(err)
