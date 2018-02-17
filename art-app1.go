@@ -18,7 +18,8 @@ import (
 )
 
 func main() {
-	time.Sleep(30,000,000,000) // Sleeps for 30 seconds. Unit is nanoseconds
+	duration, _ := time.ParseDuration("10s")
+	time.Sleep(duration) // Sleeps for 30 seconds.
 	validateNum := 0 // TODO: Change this to a bigger number for submission
 	shapes := []string{}
 	blocks := []string{}
@@ -70,12 +71,12 @@ func main() {
 
 	// assert ink3 > ink2
 	if ink3 <= ink2 {
-		checkError(fmt.Errorf("Err! ink3 not > ink4"))
+		checkError(fmt.Errorf("Err! ink3 not > ink2"))
 	}
 
 	fmt.Println("ART-APP1: Drawing square that intersects with ART-APP's polygon")
-	shapeHash, blockHash, ink4, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M4,3 h 1 v 1 h -1 v -1", "filled", colour)
-	if ae, ok := err.(*blockartlib.ShapeOverlapError); ok{
+	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M4,3 h 1 v 1 h -1 v -1", "filled", colour)
+	if _, ok := err.(*blockartlib.ShapeOverlapError); ok{
 		fmt.Printf("Got ShapeOverlapError as expected. Err: %v\n", err)
 	} else {
 		shapes = append(shapes, shapeHash)
@@ -83,14 +84,14 @@ func main() {
 	}
 
 	fmt.Println("ART-APP1: Drawing shape with out of bounds svg string") // M -4,-3 invalid
-	shapeHash, blockHash, ink4, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 h 1 v 1 h -1 v -1", "filled", colour)
-	if ae, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
+	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 h 1 v 1 h -1 v -1", "filled", colour)
+	if _, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
 		fmt.Printf("Got InvalidShapeSvgStringError as expected. Err: %v\n", err)
 	}
 
 	fmt.Println("ART-APP1: Drawing shape with invalid svg string") // Q not supported
-	shapeHash, blockHash, ink4, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 Q 1 v 1 h -1 v -1", "filled", colour)
-	if ae, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
+	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 Q 1 v 1 h -1 v -1", "filled", colour)
+	if _, ok := err.(*blockartlib.InvalidShapeSvgStringError); ok{
 		fmt.Printf("Got InvalidShapeSvgStringError as expected. Err: %v\n", err)
 	}
 
@@ -100,4 +101,13 @@ func main() {
 	if checkError(err) != nil {
 		return
 	}
+}
+
+// If error is non-nil, print it out and return it.
+func checkError(err error) error {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
+		return err
+	}
+	return nil
 }
