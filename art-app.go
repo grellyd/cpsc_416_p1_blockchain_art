@@ -71,7 +71,7 @@ func main() {
 
 	// Draw square in transparent circle.
 	fmt.Println("ART-APP: Will draw transparent circle then filled square inside.")
-	shapeHash, blockHash, _, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 50, 50 r 10", "transparent", colour)
+	shapeHash, blockHash, _, err = canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 50, 50 r 10", "transparent", colour)
 	if checkError(err) != nil {
 		fmt.Println(err)
 	} else {
