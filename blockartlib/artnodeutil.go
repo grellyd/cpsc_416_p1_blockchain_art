@@ -109,9 +109,8 @@ func (an ArtNode) DeleteShape(validateNum uint8, shapeHash string) (inkRemaining
 	}
 	opNumber = opNumber + 1
 
-	blockHash := ""
 	fmt.Printf("[artnodeutil#DeleteShape] ShapeHash: '%v'\n", op.ShapeHash)
-	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &blockHash)
+	err = an.MinerConnection.Call("ArtNodeInstance.SubmitOperation", op, &shapeHash)
 	if err != nil {
 		return 0, fmt.Errorf("unable to submit operation: %v", err)
 	}
