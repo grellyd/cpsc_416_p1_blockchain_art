@@ -305,8 +305,6 @@ func (si *ArtNodeInstance) GetAvailableInk(stub *bool, reply *uint32) error {
 }
 
 func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
-	fmt.Println("INK-MINER: Received GetSVGString RPC call")
-	// fmt.Println("In RPC getting svg string")
 	//m.Blockchain.BC
 	temp := m.Blockchain.BC.GenesisNode
 	var b *minerlib.Block
@@ -327,7 +325,6 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 }
 
 func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) error {
-	fmt.Println("INK-MINER: Received GetALLSVGStrings RPC call")
 	// fmt.Println("In RPC getting svg string")
 	bcBlocks := m.Blockchain.FindBlocksInBC(blockHash)
 	for _, b := range bcBlocks {

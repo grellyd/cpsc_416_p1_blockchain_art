@@ -23,6 +23,7 @@ func main() {
 	minerAddr := os.Args[1]
 	privateKey, _, err := keys.Generate()
 	fmt.Printf("%v\n", privateKey.PublicKey)
+	colour := "red"
 
 	// Open a canvas.
 	// TODO: use settings
@@ -35,8 +36,8 @@ func main() {
 	}
 
 	// Add a line.
-	fmt.Println("ART-APP: Calling AddShape to add a red line")
-	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 0, 5", "transparent", "red")
+	fmt.Println("ART-APP: Calling AddShape to add a red transparent polygon")
+	shapeHash, blockHash, ink, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M2,2L4,2L4,4L7,4L7,2L10,2L10,6L2,6L2,2", "transparent", colour)
 	if checkError(err) != nil {
 		fmt.Printf("ART-APP: There was an error with calling AddShape: \n")
 		fmt.Println(err)
@@ -46,8 +47,8 @@ func main() {
 	blocks = append(blocks, blockHash)
 
 	// Add another line.
-    fmt.Println("ART-APP: Calling AddShape to add another line")
-	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M 0,0 L 5 ,0", "transparent", "blue")
+    fmt.Println("ART-APP: Calling AddShape to add a filled circle. Intersects with polygon. Gets drawn.")
+	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 10,6 r 1", "filled", colour)
 	if checkError(err) != nil {
 		return
 	}
@@ -68,6 +69,18 @@ func main() {
 	if ink3 <= ink2 {
 		checkError(fmt.Errorf("Err! ink3 not > ink4"))
 	}
+
+	// Draw square in transparent circle.
+	fmt.Println("ART-APP: Will draw transparent circle then filled square inside.")
+	shapeHash, blockHash, ink4, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 50, 50 r 10", "transparent", colour)
+	shapes = append(shapes, shapeHash)
+	blocks = append(blocks, blockHash)
+
+	shapeHash, blockHash, ink5, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "M50,50 h 1 v -1 h -1 v 1", "transparent", colour)
+	shapes = append(shapes, shapeHash)
+	blocks = append(blocks, blockHash)
+
+	fmt.Println("ART-APP: Drawing square that intersects with circle 50, 50 r 10.")
 
 	fmt.Println("Closing the canvas")
 	// Close the canvas.
