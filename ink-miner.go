@@ -322,7 +322,6 @@ func (si *ArtNodeInstance) GetSVGString(shapeHash string, reply *string) error {
 }
 
 func (si *ArtNodeInstance) GetAllSVGStrings(blockHash string, reply []string) error {
-	// fmt.Println("In RPC getting svg string")
 	bcBlocks := m.Blockchain.FindBlocksInBC(blockHash)
 	for _, b := range bcBlocks {
 		for _, op := range b.Operations {
