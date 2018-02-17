@@ -499,8 +499,11 @@ func (m *Miner) OnNewBlock(b Block) {
 		fmt.Printf("[miner#OnNewBlock] channel: %v\n", artNodeConn.ShapeHashResponse)
 		fmt.Printf("[miner#OnNewBlock] channel addr: %v\n", &artNodeConn.ShapeHashResponse)
 		artNodeConn.ShapeHashResponse <- doneOp.ShapeHash
-		// TODO: maybe check error?
-		ink, _ := InkNeeded(*doneOp, m.Settings.CanvasSettings)
+		ink, err := InkNeeded(*doneOp, m.Settings.CanvasSettings)
+		if err != nil {
+			fmt.Printf("ERROR in OnNewBlock: %v", err)
+			return
+		}
 		if doneOp.Type == blockartlib.DRAW {
 			m.InkLevel -= ink
 		} else if doneOp.Type == blockartlib.DELETE {
