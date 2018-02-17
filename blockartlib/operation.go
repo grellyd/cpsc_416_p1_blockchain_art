@@ -45,12 +45,6 @@ func (o *Operation) CalculateSig() (string) {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func (o *Operation) GetNumber() error {
-	// TODO set operation number
-	o.OperationNumber = 5
-	return nil
-}
-
 func (o *Operation)Marshall() (data []byte, err error) {
 	gob.Register(&Operation{})
 	var buff bytes.Buffer
