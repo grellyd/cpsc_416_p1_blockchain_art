@@ -52,24 +52,46 @@ func main() {
     fmt.Println("ART-APP1: Calling AddShape to add a transparent triangle. Expect fail")
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M6,1L6,6L1,4L6,1", "filled", colour)
 	if checkError(err) != nil {
-		return
+		fmt.Println(err)
+	} else {
+		shapes = append(shapes, shapeHash)
+		blocks = append(blocks, blockHash)
 	}
 	if ink2 <= ink {
 		checkError(fmt.Errorf("Err! ink2 not > ink1"))
 	}
-	shapes = append(shapes, shapeHash)
-	blocks = append(blocks, blockHash)
 
 	// Delete the first line.
 	fmt.Println("ART-APP1: Deleting the first line")
 	ink3, err := canvas.DeleteShape(uint8(validateNum), shapeHash)
 	if checkError(err) != nil {
-		return
-	}
+		fmt.Println(err)
+	} 
 
 	// assert ink3 > ink2
 	if ink3 <= ink2 {
 		checkError(fmt.Errorf("Err! ink3 not > ink4"))
+	}
+
+	fmt.Println("ART-APP1: Drawing square that intersects with ART-APP's polygon")
+	shapeHash, blockHash, ink4, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M4,3 h 1 v 1 h -1 v -1", "filled", colour)
+	if checkError(err) != nil {
+		fmt.Println(err)
+	} else {
+		shapes = append(shapes, shapeHash)
+		blocks = append(blocks, blockHash)
+	}
+
+	fmt.Println("ART-APP1: Drawing shape with out of bounds svg string") // M -4,-3 invalid
+	shapeHash, blockHash, ink4, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 h 1 v 1 h -1 v -1", "filled", colour)
+	if checkError(err) != nil {
+		fmt.Println(err)
+	} 
+
+	fmt.Println("ART-APP1: Drawing shape with invalid svg string") // Q not supported
+	shapeHash, blockHash, ink4, err = canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M-4,-3 Q 1 v 1 h -1 v -1", "filled", colour)
+	if checkError(err) != nil {
+		fmt.Println(err)
 	}
 
 	fmt.Println("Closing the canvas")

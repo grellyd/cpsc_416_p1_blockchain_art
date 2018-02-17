@@ -41,7 +41,6 @@ func main() {
 	if checkError(err) != nil {
 		fmt.Printf("ART-APP: There was an error with calling AddShape: \n")
 		fmt.Println(err)
-		return
 	}
 	shapes = append(shapes, shapeHash)
 	blocks = append(blocks, blockHash)
@@ -50,7 +49,7 @@ func main() {
     fmt.Println("ART-APP: Calling AddShape to add a filled circle. Intersects with polygon. Gets drawn.")
 	shapeHash, blockHash, ink2, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 10,6 r 1", "filled", colour)
 	if checkError(err) != nil {
-		return
+		fmt.Println(err)
 	}
 	if ink2 <= ink {
 		checkError(fmt.Errorf("Err! ink2 not > ink1"))
@@ -62,7 +61,7 @@ func main() {
 	fmt.Println("ART-APP: Deleting the first line")
 	ink3, err := canvas.DeleteShape(uint8(validateNum), shapeHash)
 	if checkError(err) != nil {
-		return
+		fmt.Println(err)
 	}
 
 	// assert ink3 > ink2
@@ -73,18 +72,32 @@ func main() {
 	// Draw square in transparent circle.
 	fmt.Println("ART-APP: Will draw transparent circle then filled square inside.")
 	shapeHash, blockHash, ink4, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "c 50, 50 r 10", "transparent", colour)
-	shapes = append(shapes, shapeHash)
-	blocks = append(blocks, blockHash)
-
-	shapeHash, blockHash, ink5, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "M50,50 h 1 v -1 h -1 v 1", "transparent", colour)
-	shapes = append(shapes, shapeHash)
-	blocks = append(blocks, blockHash)
-
-    if ink5 <= ink4 {
-		checkError(fmt.Errorf("Err! ink4 not > ink 5"))
+	if checkError(err) != nil {
+		fmt.Println(err)
+	} else {
+		shapes = append(shapes, shapeHash)
+		blocks = append(blocks, blockHash)
 	}
 
-	fmt.Println("ART-APP: Drawing square that intersects with circle 50, 50 r 10.")
+
+	shapeHash, blockHash, ink5, err := canvas.AddShape(uint8(validateNum), blockartlib.CIRCLE, "M50,50 h 1 v -1 h -1 v 1", "transparent", colour)
+	if checkError(err) != nil {
+		fmt.Println(err)
+	} else {
+		shapes = append(shapes, shapeHash)
+		blocks = append(blocks, blockHash)
+	}
+
+	fmt.Println("ART-APP: Drawing line that intersects with circle 50, 50 r 10.")
+	shapeHash, blockHash, ink6, err := canvas.AddShape(uint8(validateNum), blockartlib.PATH, "M50,50 h 60", "transparent", colour)
+	shapes = append(shapes, shapeHash)
+	blocks = append(blocks, blockHash)
+	if checkError(err) != nil {
+		fmt.Println(err)
+	} else {
+		shapes = append(shapes, shapeHash)
+		blocks = append(blocks, blockHash)
+	}
 
 	fmt.Println("Closing the canvas")
 	// Close the canvas.
