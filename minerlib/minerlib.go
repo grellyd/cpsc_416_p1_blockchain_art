@@ -1,3 +1,4 @@
+
 package minerlib
 
 import (

@@ -1,0 +1,33 @@
+3081a402010104307e2a129fffe70e5c7291d0de5243b3364ce8477f2223a2e659426d693638e9369846f1a5209e923126ea10bf972bc28ba00706052b81040022a1640362000448a78fe1631e5a4ca00465d3e19c1e777ed95706d7265bbd5b3f80989524f078de6e0c6c352e6a1851efd8683c63a84074c6630fe6ead880a3242d6c705ae2c03a18e2d21d1249b3734285d9395500ada2f5bffd5946349bd921ac131c05a0c8
+{0xc420067840 11182557044524789815640842580194867106606123967633632763823425458477960398986779128077697423676192876923800432912448 17973309635777635324988404666390162841186433037679691402343551668212624515148490609556322420750081049771472471826632}
+[art-app] shapes; []
+ART-APP: Calling OpenCanvas to Miner with address 192.168.1.74:44698
+BLOCKARTLIB: Running OpenCanvas
+ARTNODEUTIL: Running Connect to connect to miner at address  192.168.1.74:44698
+ARTNODEUTIL: Resolving ArtNode local/outbound IP: 127.0.0.1:0
+ARTNODEUTIL: ArtNode listening on 127.0.0.1:34287
+ARTNODEUTIL: trying to connec to Miner via RPC: ArtNodeInstance.ConnectNode
+ARTNODEUTIL connected via rpc without error; reply is:  true
+BLOCKARTLIB: Created new ArtNode for canvas.
+Miner addr  192.168.1.74:44698 
+LocalIP:  127.0.0.1:0 
+Miner Connection  &{0xc420126540 {0 0} {ArtNodeInstance.ConnectNode 0 <nil>} {0 0} 1 map[] false false} 
+Alive:  true Error  <nil>
+ART-APP: Canvas is  {0 192.168.1.74:44698 0xc420126270 0xc420126270 true 127.0.0.1:0 0xc420068300}
+ART-APP: Calling AddShape to add a red line
+ARTNODEUTIL: Calling AddShape
+[artnodeutil] op: {1 0 0 transparent red M 0,0 L 0, 5 3076301006072a8648ce3d020106052b810400220362000448a78fe1631e5a4ca00465d3e19c1e777ed95706d7265bbd5b3f80989524f078de6e0c6c352e6a1851efd8683c63a84074c6630fe6ead880a3242d6c705ae2c03a18e2d21d1249b3734285d9395500ada2f5bffd5946349bd921ac131c05a0c8 0 9ec5f17ecefd0b90904478af6abc617f 0}
+ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation
+[artnodeutil] shapeHash: '9ec5f17ecefd0b90904478af6abc617f'
+ART-APP: shapeHash: '9ec5f17ecefd0b90904478af6abc617f'
+[art-app] shapes; [9ec5f17ecefd0b90904478af6abc617f]
+ART-APP: Calling AddShape to add another line
+ARTNODEUTIL: Calling AddShape
+[artnodeutil] op: {1 1 0 transparent blue M 0,0 L 5 ,0 3076301006072a8648ce3d020106052b810400220362000448a78fe1631e5a4ca00465d3e19c1e777ed95706d7265bbd5b3f80989524f078de6e0c6c352e6a1851efd8683c63a84074c6630fe6ead880a3242d6c705ae2c03a18e2d21d1249b3734285d9395500ada2f5bffd5946349bd921ac131c05a0c8 0 f311fcb8eb6e00bd017a15b79db594bb 0}
+ARTNODEUTIL: Calling RPC call to Miner: ArtNodeInstance.SubmitOperation
+[artnodeutil] shapeHash: 'f311fcb8eb6e00bd017a15b79db594bb'
+ART-APP: shapeHash: 'f311fcb8eb6e00bd017a15b79db594bb'
+[art-app] shapes: [9ec5f17ecefd0b90904478af6abc617f f311fcb8eb6e00bd017a15b79db594bb]
+[art-app] shapes[0]: 9ec5f17ecefd0b90904478af6abc617f
+ART-APP: Deleting the first line
+[artnodeutil#DeleteShape] ShapeHash: '9ec5f17ecefd0b90904478af6abc617f'

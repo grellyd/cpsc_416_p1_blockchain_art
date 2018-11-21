@@ -1,0 +1,76 @@
+TODO:
+
+----------
+Phase 1: Infrastructure
+-----------
+Sharon := shape addition validation, add helper to determine how much ink an operation takes. Add ink used field to operation.
+Alex := RPC (done), miner -> server (done), applib <-> miner (done), NewMiner (done), NewArtNode (done)
+Graham := Restructure and ink generation, serialise and deserialise block; Add field BCLength to retrieve length of BC.
+Larissa := miner to miner communication
+
+Graham Deliverable (Post Alex Done) -> Able to start multiple miners from ink
+nodes, and provide no operations. The miners will all start NOPing and
+generating ink for the InkNodes to use.
+
+----------
+Phase 2: Blockchain & Blockchain RPC Calls
+-----------
+Graham := Block propagation
+Graham := Block Validation
+    AKA: 
+    - Check that the nonce for the block is valid: PoW is correct and has the right difficulty.
+    - Check that each operation in the block has a valid signature (this signature should be generated using the private key and the operation).
+    - Check that the previous block hash points to a legal, previously generated, block in the forest
+Graham := Switching to a new longest chain (stop/start mining)
+Graham := Miner main loop
+
+Alex := implement GetInk(), GetGenesisBlock(), and GetChildren(); think about stubs for BC.
+Alex := Tree comparisons for the purposes of choosing the longest chain.
+Alex := Given a valid block, check if new longest chain.
+    func IsNewLongestChain(b *Block) bool
+Alex := Fix requesting neighbors from the server
+
+Larissa := Miner intial join chain revceive
+Larissa := Share operations to other miners
+
+Sharon := Shape Addition Validation -> Validate an operation can go on the Canvas
+Sharon := Canvas generation
+Sharon := blockchain output to ink-miners
+Sharon := Check that an operation that deletes a shape refers to a shape that exists and which has not been previously deleted.
+
+:= Slice of operations from walking the tree to validate on canvas
+:= Check that the operation with an identical signature has not been previously added to the blockchain (prevents operation replay attacks).
+:= Has operation already been completed by another miner
+:= for new invalid chain, have all operations been completed? Aka operation reliability for non-committed operations
+:= Choose #OPs per block, and timeout to start mining
+
+----------
+Phase 3: Azure Deployment & Redundancy
+----------
+
+:= handling ink-miner failure
+:= handling art-node failure
+
+
+
+
+
+----------
+Phase 4: Bonuses
+-----------
+
+----------
+Notes
+-----------
+
+----------
+How to run several miners (and apps)
+-----------
+1. Run key-gen.go (each run 1 set of [Private][Public] keys).
+2. Each time copy the values you get somewhere.
+3. Run server
+4. Run every miner with the arguments 127.0.0.1:12345 [publ][priv]
+5. If you want to run an app, you'll need to copy miner's IP:Port from terminal printout (it's randomly picked) and copy private key for that miner.
+6. Manually insert into art-app.go private key and IP:Port combination
+7. Run App.
+

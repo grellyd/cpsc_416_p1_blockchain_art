@@ -1,0 +1,85 @@
+start
+[serv] 21:34:44.358179 server.go:233: Got Register from 127.0.0.1:0
+[serv] 21:34:44.358232 server.go:191: 127.0.0.1:0 is alive
+Settings  &{83218ac34c1834c26781fe4bde918ee4 2 100 50 3000 5 5 {1024 1024}}
+[miner] Starting Mining Process
+[miner] Starting to Mine Blocks
+[miner] Starting Mining: &{83218ac34c1834c26781fe4bde918ee4 [] 0xc4201341e0 0}
+[miner] Done Mining: &{83218ac34c1834c26781fe4bde918ee4 [] 0xc4201341e0 1586808763} with 5291214577f61d6cad6846a481b00000
+Parent hash  83218ac34c1834c26781fe4bde918ee4
+BCTree after append:  &{map[] 0xc42013af40 <nil> 83218ac34c1834c26781fe4bde918ee4 [0xc420365cc0] 0}
+BC after append:  &{0xc420138770 0xc42047c350}
+[miner] Starting Mining: &{5291214577f61d6cad6846a481b00000 [] 0xc4201341e0 0}
+[miner] Done Mining: &{5291214577f61d6cad6846a481b00000 [] 0xc4201341e0 3245230590} with 81292083cb6cf96ca1848d33e9000000
+Parent hash  5291214577f61d6cad6846a481b00000
+BCTree after append:  &{map[] 0xc42013af40 <nil> 83218ac34c1834c26781fe4bde918ee4 [0xc420365cc0] 0}
+BC after append:  &{0xc420138770 0xc420ee74f0}
+[miner] Starting Mining: &{81292083cb6cf96ca1848d33e9000000 [] 0xc4201341e0 0}
+[serv] 21:34:47.358307 server.go:191: 127.0.0.1:0 is alive
+[serv] 21:34:50.358396 server.go:191: 127.0.0.1:0 is alive
+[serv] 21:34:53.358494 server.go:191: 127.0.0.1:0 is alive
+[serv] 21:34:56.358593 server.go:186: 127.0.0.1:0 timed out
+Error: BlockArt server: unknown key
+
+grellyd@groot:(ink_it) ~/uni/fifth_year/cpsc_416/ass/proj1/go/src 
+>grep -r Error: BlockArt server .
+grep: BlockArt: No such file or directory
+grep: server: No such file or directory
+./blockartlib/artnodeutil.go:		fmt.Printf("Error: %v\n", err)
+./minerlib/block.go:		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
+./minerlib/block.go:		return nil, fmt.Errorf("Error: Unable to marshall nil public key")
+./minerlib/block.go:		return nil, fmt.Errorf("Error: Unable to encode ParentHash")
+./minerlib/block.go:		return nil, fmt.Errorf("Error: Unable to encode Operations")
+./minerlib/block.go:		return nil, fmt.Errorf("Error: Unable to encode MinerPublicKey")
+./minerlib/minerlib.go:				fmt.Printf("MineBlocks created Error: %v", err)
+./minerlib/block_marshall_test.go:				err = fmt.Errorf("Error: Byte %d as '%d' doesn't match '%d'", i, datum, test.data[i])
+./art-app.go:		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
+./ink-miner.go:		fmt.Printf("Error: %v\n", err)
+./why_errors.txt:Error: BlockArt server: unknown key
+./.git/hooks/pre-commit.sample:Error: Attempt to add a non-ASCII file name.
+
+grellyd@groot:(ink_it) ~/uni/fifth_year/cpsc_416/ass/proj1/go/src 
+>grep -r "Error: BlockArt server" .
+./why_errors.txt:Error: BlockArt server: unknown key
+
+grellyd@groot:(ink_it) ~/uni/fifth_year/cpsc_416/ass/proj1/go/src 
+>grep -r "BlockArt server" .
+./proj1-server/server.go:	return fmt.Sprintf("BlockArt server: key already registered [%s]", string(e))
+./proj1-server/server.go:	return fmt.Sprintf("BlockArt server: address already registered [%s]", string(e))
+./proj1-server/server.go:	unknownKeyError UnknownKeyError = errors.New("BlockArt server: unknown key")
+./why_errors.txt:Error: BlockArt server: unknown key
+
+
+func checkError(err error) {
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+
+func checkError(err error) {
+	if err != nil {
+		// induce a panic for stacktrace
+		a := []string{"hola"}
+		fmt.Printf("Error: %v %v\n", err, a[32])
+		os.Exit(1)
+	}
+}
+
+[miner] Starting Mining: &{83218ac34c1834c26781fe4bde918ee4 [] 0xc4201361b0 0}
+[serv] 21:47:33.684427 server.go:191: 127.0.0.1:0 is alive
+[serv] 21:47:36.684509 server.go:186: 127.0.0.1:0 timed out
+panic: runtime error: index out of range
+
+goroutine 1 [running]:
+main.checkError(0x925840, 0xc4214a8bc0)
+	/home/grellyd/uni/fifth_year/cpsc_416/ass/proj1/go/src/ink-miner.go:138 +0x77
+main.main()
+	/home/grellyd/uni/fifth_year/cpsc_416/ass/proj1/go/src/ink-miner.go:74 +0x7c0
+exit status 2
+
+
+	// Ask for Neighbors
+	74 err = serverConn.RequestMiners(&miners, m.Settings.MinNumMinerConnections)
+	75 checkError(fmt.Errorf("Error while requesting miners"))

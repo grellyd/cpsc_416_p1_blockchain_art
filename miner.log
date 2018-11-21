@@ -1,0 +1,10 @@
+======= [miner] START ======
+
+[miner]: Now servicing requests from ArtNodes on 192.168.1.74:40822
+
+[miner] Starting the Mining Process
+[miner] Starting to Mine Blocks
+[miner] OperationQueue: 0xc4200681e0
+[miner] len(OperationQueue): 0
+[miner] len(m.operationQueue) >= OP_THRESHOLD: false
+[miner] Starting to mine block: &{83218ac34c1834c26781fe4bde918ee4 [] 0xc4203585c0 0}
